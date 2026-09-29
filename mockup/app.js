@@ -581,36 +581,44 @@
   }
 
   // ── §Vệt tab: nền của tab đang chọn là MỘT phần tử trượt giữa các tab ──
+  var INK_LIST = '.jw-tabs, .jw-vtabs';
+  var INK_ON = '[role="tab"][aria-selected="true"]';
+  function inkBox(on) { return [on.offsetLeft, on.offsetTop, on.offsetWidth, on.offsetHeight]; }
+  function inkSet(ink, b) {
+    ink.style.setProperty('--ink-x', b[0] + 'px');
+    ink.style.setProperty('--ink-y', b[1] + 'px');
+    ink.style.setProperty('--ink-w', b[2] + 'px');
+    ink.style.setProperty('--ink-h', b[3] + 'px');
+  }
   function inkRead(root) {
     var keep = {};
-    $$('.jw-tabs[id]', root).forEach(function (tl) {
-      var on = $('.jw-tab[aria-selected="true"]', tl);
-      if (on) keep[tl.id] = [on.offsetLeft, on.offsetWidth];
+    $$('.jw-tabs[id], .jw-vtabs[id]', root).forEach(function (tl) {
+      var on = $(INK_ON, tl);
+      if (on) keep[tl.id] = inkBox(on);
     });
     return keep;
   }
   function inkMount(root, keep) {
-    $$('.jw-tabs', root).forEach(function (tl) {
+    $$(INK_LIST, root).forEach(function (tl) {
       if ($('.jw-tabs-ink', tl)) return;
       var ink = document.createElement('span');
       ink.className = 'jw-tabs-ink';
       ink.setAttribute('aria-hidden', 'true');
       var old = tl.id && keep && keep[tl.id];
-      if (old) { ink.style.setProperty('--ink-x', old[0] + 'px'); ink.style.setProperty('--ink-w', old[1] + 'px'); }
+      if (old) inkSet(ink, old);
       else ink.classList.add('jw-tabs-ink--now');
       tl.insertBefore(ink, tl.firstChild);
       tl.setAttribute('data-ink', '');
     });
   }
   function inkPlace(root) {
-    $$('.jw-tabs[data-ink]', root).forEach(function (tl) {
+    $$('.jw-tabs[data-ink], .jw-vtabs[data-ink]', root).forEach(function (tl) {
       var ink = $('.jw-tabs-ink', tl);
-      var on = $('.jw-tab[aria-selected="true"]', tl);
+      var on = $(INK_ON, tl);
       if (!ink) return;
       ink.hidden = !on;
       if (!on) return;
-      ink.style.setProperty('--ink-x', on.offsetLeft + 'px');
-      ink.style.setProperty('--ink-w', on.offsetWidth + 'px');
+      inkSet(ink, inkBox(on));
       if (ink.classList.contains('jw-tabs-ink--now')) { void ink.offsetWidth; ink.classList.remove('jw-tabs-ink--now'); }
     });
   }
@@ -1010,10 +1018,10 @@
     var tabs = [{ id: 'all', label: 'すべて', icon: 'widget' }].concat(GS_CATS);
     var cur = S.searchTab;
     var list = cur === 'all' ? all : all.filter(function (r) { return r.cat === cur; });
-    var side = '<div class="jw-vtabs" role="tablist">' + tabs.map(function (c) {
+    var side = '<div class="jw-panel jw-glass jw-vtabs-card"><div class="jw-vtabs" role="tablist" id="searchTabs" aria-label="' + esc(t('検索結果')) + '">' + tabs.map(function (c) {
       var n = c.id === 'all' ? all.length : all.filter(function (r) { return r.cat === c.id; }).length;
-      return '<button type="button" class="jw-vtab" role="tab" aria-selected="' + (c.id === cur) + '" data-act="search-tab" data-v="' + c.id + '">' + ic(c.icon, 16) + esc(t(c.label)) + '<span class="jw-tab-n">' + n + '</span></button>';
-    }).join('') + '</div>';
+      return '<button type="button" class="jw-vtab" role="tab" aria-selected="' + (c.id === cur) + '" data-act="search-tab" data-v="' + c.id + '">' + ic(c.icon, 16) + '<span class="jw-vtab-name">' + esc(t(c.label)) + '</span><span class="jw-tab-n">' + n + '</span></button>';
+    }).join('') + '</div></div>';
     var results = list.length ? '<div class="jw-rows">' + list.map(function (r) {
       var c = catOf(r.cat);
       var inner = (r.icon ? ic(r.icon, 18) : ic(c.icon, 18)) + '<span class="jw-gs-body"><span class="jw-result-cat">' + esc(t(c.label)) + '</span><span class="jw-result-title">' + esc(r.title) + '</span><span class="jw-result-sub">' + esc(r.sub) + '</span></span>';
@@ -1741,7 +1749,7 @@
   // Nút CHỈ có icon (sao, ×, mở/đóng tất cả, bánh răng…) KHÔNG nằm trong danh sách: chỉ đổi màu icon.
   var RV_SEL = '.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, a.jw-rowi, button.jw-rowi, ' +
     '.jw-panel:not(.jw-panel--flat), .jw-pane, .jw-photo-thumb, .jw-mvv2, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, ' +
-    '.jw-input, .jw-gsearch-box, .jw-sn-find';
+    '.jw-input, .jw-gsearch-box, .jw-sn-find, .jw-vtab, .jw-gs-item';
   var RV_R = 96;
   var rvLit = [], rvPt = null, rvRaf = 0;
   var rvOff = REDUCED;

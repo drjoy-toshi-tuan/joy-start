@@ -79,6 +79,11 @@
   /* MVV: mặt PHẲNG (không gradient) — nền ấm rất nhẹ, viền cam mờ */
   --mvv-bg: #fffaf3;
   --mvv-edge: rgba(240, 140, 0, 0.24);
+  --mvv-edge-hi: rgba(240, 140, 0, 0.55);
+  --mvv-wash-a: rgba(240, 140, 0, 0.1);
+  --mvv-wash-b: rgba(255, 196, 120, 0.12);
+  --mvv-ink-a: #c46200;
+  --mvv-ink-b: #eb8d00;
   --mvv-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 24px 48px -32px rgba(150, 84, 8, 0.3);
 
   /* Theme SÁNG: thẻ = mặt TRẮNG ĐỤC (kính trắng trên nền trắng không đọc ra mép), thẻ con
@@ -197,6 +202,11 @@
   --sn-panel-bg: #1d1b19;
   --mvv-bg: #1a1714;
   --mvv-edge: rgba(240, 140, 0, 0.28);
+  --mvv-edge-hi: rgba(240, 140, 0, 0.6);
+  --mvv-wash-a: rgba(240, 140, 0, 0.13);
+  --mvv-wash-b: rgba(240, 140, 0, 0.05);
+  --mvv-ink-a: #f08c00;
+  --mvv-ink-b: #ffbf66;
   --mvv-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 48px -30px rgba(0, 0, 0, 0.8);
 
   /* Theme TỐI giữ chất kính */
@@ -1252,19 +1262,20 @@ select.jw-input { cursor: pointer; }
   mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
 }
 .jw-tabs { position: relative; }
-/* Vệt nền của tab đang chọn — MỘT phần tử, trượt sang tab mới (app.js đặt --ink-x / --ink-w) */
+/* Vệt nền của tab đang chọn — MỘT phần tử, trượt sang tab mới (app.js đặt --ink-x/-y/-w/-h;
+   2 chiều nên dùng được cho tab dọc và tab xuống dòng ở mobile) */
 .jw-tabs-ink {
   position: absolute;
-  top: 2px;
+  top: 0;
   left: 0;
-  height: 32px;
   width: var(--ink-w, 0px);
-  transform: translateX(var(--ink-x, 0px));
+  height: var(--ink-h, 0px);
+  transform: translate(var(--ink-x, 0px), var(--ink-y, 0px));
   border-radius: 999px;
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
   pointer-events: none;
-  transition: transform var(--seg-dur) var(--seg-ease), width var(--seg-dur) var(--seg-ease);
+  transition: transform var(--seg-dur) var(--seg-ease), width var(--seg-dur) var(--seg-ease), height var(--seg-dur) var(--seg-ease);
 }
 .jw-tabs-ink--now { transition: none; }
 .jw-tabs[data-ink] .jw-tab[aria-selected='true'] { background: transparent; border-color: transparent; }
@@ -1532,6 +1543,7 @@ select.jw-input { cursor: pointer; }
   color: var(--ink-3);
 }
 .jw-gs-item {
+  position: relative;
   display: flex; align-items: center; gap: 0.55rem; width: 100%;
   padding: 0.42rem 0.55rem; border: 0; border-radius: 10px; background: none;
   text-align: left; cursor: pointer; color: var(--ink);
@@ -1576,12 +1588,18 @@ select.jw-input { cursor: pointer; }
   flex-direction: column;
   gap: clamp(1.4rem, 1rem + 1.4vw, 2.2rem);
   padding: clamp(1.4rem, 0.9rem + 2vw, 2.7rem);
-  border: 1px solid var(--mvv-edge);
+  /* Viền 1px chuyển sắc (đậm ở góc phải trên — nơi có watermark — nhạt dần), nền loang rất nhẹ
+     ở 2 góc chéo. Vẽ bằng nền 2 lớp padding-box / border-box để giữ được bo góc. */
+  border: 1px solid transparent;
   border-radius: 28px;
-  background: var(--mvv-bg);
+  background:
+    radial-gradient(70% 110% at 100% 0%, var(--mvv-wash-a), transparent 62%) padding-box,
+    radial-gradient(55% 80% at 0% 100%, var(--mvv-wash-b), transparent 70%) padding-box,
+    linear-gradient(var(--mvv-bg), var(--mvv-bg)) padding-box,
+    linear-gradient(215deg, var(--mvv-edge-hi), var(--mvv-edge) 38%, var(--mvv-edge) 70%, color-mix(in srgb, var(--mvv-edge) 55%, transparent)) border-box;
   box-shadow: var(--mvv-shadow);
 }
-/* Nền phẳng; mark Dr.JOY làm WATERMARK: đứng thẳng, nằm trọn trong khối, góc phải trên */
+/* Mark Dr.JOY làm WATERMARK: đứng thẳng, nằm trọn trong khối, góc phải trên */
 .jw-mvv2-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
 .jw-mvv2-mark { position: absolute; top: clamp(1.25rem, 2.6vw, 2.25rem); right: clamp(1.25rem, 3vw, 2.75rem); width: clamp(8rem, 13vw, 11.5rem); height: auto; opacity: 0.06; }
 [data-theme='dark'] .jw-mvv2-mark { opacity: 0.08; }
@@ -1595,7 +1613,7 @@ select.jw-input { cursor: pointer; }
   letter-spacing: 0.24em;
   color: var(--accent-text);
 }
-.jw-mvv2-label::before { content: ''; width: 1.5rem; height: 2px; background: var(--accent); }
+.jw-mvv2-label::before { content: ''; width: 1.75rem; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--accent) 45%, color-mix(in srgb, var(--accent) 0%, transparent)); }
 .jw-mvv2-top { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(1.4rem, 3vw, 3.2rem); align-items: end; }
 .jw-mvv2-statement {
   margin: 0.85rem 0 0;
@@ -1610,8 +1628,19 @@ select.jw-input { cursor: pointer; }
 /* 日本語: chỉ ngắt ở <wbr> (すべての｜医療従事者に、｜次の一手を) — không bẻ đôi 従事者 */
 :lang(ja) .jw-mvv2-statement { word-break: keep-all; }
 .jw-mvv-nb { white-space: nowrap; }
-.jw-mvv2-statement .jw-mvv-nb { color: var(--accent-text); }
-.jw-mvv2-vision { padding-left: clamp(1rem, 2vw, 2rem); border-left: 1px solid var(--mvv-edge); }
+.jw-mvv2-statement .jw-mvv-nb, .jw-mvv2-num > .jw-num { color: var(--accent-text); }
+/* Chữ nhấn: gradient trong CÙNG một hue (cam đậm → cam sáng), tĩnh, không ánh chạy */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .jw-mvv2-statement .jw-mvv-nb, .jw-mvv2-num > .jw-num {
+    background: linear-gradient(100deg, var(--mvv-ink-a) 10%, var(--mvv-ink-b) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .jw-mvv2-statement .jw-mvv-nb::selection, .jw-mvv2-num > .jw-num::selection { -webkit-text-fill-color: var(--ink); }
+}
+/* Vạch chia MISSION | VISION mờ dần ở 2 đầu */
+.jw-mvv2-vision { padding-left: clamp(1rem, 2vw, 2rem); border-left: 1px solid; border-image: linear-gradient(180deg, transparent, var(--mvv-edge) 22%, var(--mvv-edge) 78%, transparent) 1; }
 .jw-mvv2-vtext {
   margin: 0.75rem 0 1.1rem;
   font-family: var(--font-display);
@@ -1655,7 +1684,7 @@ select.jw-input { cursor: pointer; }
 .jw-mvv2-vname { font-family: var(--font-display); font-size: clamp(1rem, 0.92rem + 0.3vw, 1.16rem); font-weight: 700; line-height: 1.3; letter-spacing: -0.015em; color: var(--ink); }
 @container mvv (max-width: 820px) {
   .jw-mvv2-top { grid-template-columns: minmax(0, 1fr); }
-  .jw-mvv2-vision { padding: 1.2rem 0 0; border-left: 0; border-top: 1px solid var(--mvv-edge); }
+  .jw-mvv2-vision { padding: 1.2rem 0 0; border-left: 0; border-top: 1px solid; border-image: linear-gradient(90deg, var(--mvv-edge), transparent) 1; }
   .jw-mvv2-list { grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); }
 }
 
@@ -1925,18 +1954,27 @@ select.jw-input { cursor: pointer; }
 .jw-iconbtn:disabled { opacity: 0.35; cursor: default; background: none; color: var(--ink-3); }
 
 /* 検索結果 */
-.jw-search-page { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 1.25rem; align-items: start; }
-.jw-vtabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+.jw-search-page { display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.jw-vtabs-card { position: sticky; top: 0; padding: 0.4rem; }
+.jw-vtabs { position: relative; display: flex; flex-direction: column; gap: 2px; }
 .jw-vtab {
+  position: relative;
   display: flex; align-items: center; gap: 0.5rem; width: 100%;
   padding: 0.5rem 0.7rem; border: 0; border-radius: 10px; background: none; color: var(--ink-2);
   font-family: var(--font-display); font-size: 0.84rem; font-weight: 600; text-align: left; cursor: pointer;
+  transition: background-color 0.16s ease, color 0.2s ease;
 }
-.jw-vtab > svg { color: var(--ink-3); }
+.jw-vtab > svg { flex: none; color: var(--ink-3); }
+.jw-vtab-name { min-width: 0; }
 .jw-vtab:hover { background: var(--hover-fill); color: var(--ink); }
-.jw-vtab[aria-selected='true'] { background: var(--accent-fill); color: var(--on-accent); }
-.jw-vtab[aria-selected='true'] > svg, .jw-vtab[aria-selected='true'] .jw-tab-n { color: var(--on-accent); }
+.jw-vtab:hover > svg { color: var(--accent-text); }
+/* Tab đang chọn: cùng ngôn ngữ với tab ngang (nền cam nhạt + vành cam), nền là vệt trượt */
+.jw-vtab[aria-selected='true'] { background: var(--accent-soft); color: var(--accent-text); }
+.jw-vtabs[data-ink] .jw-vtab[aria-selected='true'] { background: transparent; }
+.jw-vtab[aria-selected='true'] > svg, .jw-vtab[aria-selected='true'] .jw-tab-n { color: var(--accent-text); }
+.jw-vtabs .jw-tabs-ink { border-radius: 10px; }
 .jw-vtab .jw-tab-n { margin-left: auto; }
+.jw-result:hover > svg { color: var(--accent-text); }
 .jw-result { align-items: flex-start; }
 .jw-result > svg { margin-top: 0.15rem; color: var(--ink-3); }
 .jw-result-cat { font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; color: var(--accent-text); }
@@ -2104,7 +2142,8 @@ select.jw-input { cursor: pointer; }
 :root:has(.jw-sidenav--rail) { --side-w: 3.4rem; }
 @media (max-width: 1100px) {
   .jw-search-page { grid-template-columns: minmax(0, 1fr); }
-  .jw-vtabs { flex-direction: row; flex-wrap: wrap; position: static; }
+  .jw-vtabs-card { position: relative; }
+  .jw-vtabs { flex-direction: row; flex-wrap: wrap; }
   .jw-vtab { width: auto; }
   .jw-vtab .jw-tab-n { margin-left: 0.2rem; }
   .jw-grid2 { grid-template-columns: minmax(0, 1fr); }
@@ -2348,7 +2387,8 @@ select.jw-input { cursor: pointer; }
 :is(.jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear, .jw-pane) { position: relative; }
 /* :where() = độ ưu tiên 0 ⇒ `[data-rv]::before` bên dưới luôn thắng được opacity */
 :where(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-panel:not(.jw-panel--flat),
-        .jw-pane, .jw-photo-thumb, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, .jw-mvv2, .jw-gsearch-box, .jw-sn-find)::before,
+        .jw-pane, .jw-photo-thumb, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, .jw-mvv2, .jw-gsearch-box, .jw-sn-find,
+        .jw-vtab, .jw-gs-item)::before,
 :where(a.jw-rowi, button.jw-rowi)::after {
   content: '';
   position: absolute;
@@ -2370,29 +2410,30 @@ select.jw-input { cursor: pointer; }
 .jw-mvv2::before { z-index: 1; }
 [data-rv]::before, [data-rv]:where(a.jw-rowi, button.jw-rowi)::after { opacity: 1; }
 :is(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, a.jw-rowi, button.jw-rowi,
-    .jw-pane, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile)[data-rv]:hover {
+    .jw-pane, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, .jw-vtab, .jw-gs-item)[data-rv]:hover {
   background-image: radial-gradient(calc(var(--rv-r) * 0.85) circle at var(--mx) var(--my), var(--rv-fill), transparent 100%);
 }
 
 @media (prefers-reduced-motion: no-preference) {
   :is(.jw-sn-topico, .jw-tree-icon, .jw-tree-leaf > svg, .jw-sn-fav > svg, .jw-sn-hit-ico, .jw-tab > svg,
-      .jw-seg-opt > svg, .jw-sn-me .jw-avatar, .jw-brand-mark, .jw-link-open > svg) {
+      .jw-seg-opt > svg, .jw-sn-me .jw-avatar, .jw-brand-mark, .jw-link-open > svg, .jw-vtab > svg, .jw-result > svg, .jw-gs-item > svg) {
     transition: transform 0.22s ease, color 0.16s ease;
   }
   :is(.jw-sn-top:hover .jw-sn-topico, .jw-tree-row:hover .jw-tree-icon, .jw-tree-leaf:hover > svg, .jw-sn-fav:hover > svg,
       .jw-sn-hit:hover .jw-sn-hit-ico, .jw-tab:hover > svg, .jw-seg-opt:hover > svg, .jw-sn-me:hover .jw-avatar,
-      .jw-brandhome:hover .jw-brand-mark, .jw-link-open:hover > svg) {
+      .jw-brandhome:hover .jw-brand-mark, .jw-link-open:hover > svg, .jw-vtab:hover > svg, .jw-result:hover > svg, .jw-gs-item:hover > svg) {
     transform: translateY(-2px);
     transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), color 0.16s ease;
   }
   /* CHỮ: nhích 2px sang phải khi hover hàng/mục (tinh tế — không đổi cỡ, không đổi đậm) */
-  :is(.jw-sn-topname, .jw-tree-name, .jw-tree-leafname, .jw-sn-fav-name, .jw-sn-hit-name, .jw-inbox-name, .jw-ann-title, .jw-gs-name, .jw-sn-name, .jw-menu-item > span, .jw-deal-hosp, .jw-rank-name, .jw-mvv2-vname) {
+  :is(.jw-sn-topname, .jw-tree-name, .jw-tree-leafname, .jw-sn-fav-name, .jw-sn-hit-name, .jw-inbox-name, .jw-ann-title, .jw-gs-name, .jw-sn-name, .jw-menu-item > span, .jw-deal-hosp, .jw-rank-name, .jw-mvv2-vname, .jw-vtab-name, .jw-result-title) {
     display: inline-block;
     transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.16s ease;
   }
   :is(.jw-sn-top:hover .jw-sn-topname, .jw-tree-row:hover .jw-tree-name, .jw-tree-leaf:hover .jw-tree-leafname, .jw-sn-fav:hover .jw-sn-fav-name,
       .jw-sn-hit:hover .jw-sn-hit-name, .jw-inbox-item:hover .jw-inbox-name, .jw-ann:hover .jw-ann-title, .jw-gs-item:hover .jw-gs-name,
-      .jw-sn-me:hover .jw-sn-name, .jw-menu-item:hover > span, .jw-rowi:hover .jw-deal-hosp, .jw-rowi:hover .jw-rank-name) {
+      .jw-sn-me:hover .jw-sn-name, .jw-menu-item:hover > span, .jw-rowi:hover .jw-deal-hosp, .jw-rowi:hover .jw-rank-name,
+      .jw-vtab:hover .jw-vtab-name, .jw-result:hover .jw-result-title) {
     transform: translateX(2px);
   }
   .jw-mvv2-value:hover .jw-mvv2-vname { color: var(--accent-text); }
