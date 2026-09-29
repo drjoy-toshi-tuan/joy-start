@@ -146,6 +146,11 @@ let steps = 0;
     const items = await page.$$eval('#inboxPanel .jw-inbox-item', (e) => e.length);
     if (secs !== 4) throw new Error(`có ${secs}/4 nhóm`);
     if (items !== badge) throw new Error(`badge ${badge} ≠ ${items} mục`);
+    // tab: chọn 期限切れ ⇒ chỉ còn đúng nhóm đó; すべて ⇒ đủ 4 nhóm lại
+    await page.click('#inboxPanel [data-act="inbox-tab"][data-v="overdue"]');
+    await page.waitForFunction(() => document.querySelectorAll('#inboxPanel .jw-inbox-sec').length === 1 && !!document.querySelector('#inbox-overdue'));
+    await page.click('#inboxPanel [data-act="inbox-tab"][data-v="all"]');
+    await page.waitForFunction(() => document.querySelectorAll('#inboxPanel .jw-inbox-sec').length === 4);
     await page.click('#inbox-approval .jw-inbox-item');
     await page.waitForFunction(() => location.hash === '#/todo/approvals' && !document.querySelector('#inboxPanel.jw-inbox--open'));
   });
@@ -160,6 +165,10 @@ let steps = 0;
   });
   // Tìm menu: 日本語 chỉ khớp nhãn tiếng Nhật; nhãn tiếng Việt chỉ khớp khi đang ở Tiếng Việt.
   await step('tìm trong side panel (ja: 在庫 khớp, kho KHÔNG khớp)', async () => {
+    const w0 = await page.$eval('.jw-sn-find', (e) => e.getBoundingClientRect().width);
+    if (w0 > 40) throw new Error(`ô tìm đang mở sẵn (${w0}px) — phải gập thành icon`);
+    await page.click('.jw-sn-find');
+    await page.waitForFunction(() => document.querySelector('.jw-sn-find').getBoundingClientRect().width > 120);
     await page.fill('#sideFind', 'kho');
     await page.waitForSelector('.jw-sn-hits-none');
     await page.fill('#sideFind', '在庫');
@@ -176,9 +185,9 @@ let steps = 0;
   await step('bánh răng cạnh profile → đổi Tiếng Việt + theme tối', async () => {
     await page.click('#setBtn');
     await page.waitForSelector('.jw-menu--open');
-    await page.click('.jw-slide[data-act="lang"]');
+    await page.click('#menuPanel [data-act="lang"][data-v="vi"]');
     await page.waitForFunction(() => document.documentElement.lang === 'vi');
-    await page.click('.jw-slide[data-act="theme"]');
+    await page.click('#menuPanel [data-act="theme"][data-v="dark"]');
     await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.querySelector('#menuPanel.jw-menu--open'));
@@ -195,6 +204,7 @@ let steps = 0;
     await page.waitForFunction(() => !document.querySelector('#menuPanel.jw-menu--open'));
   });
   await step('tìm trong side panel (vi: kho khớp)', async () => {
+    await page.click('.jw-sn-find');
     await page.fill('#sideFind', 'kho');
     await page.waitForSelector('.jw-sn-hit[href*="inventory"]');
     await page.click('[data-act="side-find-x"]');

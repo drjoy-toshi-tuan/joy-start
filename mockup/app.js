@@ -157,6 +157,7 @@
     homeDraft: null,
     menuOpen: false,
     inboxOpen: false,
+    inboxTab: 'all',
     gsHot: -1,
     photos: PHOTOS.slice(),
     pendingScroll: null,
@@ -253,24 +254,16 @@
   function brandLockup() {
     return '<span class="jw-brandlock">' + DRJOY_MARK + '<span class="jw-wordmark"><b>JOY</b><em>START</em></span></span>';
   }
-  function slide(act, opts, cur, cls, aria) {
-    var right = opts[1].v === cur;
-    return '<button type="button" class="jw-slide jw-rim' + (cls ? ' ' + cls : '') + '" data-act="' + act + '" data-v="' + esc(right ? opts[0].v : opts[1].v) + '" role="switch" aria-checked="' + right + '" aria-label="' + esc(aria) + '" data-slide="' + act + '">' +
-      '<span class="jw-slide-thumb jw-rim" data-right="' + right + '" aria-hidden="true"></span>' +
-      opts.map(function (o) {
-        return '<span class="jw-slide-opt' + (o.v === cur ? ' jw-slide-opt--on' : '') + '" title="' + esc(o.title || o.label || '') + '">' + (o.icon || '') + (o.label ? esc(o.label) : '') + '</span>';
-      }).join('') + '</button>';
-  }
   // ── §Panel cài đặt (nút bánh răng cạnh profile): ngôn ngữ · theme · vào màn 設定 ──
   function menuHtml() {
     var theme = themeNow();
     return '<div class="jw-menu-sec">' + t('表示設定') + '</div>' +
-      '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('言語') + '</span>' +
-        slide('lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, 'jw-slide--wide', t('言語')) + '</div>' +
-      '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('テーマ') + '</span>' +
-        slide('theme', [{ v: 'light', icon: ic('sun', 17), title: t('ライト') }, { v: 'dark', icon: ic('moon', 17), title: t('ダーク') }], theme, 'jw-slide--wide', t('テーマ')) + '</div>' +
+      '<div class="jw-menu-field"><span class="jw-menu-row-label">' + t('言語') + '</span>' +
+        seg('lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, t('言語'), 'menuLang') + '</div>' +
+      '<div class="jw-menu-field"><span class="jw-menu-row-label">' + t('テーマ') + '</span>' +
+        seg('theme', [{ v: 'light', label: t('ライト'), icon: ic('sun', 15) }, { v: 'dark', label: t('ダーク'), icon: ic('moon', 15) }], theme, t('テーマ'), 'menuTheme') + '</div>' +
       '<div class="jw-menu-sep"></div>' +
-      '<a class="jw-menu-item jw-menu-item--go jw-rim" id="setGo" data-act="setgo" href="' + setHref('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' +
+      '<a class="jw-menu-item jw-menu-item--go" id="setGo" data-act="setgo" href="' + setHref('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' +
         ic('settings', 18) + '<span>' + t('設定画面を開く') + '</span>' + ic('alt-arrow-right', 15) + '</a>';
   }
   function openMenu() {
@@ -287,18 +280,24 @@
     var btn = $('#setBtn');
     if (btn) btn.setAttribute('aria-expanded', 'true');
   }
-  // Mọc từ nút bánh răng: side panel đầy đủ ⇒ nằm TRÊN profile, canh mép trái panel;
-  // dải icon ⇒ nằm BÊN PHẢI dải, đáy canh đáy nút.
+  // Nhô HẲN ra ngoài side panel: mép trái = mép phải side panel + MENU_GAP, đáy canh đáy nút
+  // bánh răng. Không đủ chỗ bên phải (ngăn kéo mobile) ⇒ nằm TRÊN nút, trong ngăn kéo.
+  var MENU_GAP = 12;
   function placeMenu() {
     var panel = $('#menuPanel');
     var btn = $('#setBtn');
     if (!panel || !btn) return;
     var b = btn.getBoundingClientRect();
     var side = $('#side').getBoundingClientRect();
-    var w = panel.offsetWidth, h = panel.offsetHeight;
-    var left, top;
-    if (railNow()) { left = side.right + 8; top = b.bottom - h; }
-    else { left = side.left + 8; top = b.top - h - 10; }
+    var room = window.innerWidth - side.right - MENU_GAP - 8;
+    panel.style.width = '';
+    var w = panel.offsetWidth;
+    var outside = room >= Math.min(w, 248);
+    if (outside && room < w) { panel.style.width = room + 'px'; w = room; }
+    var h = panel.offsetHeight;
+    var left = outside ? side.right + MENU_GAP : side.left + MENU_GAP;
+    var top = outside ? b.bottom - h : b.top - h - MENU_GAP;
+    panel.classList.toggle('jw-menu--inside', !outside);
     panel.style.left = Math.round(Math.max(8, Math.min(left, window.innerWidth - w - 8))) + 'px';
     panel.style.top = Math.round(Math.max(8, top)) + 'px';
   }
@@ -426,7 +425,7 @@
         '<button type="button" class="jw-sn-toggle" data-act="rail" aria-expanded="' + !rail + '" aria-label="' + esc(toggleLabel) + '" data-tip="' + esc(toggleLabel) + '"' + (rail ? '' : ' data-tip-pos="bottom"') + '>' + ic('sidebar-minimalistic', 18) + '</button>' +
       '</div>' +
       (rail ? '' : '<div class="jw-sn-tools">' +
-        '<label class="jw-sn-find">' + ic('magnifier', 15) +
+        '<label class="jw-sn-find"' + (S.sideQuery ? ' data-filled' : '') + '>' + ic('magnifier', 16) +
           '<input class="jw-sn-find-input" id="sideFind" type="text" autocomplete="off" placeholder="' + esc(t('メニューを検索')) + '" aria-label="' + esc(t('メニューを検索')) + '" value="' + esc(S.sideQuery) + '">' +
           '<button type="button" class="jw-sn-find-x" id="sideFindX" data-act="side-find-x" aria-label="' + esc(t('検索をクリア')) + '"' + (S.sideQuery ? '' : ' hidden') + '>' + ic('close', 14) + '</button></label>' +
         toolBtn('expand-all', ic('double-alt-arrow-down', 18), t('すべて開く')) +
@@ -457,6 +456,8 @@
     if (el) { el.innerHTML = sideBodyHtml(); syncFades($('#sideScroll')); }
     var x = $('#sideFindX');
     if (x) x.hidden = !S.sideQuery;
+    var fl = $('#side .jw-sn-find');
+    if (fl) fl.toggleAttribute('data-filled', !!S.sideQuery);
   }
 
   function closeFloating() {
@@ -487,8 +488,10 @@
       return { label: nm(n), icon: i === 0 ? ic(p.block.icon, 13) : '' };
     });
     var fav = S.favs.indexOf(p.key) >= 0;
-    var favAction = '<button type="button" class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" data-act="fav" data-k="' + esc(p.key) + '" aria-pressed="' + fav + '">' +
-      (fav ? ic('star@bold', 15, 'jw-star-on') : ic('star', 15)) + (fav ? t('お気に入り済み') : t('お気に入り')) + '</button>';
+    // Chỉ icon (không chữ); đã ghim = sao đặc cam. Dạt phải, thẳng mép thẻ của trang.
+    var favLabel = fav ? t('お気に入りから外す') : t('お気に入りに追加');
+    var favAction = '<button type="button" class="jw-pagefav" data-act="fav" data-k="' + esc(p.key) + '" aria-pressed="' + fav + '" aria-label="' + esc(favLabel) + '" data-tip="' + esc(favLabel) + '" data-tip-pos="bottom">' +
+      (fav ? ic('star@bold', 22) : ic('star', 22)) + '</button>';
     return pageHead({
       crumbs: crumbs,
       title: nm(p.node),
@@ -533,6 +536,7 @@
     var keepSeg = {};
     $$('[data-keep]', main).forEach(function (el) { keepTabs[el.id] = el.scrollLeft; });
     $$('.jw-seg[data-seg]', main).forEach(function (el) { keepSeg[el.getAttribute('data-seg')] = el.style.getPropertyValue('--seg-i'); });
+    var keepInk = inkRead(main);
     var focusKey = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-fk');
 
     var html = pageHtml();
@@ -545,23 +549,25 @@
       screen = fresh;
     }
     screen.innerHTML = html;
+    // Núm segmented + vệt tab: gắn vị trí CŨ trước khi bất cứ gì đọc layout, rồi mới trượt sang mới
+    var segNow = [];
+    $$('.jw-seg[data-seg]', screen).forEach(function (el) {
+      var old = keepSeg[el.getAttribute('data-seg')];
+      var now = el.style.getPropertyValue('--seg-i');
+      if (old !== undefined && old !== now) { el.style.setProperty('--seg-i', old); segNow.push([el, now]); }
+    });
+    inkMount(screen, keepInk);
     if (isNav) {
       main.scrollTop = 0;
     } else {
       main.scrollTop = keepTop;
       Object.keys(keepTabs).forEach(function (id) { var el = document.getElementById(id); if (el) el.scrollLeft = keepTabs[id]; });
-      // Núm segmented TRƯỢT từ vị trí cũ sang mới (vẽ lại HTML thì mất transition)
-      $$('.jw-seg[data-seg]', main).forEach(function (el) {
-        var old = keepSeg[el.getAttribute('data-seg')];
-        var now = el.style.getPropertyValue('--seg-i');
-        if (old !== undefined && old !== now) {
-          el.style.setProperty('--seg-i', old);
-          void el.offsetWidth;
-          el.style.setProperty('--seg-i', now);
-        }
-      });
       if (focusKey) { var f = $('[data-fk="' + focusKey + '"]', main); if (f) f.focus({ preventScroll: true }); }
     }
+    // (phép đọc layout ở trên đã tính style với vị trí cũ) ⇒ giờ đặt vị trí mới là TRƯỢT
+    void main.offsetWidth;
+    segNow.forEach(function (x) { x[0].style.setProperty('--seg-i', x[1]); });
+    inkPlace(screen);
     syncFades(main);
     if (S.pendingScroll) {
       var target = document.getElementById(S.pendingScroll);
@@ -572,6 +578,41 @@
     document.title = pageTitleText() + ' — JOY START';
     srScan(isNav);
     renderInboxBtn();
+  }
+
+  // ── §Vệt tab: nền của tab đang chọn là MỘT phần tử trượt giữa các tab ──
+  function inkRead(root) {
+    var keep = {};
+    $$('.jw-tabs[id]', root).forEach(function (tl) {
+      var on = $('.jw-tab[aria-selected="true"]', tl);
+      if (on) keep[tl.id] = [on.offsetLeft, on.offsetWidth];
+    });
+    return keep;
+  }
+  function inkMount(root, keep) {
+    $$('.jw-tabs', root).forEach(function (tl) {
+      if ($('.jw-tabs-ink', tl)) return;
+      var ink = document.createElement('span');
+      ink.className = 'jw-tabs-ink';
+      ink.setAttribute('aria-hidden', 'true');
+      var old = tl.id && keep && keep[tl.id];
+      if (old) { ink.style.setProperty('--ink-x', old[0] + 'px'); ink.style.setProperty('--ink-w', old[1] + 'px'); }
+      else ink.classList.add('jw-tabs-ink--now');
+      tl.insertBefore(ink, tl.firstChild);
+      tl.setAttribute('data-ink', '');
+    });
+  }
+  function inkPlace(root) {
+    $$('.jw-tabs[data-ink]', root).forEach(function (tl) {
+      var ink = $('.jw-tabs-ink', tl);
+      var on = $('.jw-tab[aria-selected="true"]', tl);
+      if (!ink) return;
+      ink.hidden = !on;
+      if (!on) return;
+      ink.style.setProperty('--ink-x', on.offsetLeft + 'px');
+      ink.style.setProperty('--ink-w', on.offsetWidth + 'px');
+      if (ink.classList.contains('jw-tabs-ink--now')) { void ink.offsetWidth; ink.classList.remove('jw-tabs-ink--now'); }
+    });
   }
 
   // ── §Hiện dần khi cuộn (mọi trang) ──
@@ -693,11 +734,10 @@
       '<kbd class="jw-kbd" aria-hidden="true">/</kbd></label><div class="jw-gs-drop jw-glass" id="gsDrop" hidden></div></div>';
   }
   // MVV — sân khấu chính của Home: MISSION chữ lớn, VISION + số giờ đã giảm (đếm lên khi hiện),
-  // 5 VALUE đánh số. Nền: 3 quầng cam trôi chậm + mark Dr.JOY chìm.
+  // 5 VALUE đánh số. Nền phẳng (không gradient) + mark Dr.JOY chìm, đứng thẳng.
   function mvvHtml() {
     return '<section class="jw-mvv2" data-card="mvv" aria-label="MISSION · VISION · VALUE">' +
-      '<div class="jw-mvv2-bg" aria-hidden="true"><span class="jw-mvv2-blob jw-mvv2-blob--a"></span><span class="jw-mvv2-blob jw-mvv2-blob--b"></span><span class="jw-mvv2-blob jw-mvv2-blob--c"></span>' +
-        DRJOY_MARK.replace('jw-brand-mark', 'jw-mvv2-mark') + '</div>' +
+      '<div class="jw-mvv2-bg" aria-hidden="true">' + DRJOY_MARK.replace('jw-brand-mark', 'jw-mvv2-mark') + '</div>' +
       '<div class="jw-mvv2-top">' +
         '<div class="jw-mvv2-mission"><span class="jw-mvv2-label">MISSION</span><p class="jw-mvv2-statement">' + tr(MVV.mission) + '</p></div>' +
         '<div class="jw-mvv2-vision"><span class="jw-mvv2-label">VISION</span><p class="jw-mvv2-vtext">' + tr(MVV.vision) + '</p>' +
@@ -737,10 +777,12 @@
     var gs = inboxGroups();
     var total = gs.reduce(function (n, g) { return n + g.items.length; }, 0);
     return '<div class="jw-inbox-head"><span class="jw-inbox-title">' + t('通知') + '</span><span class="jw-inbox-total jw-num">' + total + '</span></div>' +
-      '<div class="jw-inbox-sum">' + gs.map(function (g) {
-        return '<button type="button" class="jw-inbox-tile jw-tone-' + g.tone + '" data-act="inbox-jump" data-v="' + g.id + '"><b class="jw-num">' + g.items.length + '</b><span>' + esc(g.label) + '</span></button>';
-      }).join('') + '</div>' +
-      '<div class="jw-inbox-body" id="inboxBody">' + gs.map(function (g) {
+      '<div class="jw-inbox-sum" role="tablist" aria-label="' + esc(t('通知')) + '">' +
+        '<button type="button" class="jw-inbox-tile jw-tone-orange" role="tab" aria-selected="' + (S.inboxTab === 'all') + '" data-act="inbox-tab" data-v="all"><b class="jw-num">' + total + '</b><span>' + t('すべて') + '</span></button>' +
+        gs.map(function (g) {
+          return '<button type="button" class="jw-inbox-tile jw-tone-' + g.tone + '" role="tab" aria-selected="' + (S.inboxTab === g.id) + '" data-act="inbox-tab" data-v="' + g.id + '"><b class="jw-num">' + g.items.length + '</b><span>' + esc(g.label) + '</span></button>';
+        }).join('') + '</div>' +
+      '<div class="jw-inbox-body" id="inboxBody">' + gs.filter(function (g) { return S.inboxTab === 'all' || S.inboxTab === g.id; }).map(function (g) {
         return '<section class="jw-inbox-sec jw-tone-' + g.tone + '" id="inbox-' + g.id + '"><div class="jw-inbox-sec-head"><span class="jw-inbox-sec-name">' + esc(g.label) + '</span>' +
           '<span class="jw-inbox-n jw-num">' + g.items.length + '</span>' + (g.more ? '<a class="jw-link" href="' + g.more + '">' + t('すべて見る') + '</a>' : '') + '</div>' +
           (g.items.length ? g.items.map(function (it) {
@@ -997,14 +1039,14 @@
     var next = idx < list.length - 1 ? list[idx + 1] : null;
     var body = tr(d.body).replace('{{release}}', '<button type="button" class="jw-link" data-act="go" data-href="' + href('dev/リリースノート') + '">' + t('開発＞リリースノートで詳しく見る') + ic('alt-arrow-right', 14) + '</button>');
     var files = d.files.length ? '<div class="jw-files"><div class="jw-set-sec">' + esc(t('添付ファイル（{n}件）', { n: d.files.length })) + '</div>' + d.files.map(function (f) {
-      return '<button type="button" class="jw-file jw-rim" data-act="toast" data-msg="添付ファイル（モック）">' + ic('file-text', 18) + '<span class="jw-file-name">' + esc(f.name) + '</span><span class="jw-tag jw-tone-crit">' + f.ext + '</span><span class="jw-file-size">' + f.size + '</span></button>';
+      return '<button type="button" class="jw-file" data-act="toast" data-msg="添付ファイル（モック）">' + ic('file-text', 18) + '<span class="jw-file-name">' + esc(f.name) + '</span><span class="jw-tag jw-tone-crit">' + f.ext + '</span><span class="jw-file-size">' + f.size + '</span></button>';
     }).join('') + '</div>' : '';
     function pager(x, dir) {
       if (!x) return '<button type="button" class="jw-pager-btn" disabled><span>' + (dir < 0 ? ic('alt-arrow-left', 14) + t('前へ') : t('次へ') + ic('alt-arrow-right', 14)) + '</span></button>';
       return '<a class="jw-pager-btn" href="#/announce/' + x.id + '" title="' + esc(tr(x.title)) + '"><span>' + (dir < 0 ? ic('alt-arrow-left', 14) + t('前へ') : t('次へ') + ic('alt-arrow-right', 14)) + '</span><span class="jw-pager-sub">' + esc(tr(x.title)) + '</span></a>';
     }
     return pageHead({ crumbs: [{ label: t('ホーム'), href: '#/home', icon: ic('home-2', 13) }, { label: t('お知らせ') }], title: t('お知らせ'), icon: ic('bell', 20),
-        actions: '<button type="button" class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" data-act="back-announce">' + ic('alt-arrow-left', 15) + t('お知らせ一覧に戻る') + '</button>' }) +
+        actions: '<button type="button" class="jw-btn jw-btn--ghost jw-btn--sm" data-act="back-announce">' + ic('alt-arrow-left', 15) + t('お知らせ一覧に戻る') + '</button>' }) +
       panel({ cls: 'jw-article', body:
         '<div class="jw-article-meta"><span class="jw-tag jw-tone-' + ANNOUNCE_TONE[a.cat] + '">' + esc(t(a.cat)) + '</span>' +
           (a.important ? '<span class="jw-badge jw-badge--crit">' + t('重要') + '</span>' : '') + '<span>' + fmtMD(a.date) + '</span></div>' +
@@ -1035,7 +1077,7 @@
     }).join('') + '</div>';
     return pageHead({ crumbs: [{ label: t('ホーム'), href: '#/home', icon: ic('home-2', 13) }], title: t('受注速報'), icon: ic('bill-check', 20),
         desc: t('新しい順・病院名／担当者／金額はサンプル'),
-        actions: '<a class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" href="#/home">' + ic('alt-arrow-left', 15) + t('ホームに戻る') + '</a>' }) +
+        actions: '<a class="jw-btn jw-btn--ghost jw-btn--sm" href="#/home">' + ic('alt-arrow-left', 15) + t('ホームに戻る') + '</a>' }) +
       '<div class="jw-stack">' +
         '<div class="jw-sumbox">' + sum(t('今月（{m}）', { m: fmtYM(HOME_TODAY.getFullYear(), HOME_TODAY.getMonth() + 1) }), month) + sum(t('全期間'), list) + '</div>' +
         panel({ cls: 'jw-deals', body: tabs + (list.length ? '<div class="jw-rows">' + list.map(dealRow).join('') + '</div>' : '<p class="jw-empty">' + t('該当する受注はありません') + '</p>') }) +
@@ -1045,7 +1087,7 @@
   // ── §やること › 予定 ──
   function pageTodo(p) {
     var tab = TODO_TABS[S.todoTab];
-    var tabs = '<div class="jw-tabs" role="tablist" data-fade-x>' + TODO_TABS.map(function (x, i) {
+    var tabs = '<div class="jw-tabs" role="tablist" id="todoTabs" data-fade-x>' + TODO_TABS.map(function (x, i) {
       return '<button type="button" class="jw-tab" role="tab" aria-selected="' + (i === S.todoTab) + '" data-act="todo-tab" data-i="' + i + '">' + esc(t(x.label)) + '<span class="jw-tab-n">0</span></button>';
     }).join('') + '</div>';
     var meet = panel({ icon: ic('users-group-two-rounded', 18), title: t('面談'), body: tabs +
@@ -1082,7 +1124,7 @@
     var rows = (HEALTH_RANKING[S.rankCat] || []).filter(function (r) {
       return S.rankLoc === '全社' || (S.rankLoc === 'VN' ? r.site === 'VN' : r.site !== 'VN');
     });
-    return pageInfoHead(p, '<a class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" href="' + setHref('プライバシー') + '">' + ic('settings-minimalistic', 15) + t('参加設定') + '</a>') +
+    return pageInfoHead(p, '<a class="jw-btn jw-btn--ghost jw-btn--sm" href="' + setHref('プライバシー') + '">' + ic('settings-minimalistic', 15) + t('参加設定') + '</a>') +
       '<div class="jw-grid2">' +
         panel({ icon: ic('ranking', 18), title: t('今月のランキング'), body:
           '<div class="jw-row-actions" style="justify-content:flex-start">' + seg('rank-cat', catOpts(), S.rankCat, t('部門'), 'rankCat') +
@@ -1101,14 +1143,14 @@
         return panel({ icon: ic(c.icon, 18), title: tr(c.name), body:
           '<div class="jw-kv">' + ic('calendar', 14) + esc(t('活動日：{d}', { d: tr(c.day) })) + '</div>' +
           '<div class="jw-kv">' + ic('users-group-rounded', 14) + esc(t('参加人数：{n}名', { n: c.members })) + '</div>' +
-          '<div><button type="button" class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" data-act="club-join" data-name="' + esc(tr(c.name)) + '">' + ic('user-plus', 15) + t('参加する') + '</button></div>' });
+          '<div><button type="button" class="jw-btn jw-btn--ghost jw-btn--sm" data-act="club-join" data-name="' + esc(tr(c.name)) + '">' + ic('user-plus', 15) + t('参加する') + '</button></div>' });
       }).join('') + '</div>' + '<div style="margin-top:1rem">' + dsLine(p.key) + '</div>';
   }
   function pageSupport(p) {
     return pageInfoHead(p) + panel({ body: '<div class="jw-rows">' + HEALTH_SUPPORT.map(function (s) {
       return '<div class="jw-rowi jw-support-row"><span class="jw-panel-ico">' + ic(s.icon, 17) + '</span><span class="jw-support-name">' + esc(tr(s.name)) + '</span>' +
         '<span class="jw-support-desc">' + esc(tr(s.desc)) + '</span>' +
-        '<a class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" href="' + href('todo/申請/勤怠') + '">' + ic('clipboard-add', 15) + t('申請する') + '</a></div>';
+        '<a class="jw-btn jw-btn--ghost jw-btn--sm" href="' + href('todo/申請/勤怠') + '">' + ic('clipboard-add', 15) + t('申請する') + '</a></div>';
     }).join('') + '</div>' + dsLine(p.key) });
   }
 
@@ -1120,7 +1162,7 @@
       if (!items.length) return '';
       return '<div class="jw-link-row"><div class="jw-link-label">' + esc(tr(g.label)) + '</div><div class="jw-link-btns">' + items.map(function (it) {
         var fav = S.favs.indexOf(it.key) >= 0;
-        return '<span class="jw-linkbtn jw-rim"><button type="button" class="jw-link-open" data-act="extlink" data-k="' + esc(it.key) + '">' + esc(tr(it.label)) + ic('arrow-right-up', 14) + '</button>' +
+        return '<span class="jw-linkbtn"><button type="button" class="jw-link-open" data-act="extlink" data-k="' + esc(it.key) + '">' + esc(tr(it.label)) + ic('arrow-right-up', 14) + '</button>' +
           '<button type="button" class="jw-fav" data-act="fav" data-k="' + esc(it.key) + '" aria-pressed="' + fav + '" aria-label="' + esc(fav ? t('お気に入りから外す') : t('お気に入りに追加')) + '" title="' + esc(fav ? t('お気に入りから外す') : t('お気に入りに追加')) + '">' + (fav ? ic('star@bold', 14) : ic('star', 14)) + '</button></span>';
       }).join('') + '</div></div>';
     }).join('');
@@ -1160,7 +1202,7 @@
     function ro(label, v) { return '<label class="jw-field">' + esc(label) + '<input class="jw-input" type="text" value="' + esc(v) + '" readonly></label>'; }
     return setBox(
       '<div class="jw-profile"><span class="jw-profile-av">' + avatarSvg(HEALTH_AVATARS[SETTINGS_ME.name]) + '</span><div class="jw-stack" style="gap:.35rem">' +
-        '<div><button type="button" class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" data-act="toast" data-msg="写真の変更（モック）">' + ic('camera', 15) + t('写真を変更') + '</button></div>' +
+        '<div><button type="button" class="jw-btn jw-btn--ghost jw-btn--sm" data-act="toast" data-msg="写真の変更（モック）">' + ic('camera', 15) + t('写真を変更') + '</button></div>' +
         '<span class="jw-note">' + t('イラストはサンプルです') + '</span></div></div>' +
       '<label class="jw-field">' + t('表示名') + '<input class="jw-input" type="text" data-sf="displayName" maxlength="40" value="' + esc(sval(s, 'displayName', SETTINGS_ME.name)) + '"></label>' +
       '<label class="jw-field">' + t('ひとこと（プロフィール）') + '<textarea class="jw-input" rows="3" data-sf="bio" maxlength="140" placeholder="' + esc(t('例：AI電話の導入支援を担当しています')) + '">' + esc(sval(s, 'bio', '')) + '</textarea></label>' +
@@ -1169,7 +1211,7 @@
       '<label class="jw-field">' + t('メール') + '<input class="jw-input" type="email" data-sf="mail" value="' + esc(sval(s, 'mail', SETTINGS_ME.mail)) + '"></label>' +
       saveBar('アカウント')) +
     setBox('<div class="jw-row-actions" style="justify-content:space-between"><div><div class="jw-set-sec">' + t('ログアウト') + '</div><p class="jw-note" style="margin:0">' + t('この端末から JOY START をログアウトします。') + '</p></div>' +
-      '<button type="button" class="jw-btn jw-btn--danger jw-rim" data-act="logout">' + ic('logout-2', 16) + t('ログアウト') + '</button></div>');
+      '<button type="button" class="jw-btn jw-btn--danger" data-act="logout">' + ic('logout-2', 16) + t('ログアウト') + '</button></div>');
   }
   function tabDisplay() {
     var sample = new Date(2026, 8, 24);
@@ -1220,7 +1262,7 @@
         '<div class="jw-set-list jw-pane"><div class="jw-set-colhead">' + t('左カラム') + '</div>' + rows('left') + '</div>' +
         '<div class="jw-set-list jw-pane"><div class="jw-set-colhead">' + t('右カラム') + '</div>' + rows('right') + '</div></div>' +
       '<div class="jw-row-actions" style="justify-content:flex-start"><button type="button" class="jw-btn jw-btn--solid" data-act="home-save">' + ic('diskette', 16) + t('保存する') + '</button>' +
-        '<button type="button" class="jw-btn jw-btn--ghost jw-rim" data-act="home-reset">' + ic('restart', 16) + t('初期設定に戻す') + '</button></div>');
+        '<button type="button" class="jw-btn jw-btn--ghost" data-act="home-reset">' + ic('restart', 16) + t('初期設定に戻す') + '</button></div>');
   }
   function tabPrivacy() {
     var s = sload('プライバシー');
@@ -1237,7 +1279,7 @@
       var on = !!sval(s, x.key, x.def);
       return '<div class="jw-set-row"><span class="jw-panel-ico" style="width:30px;height:30px">' + ic(x.icon, 16) + '</span><span class="jw-set-label">' + esc(x.name) + '<span class="jw-set-sub">' + esc(tr(x.sub)) + '</span></span>' +
         '<span class="jw-tag ' + (on ? 'jw-tone-ok' : 'jw-tone-slate') + '">' + (on ? t('連携済み') : t('未連携')) + '</span>' +
-        '<button type="button" class="jw-btn jw-btn--sm ' + (on ? 'jw-btn--danger' : 'jw-btn--ghost') + ' jw-rim" data-act="integ" data-k="' + x.key + '">' + (on ? ic('unlink', 15) + t('解除') : ic('link-round', 15) + t('連携する')) + '</button></div>';
+        '<button type="button" class="jw-btn jw-btn--sm ' + (on ? 'jw-btn--danger' : 'jw-btn--ghost') + '" data-act="integ" data-k="' + x.key + '">' + (on ? ic('unlink', 15) + t('解除') : ic('link-round', 15) + t('連携する')) + '</button></div>';
     }).join('') + '</div><p class="jw-note" style="margin:0">' + t('モックのため、実際の連携・解除は行いません（状態だけ保存します）') + '</p>');
   }
   function tabSecurity() {
@@ -1245,7 +1287,7 @@
     return setBox('<div class="jw-set-list jw-pane">' + toggleRow(s, 'twofa', true, t('2段階認証'), t('ログインのときに、スマホに届く確認コードも入力します')) + '</div>' + saveBar('セキュリティ')) +
       setBox('<div><div class="jw-set-sec">' + t('ログイン中の端末') + '</div><div class="jw-set-list jw-pane">' + SECURITY_DEVICES.map(function (dv, i) {
         return '<div class="jw-set-row"><span class="jw-panel-ico" style="width:30px;height:30px">' + ic(dv.icon, 16) + '</span><span class="jw-set-label">' + esc(tr(dv.name)) + '<span class="jw-set-sub">' + esc(tr(dv.place)) + '｜' + esc(tr(dv.last)) + '</span></span>' +
-          (dv.current ? '<span class="jw-tag jw-tone-ok">' + t('この端末') + '</span>' : '<button type="button" class="jw-btn jw-btn--sm jw-btn--danger jw-rim" data-act="sec-logout" data-i="' + i + '">' + ic('logout-2', 15) + t('ログアウト') + '</button>') + '</div>';
+          (dv.current ? '<span class="jw-tag jw-tone-ok">' + t('この端末') + '</span>' : '<button type="button" class="jw-btn jw-btn--sm jw-btn--danger" data-act="sec-logout" data-i="' + i + '">' + ic('logout-2', 15) + t('ログアウト') + '</button>') + '</div>';
       }).join('') + '</div><p class="jw-note" style="margin:.45rem 0 0">' + t('端末・場所はサンプルです') + '</p></div>' +
       '<div><div class="jw-set-sec">' + t('最近のログイン履歴') + '</div><div class="jw-table-wrap"><table class="jw-table"><thead><tr><th>' + t('日時') + '</th><th>' + t('場所') + '</th><th>' + t('端末') + '</th></tr></thead><tbody>' +
         SECURITY_HISTORY.map(function (h) { return '<tr><td class="jw-num">' + h.at + '</td><td>' + esc(tr(h.place)) + '</td><td>' + esc(tr(h.device)) + '</td></tr>'; }).join('') + '</tbody></table></div></div>');
@@ -1352,7 +1394,7 @@
   }
   function openLightbox(p) {
     var cap = tr(p.caption);
-    openModal('<button type="button" class="jw-iconbtn jw-rim jw-dialog-x" data-act="dialog-close" aria-label="' + esc(t('閉じる')) + '" data-autofocus>' + ic('close', 18) + '</button>' +
+    openModal('<button type="button" class="jw-iconbtn jw-dialog-x" data-act="dialog-close" aria-label="' + esc(t('閉じる')) + '" data-autofocus>' + ic('close', 18) + '</button>' +
       '<div class="jw-lightbox-media">' + photoMedia(p) + '</div>' +
       '<div class="jw-lightbox-cap">' + esc(cap) + (p.src ? '' : ' <span class="jw-muted">' + esc(t('（サンプル）')) + '</span>') + '</div>' +
       '<div class="jw-lightbox-meta">' + ic('calendar-minimalistic', 13) + fmtMD(p.date) + '｜' + ic('user-rounded', 13) + esc(p.user) + '｜' + ic('heart', 13) + p.likes + '</div>');
@@ -1360,7 +1402,7 @@
   function confirmLogout() {
     openModal('<div class="jw-dialog-head"><span class="jw-dialog-icon jw-dialog-icon--danger">' + ic('logout-2', 18) + '</span><h2 class="jw-dialog-title">' + t('ログアウト') + '</h2></div>' +
       '<p class="jw-dialog-body">' + t('JOY START からログアウトしますか？') + '</p>' +
-      '<div class="jw-dialog-actions"><button type="button" class="jw-btn jw-btn--ghost jw-rim" data-act="dialog-close" data-autofocus>' + t('キャンセル') + '</button>' +
+      '<div class="jw-dialog-actions"><button type="button" class="jw-btn jw-btn--ghost" data-act="dialog-close" data-autofocus>' + t('キャンセル') + '</button>' +
       '<button type="button" class="jw-btn jw-btn--crit" data-act="logout-do">' + ic('logout-2', 16) + t('ログアウト') + '</button></div>', 'jw-dialog--confirm');
   }
   function showLoggedOut() {
@@ -1405,7 +1447,9 @@
     if (S.menuOpen) placeMenu();
     hideTip();
     syncFades(document);
+    inkPlace(document);
   });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { inkPlace(document); });
 
   // ── §Vẽ lại toàn bộ (đổi ngôn ngữ / theme) ──
   function refreshChrome() {
@@ -1416,15 +1460,7 @@
     if (S.menuOpen) {
       var panel = $('#menuPanel');
       if (panel) {
-        var oldSlides = {};
-        $$('[data-slide]', panel).forEach(function (s) { oldSlides[s.getAttribute('data-slide')] = s.querySelector('.jw-slide-thumb').getAttribute('data-right'); });
         panel.innerHTML = menuHtml();
-        $$('[data-slide]', panel).forEach(function (s) {
-          var th = s.querySelector('.jw-slide-thumb');
-          var old = oldSlides[s.getAttribute('data-slide')];
-          var now = th.getAttribute('data-right');
-          if (old !== undefined && old !== now) { th.setAttribute('data-right', old); void th.offsetWidth; th.setAttribute('data-right', now); }
-        });
         placeMenu();
       }
       var btn = $('#setBtn');
@@ -1438,9 +1474,14 @@
     toast(LANG === 'vi' ? 'Đã chuyển sang Tiếng Việt' : '日本語に切り替えました', ic('global', 16));
   }
   function setTheme(v) {
-    save(KEY.theme, v === 'dark' ? 'dark' : 'light');
-    applyTheme();
-    refreshChrome();
+    function apply() {
+      save(KEY.theme, v === 'dark' ? 'dark' : 'light');
+      applyTheme();
+      refreshChrome();
+    }
+    // Hoà mờ CHẬM cả trang (~1s) thay cho đổi màu tức thì — mượt như slow motion
+    if (document.startViewTransition && !REDUCED) document.startViewTransition(apply);
+    else apply();
   }
 
   // ── §Sự kiện: click ──
@@ -1449,6 +1490,25 @@
     // Bấm ra ngoài: đóng dropdown tìm
     if (!e.target.closest('#gsearch')) closeGs();
     if (!el) return;
+    if (el.classList.contains('jw-seg-opt')) {
+      if (el.getAttribute('aria-checked') === 'true') return;
+      if (SEG_LEAD_ACTS[el.getAttribute('data-act')] && !REDUCED) {
+        segMoveTo(el);
+        setTimeout(function () { runAct(e, el); }, SEG_LEAD_MS);
+        return;
+      }
+    }
+    runAct(e, el);
+  });
+  var SEG_LEAD_ACTS = { lang: 1, theme: 1, 'set-lang': 1, 'set-theme': 1 };
+  var SEG_LEAD_MS = 360;
+  function segMoveTo(opt) {
+    var sg = opt.parentNode;
+    var opts = $$('.jw-seg-opt', sg);
+    sg.style.setProperty('--seg-i', opts.indexOf(opt));
+    opts.forEach(function (o) { var on = o === opt; o.classList.toggle('jw-seg-opt--on', on); o.setAttribute('aria-checked', String(on)); });
+  }
+  function runAct(e, el) {
     var act = el.getAttribute('data-act');
     var v = el.getAttribute('data-v');
     var k = el.getAttribute('data-k');
@@ -1524,7 +1584,12 @@
       case 'search-tab': S.searchTab = v; renderPage(false); break;
       case 'inbox': if (S.inboxOpen) closeInbox(); else openInbox(); break;
       case 'inbox-close': closeInbox(); break;
-      case 'inbox-jump': { var sec = document.getElementById('inbox-' + v), body = $('#inboxBody'); if (sec && body) body.scrollTo({ top: sec.offsetTop - body.offsetTop - 4, behavior: 'smooth' }); break; }
+      case 'inbox-tab': {
+        S.inboxTab = v;
+        var ipn = $('#inboxPanel');
+        if (ipn) { ipn.innerHTML = inboxHtml(); var ib2 = $('#inboxBody'); if (ib2) ib2.classList.add('jw-inbox-body--in'); }
+        break;
+      }
       case 'ann-tab': S.announceTab = v; renderPage(false); break;
       case 'ann-readall':
         ANNOUNCEMENTS.forEach(function (a) { if (a.unread) S.read[a.id] = true; });
@@ -1597,7 +1662,7 @@
         break;
       }
     }
-  });
+  }
 
   // ── §Sự kiện: nhập liệu ──
   var composing = false;
@@ -1674,8 +1739,9 @@
   // `data-rv` + toạ độ chuột TÍNH TRONG nó (--mx/--my) ⇒ CSS vẽ viền sáng dần theo khoảng cách.
   // Chỉ chuột (không chạm), và một lượt đọc hết rồi mới ghi (tránh layout thrash).
   // Nút CHỈ có icon (sao, ×, mở/đóng tất cả, bánh răng…) KHÔNG nằm trong danh sách: chỉ đổi màu icon.
-  var RV_SEL = '.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-rim:not(.jw-inbox-btn), a.jw-rowi, button.jw-rowi, ' +
-    '.jw-panel:not(.jw-panel--flat), .jw-pane, .jw-photo-thumb, .jw-mvv2, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile';
+  var RV_SEL = '.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, a.jw-rowi, button.jw-rowi, ' +
+    '.jw-panel:not(.jw-panel--flat), .jw-pane, .jw-photo-thumb, .jw-mvv2, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, ' +
+    '.jw-input, .jw-gsearch-box, .jw-sn-find';
   var RV_R = 96;
   var rvLit = [], rvPt = null, rvRaf = 0;
   var rvOff = REDUCED;

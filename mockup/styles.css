@@ -56,12 +56,14 @@
   --rim-fill-hi: rgba(255, 255, 255, 0.78);
   --rim-hi-strong: #ffffff;
   --rim-shadow-hi: 0 6px 16px -6px rgba(28, 25, 23, 0.34);
-  --slide-track: rgba(28, 25, 23, 0.15);
-  --slide-track-hi: rgba(28, 25, 23, 0.12);
-  --track-thumb: #ffffff;
-  --track-thumb-hi: #ffffff;
-  --thumb-shadow: 0 1px 2px rgba(28, 25, 23, 0.18), 0 3px 8px -3px rgba(28, 25, 23, 0.2);
+  /* Toggle (segmented + công tắc): RÃNH lõm nhẹ + NÚM là mặt nút phẳng (vành 1px + bóng nhỏ) */
+  --seg-track: #f1ede7;
+  --seg-edge: rgba(28, 25, 23, 0.06);
+  --seg-thumb: #ffffff;
+  --seg-thumb-shadow: 0 0 0 1px rgba(28, 25, 23, 0.07), 0 1px 2px rgba(28, 25, 23, 0.07), 0 3px 8px -3px rgba(28, 25, 23, 0.16);
   --seg-pad: 3px;
+  --seg-dur: 0.5s;
+  --seg-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --bloom-1: rgba(240, 140, 0, 0.14);
   --bloom-2: rgba(255, 180, 90, 0.14);
   --bloom-3: rgba(120, 145, 160, 0.1);
@@ -74,20 +76,45 @@
   --table-line: color-mix(in srgb, var(--ink) 14%, transparent);
   --table-line-head: color-mix(in srgb, var(--ink) 28%, transparent);
   --sn-panel-bg: #f9f7f3;
-  /* Chữ chuyển sắc cam (tên ở lời chào, cụm nhấn của MISSION). Sáng: đầu đậm hơn để đủ 3:1. */
-  --grad-a: #d97700;
-  --grad-b: #f08c00;
-  --mvv-bg: linear-gradient(135deg, #fffaf2 0%, #ffffff 44%, #fff3e2 100%);
-  --mvv-edge: rgba(240, 140, 0, 0.22);
-  --mvv-shadow: 0 34px 70px -38px rgba(150, 84, 8, 0.38), inset 0 1px 0 #ffffff;
-  --blob-a: rgba(240, 140, 0, 0.3);
-  --blob-b: rgba(255, 184, 96, 0.34);
-  --blob-c: rgba(255, 128, 64, 0.18);
+  /* MVV: mặt PHẲNG (không gradient) — nền ấm rất nhẹ, viền cam mờ */
+  --mvv-bg: #fffaf3;
+  --mvv-edge: rgba(240, 140, 0, 0.24);
+  --mvv-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 24px 48px -32px rgba(150, 84, 8, 0.3);
+
+  /* Theme SÁNG: thẻ = mặt TRẮNG ĐỤC (kính trắng trên nền trắng không đọc ra mép), thẻ con
+     trong thẻ = ngà nhạt + viền rõ; hover = phủ mực mờ (phủ trắng lên trắng thì vô hình). */
+  --panel-bg: #ffffff;
+  --panel-edge: #ebe5dc;
+  --panel-shadow: 0 1px 2px rgba(28, 25, 23, 0.05), 0 10px 28px -18px rgba(28, 25, 23, 0.16);
+  --pane-bg: #faf7f2;
+  --pane-edge: #ebe4da;
+  --pane-shadow: none;
+  --hover-fill: rgba(28, 25, 23, 0.045);
+  --field-bg: #ffffff;
+  --field-line: #e2dbd0;
+
+  /* NÚT PHẲNG (chép token của JOY Forge — flat-buttons.css — đổi sang bảng màu JOY START).
+     Sáng = NHẤC LÊN (dời 2px + bóng), tối = GLOW theo màu nút chính. */
+  --fb-btn-fill: var(--surface);
+  --fb-btn-fill-hi: #ffffff;
+  --fb-btn-edge-c: color-mix(in srgb, var(--ink) 11%, transparent);
+  --fb-btn-rest: 0 1px 2px color-mix(in srgb, var(--ink) 14%, transparent);
+  --fb-btn-lift-y: -2px;
+  --fb-btn-lift:
+    0 10px 20px -10px color-mix(in srgb, var(--ink) 50%, transparent),
+    0 3px 6px -3px color-mix(in srgb, var(--ink) 22%, transparent);
+  --fb-icon-lift: 0 3px 2px color-mix(in srgb, var(--ink) 26%, transparent);
+  --fb-btn-glow: var(--accent-fill);
+  --fb-btn-glow-ring: 0%;
+  --fb-btn-glow-halo: 0%;
+  --fb-btn-danger: #dc2626;
+  --fb-btn-danger-hi: #c81e1e;
+  --fb-float-shadow: 0 10px 34px -12px rgba(28, 25, 23, 0.3);
   /* Hiệu ứng "đèn" theo con trỏ (Reveal kiểu Windows): viền + nền sáng lên quanh chuột */
   --rv-r: 96px;
   --rv-edge: rgba(240, 140, 0, 0.75);
   --rv-fill: rgba(240, 140, 0, 0.1);
-  --glass-fill-pop: rgba(255, 255, 255, 0.9);
+  --glass-fill-pop: rgba(255, 255, 255, 0.985);
 
   /* Tông cho nhãn phân loại (danh mục お知らせ · プロダクト · trạng thái).
      Chữ ĐẬM đủ tương phản trên nền kính sáng; nền chip = 13% của chính tông. */
@@ -141,7 +168,7 @@
   --accent-soft: rgba(240, 140, 0, 0.14);
   --accent-line: rgba(240, 140, 0, 0.42);
   --accent-fill: #f08c00;
-  --on-accent: #ffffff;
+  --on-accent: #2a1c0e;
   --ok: #4ade80;
   --warn: #fbbf24;
   --crit: #fca5a5;
@@ -160,23 +187,40 @@
   --rim-fill-hi: rgba(255, 255, 255, 0.22);
   --rim-hi-strong: rgba(255, 255, 255, 0.68);
   --rim-shadow-hi: 0 6px 18px -6px rgba(0, 0, 0, 0.62);
-  --slide-track: rgba(0, 0, 0, 0.5);
-  --slide-track-hi: rgba(0, 0, 0, 0.42);
-  --track-thumb: #3a3431;
-  --track-thumb-hi: #463f3a;
-  --thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 3px 10px -3px rgba(0, 0, 0, 0.5);
+  --seg-track: rgba(0, 0, 0, 0.32);
+  --seg-edge: rgba(255, 255, 255, 0.05);
+  --seg-thumb: #312c28;
+  --seg-thumb-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(0, 0, 0, 0.55);
   --bloom-1: rgba(240, 140, 0, 0.13);
   --bloom-2: rgba(240, 120, 0, 0.09);
   --bloom-3: rgba(90, 120, 140, 0.1);
   --sn-panel-bg: #1d1b19;
-  --grad-a: #f08c00;
-  --grad-b: #ffb347;
-  --mvv-bg: linear-gradient(135deg, #1f1710 0%, #141110 48%, #1e150c 100%);
-  --mvv-edge: rgba(240, 140, 0, 0.3);
-  --mvv-shadow: 0 34px 70px -36px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --blob-a: rgba(240, 140, 0, 0.26);
-  --blob-b: rgba(255, 170, 70, 0.16);
-  --blob-c: rgba(255, 110, 40, 0.14);
+  --mvv-bg: #1a1714;
+  --mvv-edge: rgba(240, 140, 0, 0.28);
+  --mvv-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 48px -30px rgba(0, 0, 0, 0.8);
+
+  /* Theme TỐI giữ chất kính */
+  --panel-bg: var(--glass-fill);
+  --panel-edge: var(--glass-edge);
+  --panel-shadow: inset 0 1px 0 var(--glass-spec), inset 0 -1px 0 var(--glass-spec-lo), var(--glass-shadow);
+  --pane-bg: rgba(255, 255, 255, 0.045);
+  --pane-edge: rgba(255, 255, 255, 0.1);
+  --pane-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --hover-fill: rgba(255, 255, 255, 0.06);
+  --field-bg: rgba(255, 255, 255, 0.06);
+  --field-line: rgba(255, 255, 255, 0.14);
+
+  --fb-btn-fill: color-mix(in srgb, var(--ink) 11%, var(--surface));
+  --fb-btn-fill-hi: color-mix(in srgb, var(--ink) 16%, var(--surface));
+  --fb-btn-edge-c: color-mix(in srgb, var(--ink) 8%, transparent);
+  --fb-btn-rest: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --fb-btn-lift-y: -1px;
+  --fb-btn-lift: 0 6px 14px -8px rgba(0, 0, 0, 0.7);
+  --fb-icon-lift: 0 0 0 transparent;
+  --fb-btn-glow-ring: 55%;
+  --fb-btn-glow-halo: 50%;
+  --fb-btn-danger-hi: #dc2626;
+  --fb-float-shadow: 0 10px 34px -12px rgba(0, 0, 0, 0.6);
   --rv-edge: rgba(255, 190, 120, 0.6);
   --rv-fill: rgba(255, 200, 150, 0.09);
   --glass-fill-pop: rgba(30, 28, 26, 0.92);
@@ -271,50 +315,15 @@ h1, h2, h3, h4 {
     inset 0 -1px 0 var(--glass-spec-lo),
     var(--glass-shadow);
 }
-/* Kính "nhẹ" cho ô CON nằm trong một tấm kính — không nhoè lần hai (đỡ GPU). */
+/* Ô CON nằm trong một thẻ: sáng = ngà nhạt + viền rõ (đọc ra "thẻ trên thẻ"); tối = kính nhẹ. */
 .jw-pane {
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-edge);
-  box-shadow: inset 0 1px 0 var(--glass-spec), inset 0 -1px 0 var(--glass-spec-lo);
+  background: var(--pane-bg);
+  border: 1px solid var(--pane-edge);
+  box-shadow: var(--pane-shadow);
 }
+/* Thẻ nội dung: sáng = trắng đục; tối = kính (token ở khối theme) */
+.jw-panel.jw-glass { background: var(--panel-bg); border-color: var(--panel-edge); box-shadow: var(--panel-shadow); }
 
-/* GỜ KÍNH cho control (chép cơ chế `::before` + mask của JOY Analytics) */
-.jw-rim {
-  --rim-fill: var(--glass-fill-ctl);
-  --rim-shadow: var(--glass-shadow);
-  position: relative;
-  border: none;
-  background: var(--rim-fill);
-  box-shadow: var(--rim-shadow);
-  transition:
-    background 0.16s ease,
-    box-shadow 0.16s ease,
-    color 0.16s ease,
-    transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.25);
-}
-.jw-rim::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background:
-    radial-gradient(var(--rv-r) circle at var(--mx, -999px) var(--my, -999px), var(--rv-edge-on, transparent), transparent 70%),
-    linear-gradient(158deg, var(--rim-hi) 0%, var(--rim-hi) 12%, var(--rim-mid) 44%, var(--rim-lo) 86%, var(--rim-lo) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-.jw-rim:where(:not(:disabled)):hover {
-  --rim-fill: var(--rim-fill-hi);
-  --rim-hi: var(--rim-hi-strong);
-  --rim-shadow: var(--rim-shadow-hi);
-  transform: translateY(-1px);
-}
-.jw-rim:where(:not(:disabled)):active { transform: translateY(0) scale(0.97); transition-duration: 0.06s; }
-.jw-rim:disabled { cursor: default; opacity: 0.45; }
 
 /* ==========================================================================
    §Vỏ app
@@ -341,7 +350,7 @@ h1, h2, h3, h4 {
   text-decoration: none;
   transition: background 0.16s ease;
 }
-.jw-brandhome:hover { background: var(--glass-fill); }
+.jw-brandhome:hover { background: var(--hover-fill); }
 .jw-brandlock { display: inline-flex; align-items: center; gap: 0.55rem; min-width: 0; }
 .jw-brand-mark { width: 36px; height: 25px; flex: none; }
 .jw-wordmark {
@@ -396,6 +405,8 @@ h1, h2, h3, h4 {
   border-radius: 18px;
   transform-origin: bottom left;
   max-height: calc(100dvh - 1rem);
+  /* bay ra từ mép side panel: trượt ngang một đoạn ngắn */
+  --menu-from: translateX(-10px) scale(0.96);
   overflow-y: auto;
   overscroll-behavior: contain;
   /* Side panel phía sau KHÔNG nhoè (chỉ vùng nội dung nhoè) ⇒ fill đặc hơn menu của JOY
@@ -403,10 +414,11 @@ h1, h2, h3, h4 {
   background: var(--glass-fill-pop);
   --glass-blur: 26px;
   opacity: 0;
-  transform: scale(0.94) translateY(6px);
+  transform: var(--menu-from);
   pointer-events: none;
   transition: opacity var(--menu-close-dur) var(--menu-close-ease), transform var(--menu-close-dur) var(--menu-close-ease);
 }
+.jw-menu--inside { --menu-from: translateY(8px) scale(0.96); }
 .jw-menu--open {
   opacity: 1;
   transform: none;
@@ -435,19 +447,13 @@ h1, h2, h3, h4 {
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.jw-menu-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 10px;
-}
-.jw-menu-row-label { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
 .jw-menu-sep { height: 1px; margin: 0.6rem 0.25rem 0.5rem; background: var(--glass-edge); }
 .jw-menu-item {
-  --rim-fill: transparent;
-  --rim-shadow: none;
+  position: relative;
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: background-color 0.16s ease, box-shadow 0.2s ease, color 0.16s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -462,62 +468,29 @@ h1, h2, h3, h4 {
   cursor: pointer;
 }
 .jw-menu-item + .jw-menu-item { margin-top: 2px; }
-.jw-menu-item[aria-current='page'] { color: var(--ink); --rim-fill: var(--glass-fill); }
+.jw-menu-item[aria-current='page'] { color: var(--ink); }
 .jw-menu-item:hover { color: var(--ink); }
 .jw-menu-item svg { color: var(--ink-2); transition: color 0.16s ease; }
 .jw-menu-item > span { flex: 1 1 auto; }
-.jw-menu-item--go { color: var(--ink); --rim-fill: var(--glass-fill); }
+.jw-menu-item--go { color: var(--ink); background: var(--fb-btn-fill); box-shadow: 0 0 0 1px var(--fb-btn-edge-c), var(--fb-btn-rest); }
+.jw-menu-item--go:hover {
+  background: var(--fb-btn-fill-hi);
+  transform: translateY(var(--fb-btn-lift-y));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--fb-btn-glow) var(--fb-btn-glow-ring), transparent),
+    0 0 18px -2px color-mix(in srgb, var(--fb-btn-glow) var(--fb-btn-glow-halo), transparent),
+    0 0 0 1px var(--fb-btn-edge-c), var(--fb-btn-lift);
+}
 .jw-menu-item:hover svg, .jw-menu-item[aria-current='page'] svg { color: var(--accent-text); }
 .jw-avatar { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; overflow: hidden; }
 .jw-avatar svg { width: 100%; height: 100%; }
 
-/* Công tắc 2 nấc `.jw-slide` (chép) — dùng ở panel cài đặt: ngôn ngữ · theme */
-.jw-slide {
-  --rim-fill: var(--slide-track);
-  --rim-shadow: none;
-  display: inline-flex;
-  align-items: stretch;
-  width: 8rem;
-  height: 32px;
-  padding: 3px;
-  border-radius: 999px;
-  cursor: pointer;
-  user-select: none;
-}
-.jw-slide:hover { --rim-fill: var(--slide-track-hi); --track-thumb: var(--track-thumb-hi); }
-.jw-slide--wide { width: 10.25rem; }
+/* Panel cài đặt: nhãn nhỏ ở TRÊN, segmented trải hết bề ngang ở DƯỚI (cùng component với trang) */
+.jw-menu-field { display: grid; gap: 0.4rem; padding: 0.3rem 0.5rem 0.6rem; }
+.jw-menu-row-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; color: var(--ink-3); }
+.jw-menu-field .jw-seg { display: grid; width: 100%; }
 /* 表示: ngôn ngữ + theme cùng một bề ngang */
 .jw-seg:is([data-seg='setLang'], [data-seg='setTheme']) { width: 16rem; }
-.jw-slide-thumb {
-  --rim-fill: var(--track-thumb);
-  --rim-shadow: var(--thumb-shadow);
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  border-radius: 999px;
-  transition: background 0.16s ease, box-shadow 0.16s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.jw-slide-thumb[data-right='true'] { transform: translateX(100%); }
-.jw-slide-opt {
-  position: relative;
-  z-index: 1;
-  flex: 1 1 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 0 8px;
-  font-family: var(--font-ui);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  color: var(--ink-3);
-  transition: color 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.jw-slide-opt--on { color: var(--accent-text); }
 
 /* ==========================================================================
    §SIDE PANEL — cây điều hướng (chép `.jw-sidenav` + `.jw-tree-*`)
@@ -614,14 +587,14 @@ h1, h2, h3, h4 {
   text-decoration: none;
   transition: background 0.16s ease;
 }
-.jw-sn-me:hover, .jw-sn-me[aria-current='page'] { background: var(--glass-fill); }
+.jw-sn-me:hover, .jw-sn-me[aria-current='page'] { background: var(--hover-fill); }
 .jw-sn-me .jw-avatar { width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--glass-edge); }
 .jw-sn-who { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
 .jw-sn-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
 .jw-sn-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; color: var(--ink-3); }
-.jw-sn-gear svg { transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); }
+.jw-sn-gear svg { transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), color 0.3s ease; will-change: transform; }
 .jw-sn-gear[aria-expanded='true'] { color: var(--accent-text); }
-.jw-sn-gear[aria-expanded='true'] svg { transform: rotate(60deg); }
+.jw-sn-gear[aria-expanded='true'] svg { transform: rotate(120deg); }
 .jw-sn-toggle, .jw-sn-tool, .jw-sn-gear {
   display: inline-flex;
   align-items: center;
@@ -640,20 +613,28 @@ h1, h2, h3, h4 {
 .jw-sn-toggle:hover, .jw-sn-toggle:focus-visible, .jw-sn-tool:hover, .jw-sn-tool:focus-visible, .jw-sn-gear:hover, .jw-sn-gear:focus-visible { color: var(--accent-text); }
 .jw-sn-gear { width: 38px; height: 38px; border-radius: 11px; color: var(--ink-2); }
 .jw-sn-find {
-  flex: 1 1 auto;
+  position: relative;
+  flex: 0 0 34px;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 0.35rem;
   height: 34px;
-  padding: 0 calc(0.25rem - 1px) 0 calc(0.5rem - 1px);
-  border: 1px solid var(--glass-edge);
+  padding: 0 calc(0.25rem - 1px) 0 calc(0.55rem - 1px);
+  overflow: hidden;
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: var(--glass-fill);
+  background: transparent;
   color: var(--ink-3);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  cursor: pointer;
+  transition: flex-grow 0.45s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.16s ease;
 }
+.jw-sn-find:hover { color: var(--accent); }
+/* mở: ô GIÃN vào phần trống của hàng (flex-grow nội suy được ⇒ bung êm), 2 nút mở/đóng tất cả dạt phải */
+.jw-sn-find:is(:hover, :focus-within, [data-filled]) { flex-grow: 1; background: var(--field-bg); border-color: var(--field-line); cursor: text; }
 .jw-sn-find:focus-within { border-color: var(--field-edge); box-shadow: var(--field-glow); }
+.jw-sn-find .jw-sn-find-input { opacity: 0; transition: opacity 0.2s ease 0.08s; }
+.jw-sn-find:is(:hover, :focus-within, [data-filled]) .jw-sn-find-input { opacity: 1; }
 .jw-sn-find-input { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font-size: 0.86rem; }
 .jw-sn-find-input:focus { outline: none; }
 .jw-sn-find-input::placeholder { color: var(--ink-3); }
@@ -671,7 +652,7 @@ h1, h2, h3, h4 {
   color: var(--tree-ink); text-align: left; text-decoration: none; cursor: pointer;
   transition: background 0.16s ease;
 }
-.jw-sn-hit:hover, .jw-sn-hit:focus-visible, .jw-sn-hit[data-hot] { background: var(--glass-fill); }
+.jw-sn-hit:hover, .jw-sn-hit:focus-visible, .jw-sn-hit[data-hot] { background: var(--hover-fill); }
 .jw-sn-hit-ico { display: inline-flex; flex: none; color: var(--tree-icon-ink); }
 .jw-sn-hit-body { display: flex; flex-direction: column; min-width: 0; }
 .jw-sn-hit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: 0.84rem; font-weight: 600; color: var(--ink); }
@@ -698,7 +679,7 @@ h1, h2, h3, h4 {
   color: var(--tree-ink); text-decoration: none; font-size: 0.8rem;
   transition: background 0.16s ease, color 0.16s ease;
 }
-.jw-sn-fav:hover { background: var(--glass-fill); color: var(--ink); }
+.jw-sn-fav:hover { background: var(--hover-fill); color: var(--ink); }
 button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
 .jw-sn-fav-item { position: relative; }
 .jw-sn-fav-item .jw-sn-fav-path { transition: opacity 0.12s ease; }
@@ -744,7 +725,7 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-family: var(--font-display); font-size: 0.94rem; font-weight: 600; letter-spacing: -0.01em;
 }
-.jw-sn-top:hover { background: var(--glass-fill); color: var(--ink); }
+.jw-sn-top:hover { background: var(--hover-fill); color: var(--ink); }
 .jw-sn-caret { display: inline-flex; flex: none; color: var(--ink-3); transition: transform 0.18s ease, color 0.16s ease; }
 /* Khác JOY Analytics (ở đó khối ĐANG MỞ = nền cam, vì chỉ mở được MỘT khối): ở đây mở được
    nhiều khối cùng lúc (nút "mở tất cả"), nên nền cam chỉ dành cho TRANG hiện tại ở tầng 1
@@ -830,7 +811,7 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   cursor: pointer;
   transition: background 0.16s ease, color 0.16s ease;
 }
-.jw-tree-row:hover { background: var(--glass-fill); color: var(--ink); }
+.jw-tree-row:hover { background: var(--hover-fill); color: var(--ink); }
 .jw-tree-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--tree-icon); height: var(--tree-icon);
@@ -895,9 +876,9 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   transition: background 0.16s ease, color 0.16s ease;
 }
 .jw-tree-leaf > svg { color: var(--tree-icon-ink); flex-shrink: 0; }
-.jw-tree-leaf:hover { background: var(--glass-fill); color: var(--ink); }
+.jw-tree-leaf:hover { background: var(--hover-fill); color: var(--ink); }
 .jw-tree-leaf:hover > svg { color: var(--accent-text); }
-.jw-tree-row.jw-tree-on, .jw-tree-leaf.jw-tree-on { background: var(--glass-fill); color: var(--accent-text); }
+.jw-tree-row.jw-tree-on, .jw-tree-leaf.jw-tree-on { background: var(--accent-soft); color: var(--accent-text); }
 .jw-tree-row.jw-tree-on .jw-tree-icon, .jw-tree-leaf.jw-tree-on > svg { color: var(--accent-text); }
 .jw-tree-leafname {
   flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -989,7 +970,10 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
 /* ==========================================================================
    §TIÊU ĐỀ TRANG (chép `.jw-page-*`)
    ========================================================================== */
-.jw-page-head { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.25rem; padding-right: 3.4rem; }
+.jw-page-head { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.25rem; }
+/* Chuông nổi ở góc phải trên ⇒ dòng breadcrumb chừa chỗ; dòng tiêu đề đứng THẤP hơn chuông nên nút
+   お気に入り dạt phải được, thẳng mép thẻ của trang. */
+.jw-page-eyebrow { padding-right: 3.6rem; min-height: 1.6rem; }
 .jw-page-eyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 0.15rem; font-size: 0.82rem; color: var(--ink-3); }
 .jw-page-sep { display: inline-flex; padding: 0 0.1rem; opacity: 0.7; }
 .jw-page-crumb-btn, .jw-page-crumb-txt {
@@ -998,7 +982,7 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   color: inherit; font-family: var(--font-display); text-decoration: none;
 }
 .jw-page-crumb-btn { cursor: pointer; }
-.jw-page-crumb-btn:hover { color: var(--ink); background: var(--glass-fill); }
+.jw-page-crumb-btn:hover { color: var(--ink); background: var(--hover-fill); }
 .jw-page-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .jw-page-title {
   margin: 0;
@@ -1029,43 +1013,77 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
    §CONTROL — nút · ô nhập · công tắc · segmented · tab
    ========================================================================== */
 .jw-btn {
+  /* NÚT PHẲNG — chép cơ chế 3 tầng của JOY Forge (flat-buttons.css):
+     1 THÂN đục · 2 MẶT NGHỈ không viền (vành 1px mờ + bóng nhỏ) · 3 HOVER nhấc lên (sáng) / glow (tối).
+     Biến cục bộ --btn-edge / --btn-glow / --btn-rest CHỈ khai ở biến thể; rule chung chỉ ĐỌC. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 10px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.2;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--ink-2);
+  color: var(--ink);
+  background: var(--fb-btn-fill);
+  box-shadow: 0 0 0 1px var(--btn-edge, var(--fb-btn-edge-c)), var(--btn-rest, var(--fb-btn-rest));
   white-space: nowrap;
   text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.16s ease, box-shadow 0.2s ease, color 0.16s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
-.jw-btn:disabled { opacity: 0.45; cursor: default; }
-.jw-btn--solid {
-  background: var(--accent-fill);
-  color: var(--on-accent);
-  border-color: transparent;
-  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--accent) 80%, transparent);
-  transition: background 0.16s ease, transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.25), box-shadow 0.16s ease;
+.jw-btn:not(:disabled, [aria-disabled='true']):hover { background: var(--fb-btn-fill-hi); }
+.jw-btn:not(:disabled, [aria-disabled='true'], [aria-busy='true']):is(:hover, :focus-visible) {
+  transform: translateY(var(--fb-btn-lift-y));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--btn-glow, var(--fb-btn-glow)) var(--fb-btn-glow-ring), transparent),
+    0 0 18px -2px color-mix(in srgb, var(--btn-glow, var(--fb-btn-glow)) var(--fb-btn-glow-halo), transparent),
+    0 0 0 1px var(--btn-edge, var(--fb-btn-edge-c)),
+    var(--fb-btn-lift);
 }
-.jw-btn--solid:not(:disabled):hover { background: var(--accent-hover); transform: translateY(-1px); }
-.jw-btn--solid:not(:disabled):active { transform: scale(0.97); }
-.jw-btn--ghost { --rim-fill: var(--glass-fill-ctl); --rim-shadow: var(--glass-shadow); color: var(--ink); }
-.jw-btn--ghost:where(:not(:disabled)):hover {
-  color: var(--ink);
-  --rim-fill: color-mix(in srgb, var(--accent) 14%, var(--rim-fill-hi));
-  --rim-hi: var(--accent-line);
+.jw-btn:not(:disabled, [aria-disabled='true'], [aria-busy='true']):active { transform: translateY(0) scale(0.97); }
+.jw-btn:disabled, .jw-btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+/* nút chính: mặt cam ĐẶC, chữ = --on-accent (sáng: trắng · tối: mực thẫm) */
+.jw-btn--solid { --btn-edge: transparent; background: var(--accent-fill); color: var(--on-accent); }
+.jw-btn--solid:not(:disabled, [aria-disabled='true']):hover { background: var(--accent-hover); }
+/* nút phụ = thân mặc định */
+.jw-btn--ghost { color: var(--ink); }
+/* đang bật = LÊN TONE (pha 16% cam vào mặt), không viền màu */
+.jw-btn--ghost[aria-pressed='true'], .jw-btn--on { --btn-edge: transparent; color: var(--accent-text); background: color-mix(in srgb, var(--accent-fill) 16%, var(--surface)); }
+/* nguy hiểm nhẹ (chữ đỏ) / nguy hiểm (đỏ đặc) — glow ĐỎ */
+.jw-btn--danger { --btn-glow: var(--fb-btn-danger); color: color-mix(in oklab, var(--crit) 80%, var(--ink)); }
+.jw-btn--danger:not(:disabled, [aria-disabled='true']):hover { background: color-mix(in srgb, var(--crit) 8%, var(--fb-btn-fill)); }
+.jw-btn--crit { --btn-edge: transparent; --btn-glow: var(--fb-btn-danger); background: var(--fb-btn-danger); color: #fff; }
+.jw-btn--crit:not(:disabled, [aria-disabled='true']):hover { background: var(--fb-btn-danger-hi); }
+.jw-btn--sm { padding: 0.36rem 0.8rem; font-size: 0.78rem; border-radius: 9px; }
+.jw-btn--xs { padding: 0.22rem 0.55rem; font-size: 0.72rem; border-radius: 8px; }
+
+/* NÚT CHỈ CÓ ICON (fb-icon): không thân ở MỌI trạng thái; hover = icon đổi sang cam + NHẤC lên
+   (sáng: bóng ôm nét glyph; tối: glow 2 lớp). Nhấc + lọc cái `svg` chứ không phải cả nút — vài
+   nút (sao trong cây) đang dùng `transform` để canh giữa. Nền CHỈ cho trạng thái mở/bật. */
+:is(.jw-sn-tool, .jw-sn-toggle, .jw-fav, .jw-sn-fav-x, .jw-cta, .jw-iconbtn, .jw-sn-find-x, .jw-pagefav) > svg {
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), filter 0.2s ease, color 0.16s ease;
 }
-.jw-btn--danger { --rim-fill: var(--glass-fill-ctl); --rim-shadow: none; color: var(--crit); }
-.jw-btn--danger:where(:not(:disabled)):hover { --rim-fill: color-mix(in srgb, var(--crit) 14%, var(--rim-fill-hi)); --rim-hi: color-mix(in srgb, var(--crit) 50%, transparent); }
-.jw-btn--sm { padding: 0.32rem 0.75rem; font-size: 0.78rem; }
-.jw-btn--xs { padding: 0.2rem 0.55rem; font-size: 0.72rem; }
+:is(.jw-sn-tool, .jw-sn-toggle, .jw-fav, .jw-sn-fav-x, .jw-cta, .jw-iconbtn, .jw-sn-find-x, .jw-pagefav):not(:disabled):is(:hover, :focus-visible) > svg {
+  transform: translateY(var(--fb-btn-lift-y));
+  filter:
+    drop-shadow(var(--fb-icon-lift))
+    drop-shadow(0 0 1.5px color-mix(in srgb, var(--btn-glow, var(--fb-btn-glow)) var(--fb-btn-glow-ring), transparent))
+    drop-shadow(0 0 8px color-mix(in srgb, var(--btn-glow, var(--fb-btn-glow)) var(--fb-btn-glow-halo), transparent));
+}
+.jw-sn-fav-x { --btn-glow: var(--fb-btn-danger); }
+.jw-pagefav {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 38px; height: 38px; padding: 0; border: 0; border-radius: 10px;
+  background: none; color: var(--ink-3); cursor: pointer;
+}
+.jw-pagefav:hover, .jw-pagefav:focus-visible, .jw-pagefav[aria-pressed='true'] { color: var(--accent); }
+
 .jw-link {
   display: inline-flex;
   align-items: center;
@@ -1105,10 +1123,10 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   width: 100%;
   min-height: 38px;
   padding: 0.45rem 0.75rem;
-  border: 1px solid var(--glass-edge);
+  border: 1px solid var(--field-line);
   border-radius: 10px;
-  background: var(--glass-fill-ctl);
-  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 8%, transparent);
+  background: var(--field-bg);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -1116,6 +1134,15 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 .jw-input::placeholder { color: var(--ink-3); }
+.jw-input[data-rv] {
+  border-color: transparent;
+  background:
+    radial-gradient(calc(var(--rv-r) * 0.8) circle at var(--mx) var(--my), var(--rv-fill), transparent 100%) padding-box,
+    linear-gradient(var(--field-bg), var(--field-bg)) padding-box,
+    radial-gradient(var(--rv-r) circle at var(--mx) var(--my), var(--rv-edge), transparent 70%) border-box,
+    linear-gradient(var(--field-line), var(--field-line)) border-box;
+}
+.jw-input[data-rv]:focus { border-color: var(--field-edge); background: var(--field-bg); }
 .jw-input:focus { outline: none; border-color: var(--field-edge); box-shadow: var(--field-glow); }
 .jw-input[readonly] { background: var(--glass-fill); color: var(--ink-2); box-shadow: none; }
 textarea.jw-input { resize: vertical; min-height: 5rem; line-height: 1.5; }
@@ -1125,10 +1152,17 @@ select.jw-input { cursor: pointer; }
 .jw-check input[type='checkbox'] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent-fill); cursor: pointer; }
 .jw-input[type='time'] { width: 7.2rem; }
 
-/* Công tắc bật/tắt — cùng vật liệu với `.jw-slide` (rãnh tối + núm có bóng) */
-.jw-switch { position: relative; display: inline-flex; flex: none; width: 42px; height: 24px; }
+/* Công tắc bật/tắt — cùng vật liệu với `.jw-seg` (rãnh lõm + núm mặt nút phẳng), núm trượt êm */
+.jw-switch { position: relative; display: inline-flex; flex: none; width: 40px; height: 24px; }
 .jw-switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.jw-switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--slide-track); transition: background 0.2s ease; }
+.jw-switch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--seg-track);
+  box-shadow: inset 0 0 0 1px var(--seg-edge);
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
 .jw-switch span::after {
   content: '';
   position: absolute;
@@ -1137,15 +1171,17 @@ select.jw-input { cursor: pointer; }
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--track-thumb);
-  box-shadow: var(--thumb-shadow);
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  background: var(--seg-thumb);
+  box-shadow: var(--seg-thumb-shadow);
+  transition: transform var(--seg-dur) var(--seg-ease), background-color 0.35s ease;
 }
-.jw-switch input:checked + span { background: var(--accent-fill); }
-.jw-switch input:checked + span::after { transform: translateX(18px); background: #fff; }
+.jw-switch input:hover + span { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent); }
+.jw-switch input:checked + span { background: var(--accent-fill); box-shadow: inset 0 0 0 1px transparent; }
+.jw-switch input:checked + span::after { transform: translateX(16px); background: #fff; }
 .jw-switch input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-/* Segmented `.jw-seg` (chép) — núm trượt theo --seg-i / --seg-n */
+/* Segmented `.jw-seg` — núm trượt theo --seg-i / --seg-n. Rãnh lõm nhẹ, núm = mặt nút phẳng;
+   lựa chọn đang bật: chữ đậm màu mực + icon cam. Trượt 0.5s easeOutQuint (nhanh lúc đầu, đậu êm). */
 .jw-seg {
   position: relative;
   display: inline-grid;
@@ -1153,8 +1189,9 @@ select.jw-input { cursor: pointer; }
   grid-auto-columns: minmax(0, 1fr);
   align-items: stretch;
   padding: var(--seg-pad);
-  border-radius: 999px;
-  background: var(--slide-track);
+  border-radius: 12px;
+  background: var(--seg-track);
+  box-shadow: inset 0 0 0 1px var(--seg-edge);
   user-select: none;
   max-width: 100%;
 }
@@ -1164,11 +1201,11 @@ select.jw-input { cursor: pointer; }
   bottom: var(--seg-pad);
   left: var(--seg-pad);
   width: calc((100% - var(--seg-pad) * 2) / var(--seg-n));
-  border-radius: 999px;
-  background: var(--track-thumb);
-  box-shadow: var(--thumb-shadow);
+  border-radius: 9px;
+  background: var(--seg-thumb);
+  box-shadow: var(--seg-thumb-shadow);
   transform: translateX(calc(var(--seg-i) * 100%));
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform var(--seg-dur) var(--seg-ease);
   pointer-events: none;
 }
 .jw-seg-opt {
@@ -1177,14 +1214,14 @@ select.jw-input { cursor: pointer; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
-  min-height: 28px;
-  padding: 0.25rem 0.85rem;
+  min-height: 30px;
+  padding: 0.25rem 0.9rem;
   border: none;
-  border-radius: 999px;
+  border-radius: 9px;
   background: none;
-  color: var(--ink-2);
+  color: var(--ink-3);
   font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.25;
@@ -1192,10 +1229,12 @@ select.jw-input { cursor: pointer; }
   /* Hẹp (dải icon ở mobile ăn mất 54px) thì nhãn dài XUỐNG DÒNG trong nút thay vì tràn */
   white-space: normal;
   cursor: pointer;
-  transition: color 0.16s ease;
+  transition: color 0.35s ease;
 }
+.jw-seg-opt > svg { flex: none; color: inherit; transition: color 0.35s ease; }
 .jw-seg-opt:hover { color: var(--ink); }
-.jw-seg-opt--on { color: var(--ink); }
+.jw-seg-opt--on { color: var(--ink); cursor: default; }
+.jw-seg-opt--on > svg { color: var(--accent-text); }
 .jw-seg-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* Dải TAB dạng viên thuốc — cuộn ngang, mờ 2 mép khi còn nội dung (nếp `.jw-gbar-strip` của JOY Analytics) */
@@ -1212,10 +1251,28 @@ select.jw-input { cursor: pointer; }
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
   mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
 }
+.jw-tabs { position: relative; }
+/* Vệt nền của tab đang chọn — MỘT phần tử, trượt sang tab mới (app.js đặt --ink-x / --ink-w) */
+.jw-tabs-ink {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: 32px;
+  width: var(--ink-w, 0px);
+  transform: translateX(var(--ink-x, 0px));
+  border-radius: 999px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  pointer-events: none;
+  transition: transform var(--seg-dur) var(--seg-ease), width var(--seg-dur) var(--seg-ease);
+}
+.jw-tabs-ink--now { transition: none; }
+.jw-tabs[data-ink] .jw-tab[aria-selected='true'] { background: transparent; border-color: transparent; }
 .jw-tabs[data-fade-l] { --fade-l: var(--fade); }
 .jw-tabs[data-fade-r] { --fade-r: var(--fade); }
 .jw-tabs::-webkit-scrollbar { display: none; }
 .jw-tab {
+  position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -1234,7 +1291,7 @@ select.jw-input { cursor: pointer; }
   cursor: pointer;
   transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 }
-.jw-tab:hover { background: var(--glass-fill); color: var(--ink); }
+.jw-tab:hover { background: var(--hover-fill); color: var(--ink); }
 .jw-tab[aria-selected='true'] {
   background: var(--accent-soft);
   border-color: var(--accent-line);
@@ -1363,7 +1420,7 @@ select.jw-input { cursor: pointer; }
   transition: color 0.16s ease, background 0.16s ease;
 }
 .jw-panel:hover .jw-cta, .jw-cta:focus-visible { color: var(--accent-text); }
-.jw-panel--flat { padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.jw-panel.jw-panel--flat { padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .jw-tile { border-radius: 14px; padding: 0.85rem 1rem; min-width: 0; }
 
 /* Danh sách hàng dùng chung (お知らせ · スケジュール · 受注 · ランキング…) */
@@ -1393,7 +1450,7 @@ select.jw-input { cursor: pointer; }
   background: var(--sep);
 }
 :is(a, button).jw-rowi { cursor: pointer; transition: background 0.16s ease; }
-:is(a, button).jw-rowi:hover { background: var(--glass-fill); }
+:is(a, button).jw-rowi:hover { background: var(--hover-fill); }
 :is(a, button).jw-rowi:hover::before, :is(a, button).jw-rowi:hover + .jw-rowi::before { opacity: 0; }
 
 /* ==========================================================================
@@ -1430,7 +1487,9 @@ select.jw-input { cursor: pointer; }
   color: var(--ink-3);
   --glass-blur: 20px;
   --glass-sat: 170%;
-  background: var(--glass-fill-ctl);
+  background: var(--field-bg);
+  border-color: var(--field-line);
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 .jw-gsearch-box:focus-within { border-color: var(--field-edge); box-shadow: var(--glass-shadow), var(--field-glow); }
@@ -1477,7 +1536,7 @@ select.jw-input { cursor: pointer; }
   padding: 0.42rem 0.55rem; border: 0; border-radius: 10px; background: none;
   text-align: left; cursor: pointer; color: var(--ink);
 }
-.jw-gs-item:hover, .jw-gs-item[data-hot] { background: var(--glass-fill); }
+.jw-gs-item:hover, .jw-gs-item[data-hot] { background: var(--hover-fill); }
 .jw-gs-item > svg { color: var(--ink-3); }
 .jw-gs-item:hover > svg, .jw-gs-item[data-hot] > svg { color: var(--accent-text); }
 .jw-gs-body { display: flex; flex-direction: column; min-width: 0; }
@@ -1489,7 +1548,7 @@ select.jw-input { cursor: pointer; }
   border-radius: 0 0 10px 10px; background: none; color: var(--accent-text);
   font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600; cursor: pointer;
 }
-.jw-gs-all:hover, .jw-gs-all[data-hot] { background: var(--glass-fill); }
+.jw-gs-all:hover, .jw-gs-all[data-hot] { background: var(--hover-fill); }
 .jw-gs-none { padding: 1.1rem; text-align: center; font-size: 0.84rem; color: var(--ink-3); }
 
 /* HERO — lời chào + ô tìm */
@@ -1504,12 +1563,7 @@ select.jw-input { cursor: pointer; }
   letter-spacing: -0.03em;
   color: var(--ink);
 }
-.jw-hero-name, .jw-mvv2-statement .jw-mvv-nb {
-  background: linear-gradient(95deg, var(--grad-a), var(--grad-b));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+.jw-hero-name { color: var(--accent-text); }
 .jw-hero-search .jw-gsearch-box { height: 52px; padding-left: 1.15rem; font-size: 1rem; }
 
 /* MVV — sân khấu chính của Home (xương sống của cả công ty) */
@@ -1527,20 +1581,10 @@ select.jw-input { cursor: pointer; }
   background: var(--mvv-bg);
   box-shadow: var(--mvv-shadow);
 }
+/* Nền phẳng; mark Dr.JOY làm WATERMARK: đứng thẳng, nằm trọn trong khối, góc phải trên */
 .jw-mvv2-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.jw-mvv2-blob { position: absolute; border-radius: 50%; }
-.jw-mvv2-blob--a { width: 30rem; height: 30rem; left: -9rem; top: -14rem; background: radial-gradient(circle, var(--blob-a), transparent 68%); }
-.jw-mvv2-blob--b { width: 26rem; height: 26rem; right: -8rem; top: 18%; background: radial-gradient(circle, var(--blob-b), transparent 68%); }
-.jw-mvv2-blob--c { width: 22rem; height: 22rem; left: 38%; bottom: -13rem; background: radial-gradient(circle, var(--blob-c), transparent 68%); }
-.jw-mvv2-mark { position: absolute; right: -2.5rem; bottom: -3.5rem; width: 20rem; height: auto; opacity: 0.07; transform: rotate(-8deg); }
-@media (prefers-reduced-motion: no-preference) {
-  .jw-mvv2-blob--a { animation: jw-drift-a 18s ease-in-out infinite alternate; }
-  .jw-mvv2-blob--b { animation: jw-drift-b 23s ease-in-out infinite alternate; }
-  .jw-mvv2-blob--c { animation: jw-drift-c 27s ease-in-out infinite alternate; }
-}
-@keyframes jw-drift-a { to { transform: translate(7rem, 4rem) scale(1.12); } }
-@keyframes jw-drift-b { to { transform: translate(-6rem, -3rem) scale(0.92); } }
-@keyframes jw-drift-c { to { transform: translate(-5rem, -4rem) scale(1.18); } }
+.jw-mvv2-mark { position: absolute; top: clamp(1.25rem, 2.6vw, 2.25rem); right: clamp(1.25rem, 3vw, 2.75rem); width: clamp(8rem, 13vw, 11.5rem); height: auto; opacity: 0.06; }
+[data-theme='dark'] .jw-mvv2-mark { opacity: 0.08; }
 .jw-mvv2-label {
   display: inline-flex;
   align-items: center;
@@ -1551,7 +1595,7 @@ select.jw-input { cursor: pointer; }
   letter-spacing: 0.24em;
   color: var(--accent-text);
 }
-.jw-mvv2-label::before { content: ''; width: 1.7rem; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), transparent); }
+.jw-mvv2-label::before { content: ''; width: 1.5rem; height: 2px; background: var(--accent); }
 .jw-mvv2-top { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(1.4rem, 3vw, 3.2rem); align-items: end; }
 .jw-mvv2-statement {
   margin: 0.85rem 0 0;
@@ -1566,6 +1610,7 @@ select.jw-input { cursor: pointer; }
 /* 日本語: chỉ ngắt ở <wbr> (すべての｜医療従事者に、｜次の一手を) — không bẻ đôi 従事者 */
 :lang(ja) .jw-mvv2-statement { word-break: keep-all; }
 .jw-mvv-nb { white-space: nowrap; }
+.jw-mvv2-statement .jw-mvv-nb { color: var(--accent-text); }
 .jw-mvv2-vision { padding-left: clamp(1rem, 2vw, 2rem); border-left: 1px solid var(--mvv-edge); }
 .jw-mvv2-vtext {
   margin: 0.75rem 0 1.1rem;
@@ -1599,13 +1644,13 @@ select.jw-input { cursor: pointer; }
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem 1.05rem 1.1rem;
-  border: 1px solid var(--glass-edge);
+  border: 1px solid var(--pane-edge);
   border-radius: 16px;
-  background: var(--glass-fill);
-  box-shadow: inset 0 1px 0 var(--glass-spec);
+  background: var(--panel-bg);
+  box-shadow: var(--pane-shadow);
   transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
 }
-.jw-mvv2-value:hover { transform: translateY(-3px); box-shadow: 0 18px 32px -20px rgba(150, 84, 8, 0.45), inset 0 1px 0 var(--glass-spec); }
+.jw-mvv2-value:hover { transform: translateY(-3px); box-shadow: 0 18px 32px -22px rgba(150, 84, 8, 0.4); }
 .jw-mvv2-no { font-family: var(--font-num); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; color: var(--accent-text); }
 .jw-mvv2-vname { font-family: var(--font-display); font-size: clamp(1rem, 0.92rem + 0.3vw, 1.16rem); font-weight: 700; line-height: 1.3; letter-spacing: -0.015em; color: var(--ink); }
 @container mvv (max-width: 820px) {
@@ -1757,7 +1802,7 @@ select.jw-input { cursor: pointer; }
   padding: 0.95rem 1.1rem; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink);
   font-family: var(--font-display); font-size: 0.98rem; font-weight: 600;
 }
-.jw-acc-head:hover { background: var(--glass-fill); }
+.jw-acc-head:hover { background: var(--hover-fill); }
 .jw-acc-head > .jw-acc-caret { margin-left: auto; color: var(--ink-3); transition: transform 0.18s ease; }
 .jw-acc-head[aria-expanded='true'] > .jw-acc-caret { transform: rotate(180deg); }
 .jw-acc-num { font-family: var(--font-num); font-size: 0.84rem; font-weight: 700; padding: 0.02rem 0.55rem; border-radius: 999px; background: color-mix(in srgb, var(--tone) 14%, transparent); color: var(--tone); }
@@ -1794,8 +1839,9 @@ select.jw-input { cursor: pointer; }
 .jw-prose li::marker { color: var(--accent); }
 .jw-files { display: flex; flex-direction: column; gap: 0.45rem; }
 .jw-file {
-  --rim-fill: var(--glass-fill);
-  --rim-shadow: none;
+  border: 1px solid var(--pane-edge);
+  background: var(--pane-bg);
+  transition: background-color 0.16s ease;
   display: flex; align-items: center; gap: 0.6rem; width: 100%;
   padding: 0.55rem 0.8rem; border-radius: 12px; text-align: left; cursor: pointer; color: var(--ink); font-size: 0.86rem;
 }
@@ -1809,7 +1855,7 @@ select.jw-input { cursor: pointer; }
   font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600;
 }
 .jw-pager-btn:last-child { text-align: right; align-items: flex-end; margin-left: auto; }
-.jw-pager-btn:hover:not(:disabled) { background: var(--glass-fill); }
+.jw-pager-btn:hover:not(:disabled) { background: var(--hover-fill); }
 .jw-pager-btn:disabled { color: var(--ink-3); cursor: default; }
 .jw-pager-btn > span:first-child { display: inline-flex; align-items: center; gap: 0.2rem; }
 .jw-pager-sub { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-body); font-size: 0.74rem; font-weight: 400; color: var(--ink-3); }
@@ -1849,11 +1895,21 @@ select.jw-input { cursor: pointer; }
 .jw-link-label { flex: none; width: 7.5rem; padding-top: 0.35rem; font-family: var(--font-display); font-size: 0.88rem; font-weight: 600; }
 .jw-link-btns { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
 .jw-linkbtn {
-  --rim-fill: var(--glass-fill-ctl);
-  --rim-shadow: none;
+  position: relative;
   display: inline-flex; align-items: center; gap: 0.35rem;
-  height: 34px; padding: 0 0.3rem 0 0.8rem; border-radius: 999px;
+  height: 34px; padding: 0 0.3rem 0 0.8rem; border-radius: 10px;
   color: var(--ink); font-size: 0.82rem; font-weight: 600; white-space: nowrap; cursor: pointer;
+  background: var(--fb-btn-fill);
+  box-shadow: 0 0 0 1px var(--fb-btn-edge-c), var(--fb-btn-rest);
+  transition: background-color 0.16s ease, box-shadow 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.jw-linkbtn:hover {
+  background: var(--fb-btn-fill-hi);
+  transform: translateY(var(--fb-btn-lift-y));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--fb-btn-glow) var(--fb-btn-glow-ring), transparent),
+    0 0 18px -2px color-mix(in srgb, var(--fb-btn-glow) var(--fb-btn-glow-halo), transparent),
+    0 0 0 1px var(--fb-btn-edge-c), var(--fb-btn-lift);
 }
 .jw-linkbtn > svg { color: var(--ink-3); }
 .jw-linkbtn:hover > svg { color: var(--accent-text); }
@@ -1866,7 +1922,6 @@ select.jw-input { cursor: pointer; }
 .jw-linkbtn:hover .jw-link-open > svg { color: var(--accent-text); }
 .jw-star-on { color: var(--accent); }
 .jw-btn[data-act='fav']:hover svg, .jw-linkbtn .jw-fav:hover { color: var(--accent); }
-.jw-btn--ghost[aria-pressed='true'] { --rim-fill: color-mix(in srgb, var(--accent) 12%, var(--glass-fill-ctl)); color: var(--accent-text); }
 .jw-iconbtn:disabled { opacity: 0.35; cursor: default; background: none; color: var(--ink-3); }
 
 /* 検索結果 */
@@ -1878,7 +1933,7 @@ select.jw-input { cursor: pointer; }
   font-family: var(--font-display); font-size: 0.84rem; font-weight: 600; text-align: left; cursor: pointer;
 }
 .jw-vtab > svg { color: var(--ink-3); }
-.jw-vtab:hover { background: var(--glass-fill); color: var(--ink); }
+.jw-vtab:hover { background: var(--hover-fill); color: var(--ink); }
 .jw-vtab[aria-selected='true'] { background: var(--accent-fill); color: var(--on-accent); }
 .jw-vtab[aria-selected='true'] > svg, .jw-vtab[aria-selected='true'] .jw-tab-n { color: var(--on-accent); }
 .jw-vtab .jw-tab-n { margin-left: auto; }
@@ -2003,13 +2058,11 @@ select.jw-input { cursor: pointer; }
 .jw-dialog-body { margin: 0.8rem 0 0; font-size: 0.9rem; line-height: 1.5; color: var(--ink-2); }
 .jw-dialog-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem; }
 .jw-dialog-actions .jw-btn { min-width: 7rem; }
-.jw-btn--crit { background: var(--crit); color: var(--on-crit); border-color: transparent; box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--crit) 70%, transparent); }
-.jw-btn--crit:hover { filter: brightness(1.06); }
 .jw-lightbox-media { border-radius: 14px; overflow: hidden; aspect-ratio: 4 / 3; max-height: 70vh; margin: 0 auto; }
 .jw-lightbox-media svg, .jw-lightbox-media img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .jw-lightbox-cap { margin: 0.7rem 0.3rem 0.1rem; font-family: var(--font-display); font-size: 1rem; font-weight: 600; }
 .jw-lightbox-meta { display: flex; align-items: center; gap: 0.4rem; margin: 0 0.3rem 0.2rem; font-size: 0.8rem; color: var(--ink-3); }
-.jw-dialog-x { position: absolute; top: 0.9rem; right: 0.9rem; z-index: 1; --rim-fill: var(--glass-fill-panel); }
+.jw-dialog-x { position: absolute; top: 0.9rem; right: 0.9rem; z-index: 1; }
 
 .jw-logout {
   position: fixed;
@@ -2082,7 +2135,7 @@ select.jw-input { cursor: pointer; }
   .jw-page-title { font-size: 1.35rem; }
   .jw-page-icon svg { width: 1.45rem; height: 1.45rem; }
   .jw-panel { padding: 0.95rem 0.9rem 1rem; border-radius: 18px; }
-  .jw-page-head, .jw-hero { padding-right: 3rem; }
+  .jw-hero { padding-right: 3rem; }
   .jw-inbox-btn { top: 10px; right: 10px; }
   .jw-inbox { top: 60px; right: 10px; width: calc(100vw - var(--side-w) - 20px); }
   .jw-mvv2 { border-radius: 22px; }
@@ -2105,8 +2158,11 @@ select.jw-input { cursor: pointer; }
    §通知センター — nút chuông nổi góc phải trên + panel
    ========================================================================== */
 .jw-inbox-btn {
-  --rim-fill: var(--glass-fill-ctl);
-  --rim-shadow: var(--glass-shadow);
+  /* nút NỔI (fb-btn--float): thân đục + bóng tấm nổi; hover nhấc (sáng) / glow (tối) */
+  border: none;
+  background: var(--fb-btn-fill);
+  box-shadow: 0 0 0 1px var(--fb-btn-edge-c), var(--fb-float-shadow);
+  transition: background-color 0.16s ease, box-shadow 0.2s ease, color 0.16s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
   position: fixed;
   z-index: 35;
   top: 14px;
@@ -2119,10 +2175,16 @@ select.jw-input { cursor: pointer; }
   border-radius: 14px;
   color: var(--ink);
   cursor: pointer;
-  -webkit-backdrop-filter: blur(14px) saturate(170%);
-  backdrop-filter: blur(14px) saturate(170%);
 }
-.jw-inbox-btn[aria-expanded='true'] { --rim-fill: var(--rim-fill-hi); color: var(--accent-text); }
+.jw-inbox-btn:hover, .jw-inbox-btn:focus-visible {
+  background: var(--fb-btn-fill-hi);
+  transform: translateY(var(--fb-btn-lift-y));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--fb-btn-glow) var(--fb-btn-glow-ring), transparent),
+    0 0 18px -2px color-mix(in srgb, var(--fb-btn-glow) var(--fb-btn-glow-halo), transparent),
+    0 0 0 1px var(--fb-btn-edge-c), var(--fb-btn-lift);
+}
+.jw-inbox-btn[aria-expanded='true'] { color: var(--accent-text); background: color-mix(in srgb, var(--accent-fill) 14%, var(--surface)); }
 .jw-inbox-badge {
   position: absolute;
   top: -6px;
@@ -2147,7 +2209,7 @@ select.jw-input { cursor: pointer; }
   right: 18px;
   display: flex;
   flex-direction: column;
-  width: min(25rem, calc(100vw - 32px));
+  width: min(27rem, calc(100vw - 32px));
   max-height: calc(100dvh - 80px);
   overflow: hidden;
   border-radius: 20px;
@@ -2168,7 +2230,11 @@ select.jw-input { cursor: pointer; }
 .jw-inbox-head { display: flex; align-items: center; gap: 0.5rem; padding: 1rem 1.15rem 0.55rem; }
 .jw-inbox-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
 .jw-inbox-total { min-width: 1.6rem; padding: 0 0.45rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-size: 0.74rem; font-weight: 700; line-height: 1.5rem; text-align: center; }
-.jw-inbox-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; padding: 0.25rem 0.85rem 0.85rem; border-bottom: 1px solid var(--sep); }
+.jw-inbox-sum { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; padding: 0.25rem 0.85rem 0.85rem; border-bottom: 1px solid var(--sep); }
+.jw-inbox-tile[aria-selected='true'] { border-color: color-mix(in srgb, var(--tone) 55%, transparent); background: color-mix(in srgb, var(--tone) 12%, var(--panel-bg)); color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .jw-inbox-body--in > .jw-inbox-sec { animation: jw-sr-item 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+}
 .jw-inbox-tile {
   position: relative;
   display: flex;
@@ -2177,9 +2243,9 @@ select.jw-input { cursor: pointer; }
   gap: 0.05rem;
   min-width: 0;
   padding: 0.5rem 0.6rem 0.55rem;
-  border: 1px solid var(--glass-edge);
+  border: 1px solid var(--pane-edge);
   border-radius: 12px;
-  background: var(--glass-fill);
+  background: var(--pane-bg);
   color: var(--ink-2);
   font-size: 0.66rem;
   font-weight: 600;
@@ -2188,9 +2254,9 @@ select.jw-input { cursor: pointer; }
   cursor: pointer;
   transition: background 0.16s ease;
 }
-.jw-inbox-tile:hover { background: var(--rim-fill-hi); }
+.jw-inbox-tile:hover { background: var(--hover-fill); }
 .jw-inbox-tile b { font-family: var(--font-num); font-size: 1.3rem; font-weight: 600; line-height: 1.15; color: var(--tone); }
-.jw-inbox-tile span { max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.jw-inbox-tile span { max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
 .jw-inbox-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.35rem 0.55rem 0.7rem; }
 .jw-inbox-sec + .jw-inbox-sec { margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid var(--sep); }
 .jw-inbox-sec-head { display: flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.55rem 0.25rem; }
@@ -2209,7 +2275,7 @@ select.jw-input { cursor: pointer; }
   text-decoration: none;
   transition: background 0.16s ease;
 }
-.jw-inbox-item:hover { background: var(--glass-fill); }
+.jw-inbox-item:hover { background: var(--hover-fill); }
 .jw-inbox-dot { flex: none; width: 6px; height: 6px; margin: 0 0.2rem; border-radius: 50%; background: var(--tone); }
 .jw-inbox-time { flex: none; min-width: 2.6rem; font-size: 0.74rem; font-weight: 600; color: var(--tone); }
 .jw-inbox-txt { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
@@ -2227,6 +2293,13 @@ select.jw-input { cursor: pointer; }
   72% { transform: rotate(-4deg); }
 }
 
+/* Đổi sáng/tối: hoà mờ cả trang ~1s (app.js gọi document.startViewTransition) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 1s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* ==========================================================================
    §HIỆN DẦN KHI CUỘN — app.js gắn `data-sr` cho từng KHỐI (đầu trang · hero · MVV · thẻ) và
    bật `.jw-sr-in` khi khối vào vùng nhìn; con của khối (hàng, thẻ nhỏ…) nối đuôi theo --sr-i.
@@ -2241,32 +2314,41 @@ select.jw-input { cursor: pointer; }
   }
   .jw-sr-in:not(.jw-sr-done) .jw-mvv2-statement { animation: jw-sr-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.1s backwards; }
   .jw-sr-in:not(.jw-sr-done) .jw-mvv2-vision { animation: jw-sr-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.25s backwards; }
-  .jw-sr-in:not(.jw-sr-done) .jw-mvv2-statement .jw-mvv-nb { animation: jw-shine 1.6s ease 0.5s backwards; }
 }
 @keyframes jw-sr-item { from { opacity: 0; transform: translateY(12px); } }
 @keyframes jw-sr-rise { from { opacity: 0; transform: translateY(18px); filter: blur(4px); } }
-@keyframes jw-shine { from { background-position: -120% 0; } }
-.jw-mvv2-statement .jw-mvv-nb { background-size: 200% 100%; background-image: linear-gradient(95deg, var(--grad-a) 0%, var(--grad-b) 40%, #ffd08a 50%, var(--grad-b) 60%, var(--grad-a) 100%); background-position: 0 0; }
 
 /* Thẻ ở Home/trang: đổ bóng sâu hơn khi hover (không nhảy vị trí) */
 .jw-panel:not(.jw-panel--flat) { transition: box-shadow 0.35s ease, opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
-.jw-panel:not(.jw-panel--flat):hover { box-shadow: inset 0 1px 0 var(--glass-spec), inset 0 -1px 0 var(--glass-spec-lo), 0 22px 48px -26px rgba(60, 36, 12, 0.35); }
-[data-theme='dark'] .jw-panel:not(.jw-panel--flat):hover { box-shadow: inset 0 1px 0 var(--glass-spec), inset 0 -1px 0 var(--glass-spec-lo), 0 22px 48px -24px rgba(0, 0, 0, 0.8); }
+.jw-panel.jw-glass:not(.jw-panel--flat):hover { box-shadow: 0 1px 2px rgba(28, 25, 23, 0.05), 0 22px 44px -24px rgba(60, 36, 12, 0.28); }
+[data-theme='dark'] .jw-panel.jw-glass:not(.jw-panel--flat):hover { box-shadow: inset 0 1px 0 var(--glass-spec), inset 0 -1px 0 var(--glass-spec-lo), 0 22px 48px -24px rgba(0, 0, 0, 0.8); }
 .jw-panel-name { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.02em; }
+/* Vạch dọc trước tiêu đề thẻ (thay cho ô icon đã bỏ) — mảnh, cam, cao bằng chữ */
+.jw-panel-name > span:first-child { position: relative; padding-left: 0.8rem; }
+.jw-panel-name > span:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
 
 /* ==========================================================================
    §HIỆU ỨNG HOVER
    1) ĐÈN theo con trỏ (Reveal kiểu Windows): app.js ghi --mx/--my (toạ độ chuột TÍNH
       TRONG phần tử) và bật `data-rv` cho mọi phần tử nằm trong bán kính --rv-r quanh chuột
       ⇒ VIỀN của cả các phần tử lân cận sáng lên theo khoảng cách; phần tử đang hover thì
-      NỀN sáng thêm một vệt quanh chuột. Viền = ::before (control kính: lớp thêm trong
-      `.jw-rim::before`), khoét giữa bằng mask như gờ kính.
+      NỀN sáng thêm một vệt quanh chuột. Viền = ::before, khoét giữa bằng mask như gờ kính
+      (ô nhập <input> không có ::before ⇒ vẽ viền sáng bằng nền 2 lớp padding-box/border-box).
    2) ICON NHẢY: hover ⇒ icon bật lên + phóng nhẹ (đường cong vượt đích = cú nảy).
    ========================================================================== */
 :is(.jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear, .jw-pane) { position: relative; }
 /* :where() = độ ưu tiên 0 ⇒ `[data-rv]::before` bên dưới luôn thắng được opacity */
 :where(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-panel:not(.jw-panel--flat),
-        .jw-pane, .jw-photo-thumb, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, .jw-mvv2)::before,
+        .jw-pane, .jw-photo-thumb, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile, .jw-mvv2, .jw-gsearch-box, .jw-sn-find)::before,
 :where(a.jw-rowi, button.jw-rowi)::after {
   content: '';
   position: absolute;
@@ -2283,28 +2365,25 @@ select.jw-input { cursor: pointer; }
   transition: opacity 0.3s ease;
 }
 /* Có viền 1px (panel · thẻ nhỏ trong panel · ô) ⇒ đèn phủ ĐÚNG lên viền đó */
-:where(.jw-panel:not(.jw-panel--flat), .jw-pane, .jw-photo-thumb, .jw-mvv2-value, .jw-inbox-tile, .jw-mvv2)::before { inset: -1px; }
+:where(.jw-panel:not(.jw-panel--flat), .jw-pane, .jw-photo-thumb, .jw-mvv2-value, .jw-inbox-tile, .jw-mvv2, .jw-gsearch-box, .jw-sn-find)::before { inset: -1px; }
+.jw-gsearch-box { position: relative; }
 .jw-mvv2::before { z-index: 1; }
 [data-rv]::before, [data-rv]:where(a.jw-rowi, button.jw-rowi)::after { opacity: 1; }
-.jw-rim[data-rv] { --rv-edge-on: var(--rv-edge); }
-:is(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-rim, a.jw-rowi, button.jw-rowi,
+:is(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, a.jw-rowi, button.jw-rowi,
     .jw-pane, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile)[data-rv]:hover {
   background-image: radial-gradient(calc(var(--rv-r) * 0.85) circle at var(--mx) var(--my), var(--rv-fill), transparent 100%);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :is(.jw-sn-topico, .jw-tree-icon, .jw-tree-leaf > svg, .jw-sn-fav > svg, .jw-sn-hit-ico, .jw-sn-tool > svg, .jw-sn-toggle > svg,
-      .jw-sn-fav-x > svg, .jw-fav > svg, .jw-menu-item > svg, .jw-btn > svg, .jw-cta > svg, .jw-tab > svg,
+  :is(.jw-sn-topico, .jw-tree-icon, .jw-tree-leaf > svg, .jw-sn-fav > svg, .jw-sn-hit-ico, .jw-tab > svg,
       .jw-seg-opt > svg, .jw-sn-me .jw-avatar, .jw-brand-mark, .jw-link-open > svg) {
     transition: transform 0.22s ease, color 0.16s ease;
   }
   :is(.jw-sn-top:hover .jw-sn-topico, .jw-tree-row:hover .jw-tree-icon, .jw-tree-leaf:hover > svg, .jw-sn-fav:hover > svg,
-      .jw-sn-hit:hover .jw-sn-hit-ico, .jw-sn-tool:hover > svg, .jw-sn-toggle:hover > svg, .jw-sn-fav-x:hover > svg,
-      .jw-fav:hover > svg, .jw-menu-item:hover > svg, .jw-btn:hover > svg, .jw-cta:hover > svg,
-      .jw-tab:hover > svg, .jw-seg-opt:hover > svg, .jw-sn-me:hover .jw-avatar, .jw-brandhome:hover .jw-brand-mark,
-      .jw-link-open:hover > svg) {
+      .jw-sn-hit:hover .jw-sn-hit-ico, .jw-tab:hover > svg, .jw-seg-opt:hover > svg, .jw-sn-me:hover .jw-avatar,
+      .jw-brandhome:hover .jw-brand-mark, .jw-link-open:hover > svg) {
     transform: translateY(-2px);
-    transition: transform 0.38s cubic-bezier(0.34, 1.9, 0.5, 1), color 0.16s ease;
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), color 0.16s ease;
   }
   /* CHỮ: nhích 2px sang phải khi hover hàng/mục (tinh tế — không đổi cỡ, không đổi đậm) */
   :is(.jw-sn-topname, .jw-tree-name, .jw-tree-leafname, .jw-sn-fav-name, .jw-sn-hit-name, .jw-inbox-name, .jw-ann-title, .jw-gs-name, .jw-sn-name, .jw-menu-item > span, .jw-deal-hosp, .jw-rank-name, .jw-mvv2-vname) {
@@ -2317,9 +2396,9 @@ select.jw-input { cursor: pointer; }
     transform: translateX(2px);
   }
   .jw-mvv2-value:hover .jw-mvv2-vname { color: var(--accent-text); }
-  :is(.jw-tab, .jw-seg-opt, .jw-slide-opt) { transition: color 0.2s ease, letter-spacing 0.3s ease; }
+  :is(.jw-tab, .jw-seg-opt) { transition: color 0.35s ease, letter-spacing 0.3s ease; }
   /* Bánh răng: hover = xoay nhẹ (mở panel = xoay hẳn, khai ở §SIDE PANEL) */
-  .jw-sn-gear:not([aria-expanded='true']):hover svg { transform: rotate(40deg); }
+  .jw-sn-gear:not([aria-expanded='true']):hover svg { transform: rotate(60deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

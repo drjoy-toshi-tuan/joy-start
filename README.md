@@ -4,9 +4,11 @@ Mockup cổng nội bộ **JOY START**, dựng lại từ `JOY_START_menu_mockup
 và cùng BỐ CỤC: không header, side panel cao hết màn) nhưng mặc chất liệu của **JOY Analytics**: kính
 liquid glass, cây điều hướng, panel, control.
 
-- **Side panel** (như bản gốc): logo Dr.JOY ở đỉnh · ô tìm menu + nút **mở tất cả / đóng tất cả** ·
-  お気に入り + cây menu (cuộn riêng) · ở đáy là **profile** (ảnh + tên + email, bấm vào mở 設定 › アカウント)
-  và **nút bánh răng** mở panel cài đặt nhanh: đổi ngôn ngữ, đổi theme, nút vào màn 設定.
+- **Side panel** (như bản gốc): logo Dr.JOY ở đỉnh · ô tìm menu (bình thường chỉ là icon kính lúp,
+  hover hoặc bấm vào thì bung thành ô nhập) + nút **mở tất cả / đóng tất cả** · お気に入り + cây menu
+  (cuộn riêng) · ở đáy là **profile** (ảnh + tên + email, bấm vào mở 設定 › アカウント) và **nút bánh
+  răng** mở panel cài đặt nhanh: đổi ngôn ngữ, đổi theme, nút vào màn 設定. Panel này bật ra NGOÀI
+  side panel, cách mép 12px; chỗ không đủ (ngăn kéo ở mobile) thì nằm trong, ngay trên bánh răng.
   Nút gập thu side panel thành dải icon. Ở khổ ≤640px side panel luôn là dải icon; nút gập mở nó
   thành ngăn kéo phủ lên nội dung.
 - **Màu nhấn = cam Dr.JOY `#f08c00`** ở cả hai theme. Riêng chữ cam trên nền sáng dùng `#cc7400`
@@ -15,17 +17,28 @@ liquid glass, cây điều hướng, panel, control.
 - **Song ngữ 日本語 / Tiếng Việt**. Ngôn ngữ, theme, khối đang mở, お気に入り nhớ trong `localStorage`.
 - **お気に入り**: sao hover = cam, đã ghim = sao đặc cam (Solar bản Bold, ngoại lệ duy nhất của quy tắc
   "chỉ Outline"). Hover một hàng trong danh sách お気に入り hiện nút × để gỡ.
-- **通知センター**: nút chuông nổi ở góc phải trên (số = tổng mục), mở ra panel 4 nhóm 承認待ち ·
-  期限切れ · 今日の予定 · 未読のお知らせ. Thay cho dải số việc ở Home trước đây.
+- **通知センター**: nút chuông nổi ở góc phải trên (số = tổng mục). Panel có hàng tab すべて ·
+  承認待ち · 期限切れ · 今日の予定 · 未読のお知らせ: bấm một tab thì chỉ hiện nhóm đó.
 - **Home**: lời chào + ô tìm, rồi **MVV** thành sân khấu chính (MISSION chữ lớn, VISION + số giờ đã
-  giảm đếm lên, 5 VALUE đánh số) trên nền quầng cam trôi chậm; bên dưới là lưới thẻ.
+  giảm đếm lên, 5 VALUE đánh số). Nền phẳng, chữ cam đặc (không gradient); mark Dr.JOY đứng thẳng làm
+  watermark ở góc phải trên. Bên dưới là lưới thẻ; tiêu đề thẻ có vạch dọc cam mảnh phía trước.
+- **Nút**: kiểu nút phẳng của JOY Forge (`flat-buttons.css`): thân đục, lúc nghỉ chỉ có vành 1px mờ
+  + bóng nhỏ; hover ở theme sáng thì nhấc lên 2px + bóng, ở theme tối thì viền cam phát sáng. Nút
+  chỉ có icon (sao, ×, mở/đóng tất cả…) không có thân, hover chỉ nhích icon lên. Nút お気に入り của
+  mỗi trang chỉ còn icon sao, dạt phải thẳng mép thẻ.
+- **Toggle**: một component segmented dùng chung cho panel cài đặt và các trang. Núm trượt 0.5s
+  (nhanh lúc đầu, đậu êm). Đổi ngôn ngữ / theme thì núm trượt xong mới vẽ lại. Tab (お知らせ,
+  受注速報, 設定…) có vệt nền trượt sang tab mới.
+- **Đổi theme**: cả trang hoà mờ chậm ~1s (View Transitions API; trình duyệt không hỗ trợ thì đổi ngay).
+- **Theme sáng**: thẻ trắng đục, ô con bên trong thẻ màu ngà + viền, lớp nổi (panel cài đặt, 通知,
+  dropdown) đục hẳn nên chữ phía sau không lọt qua. Theme tối vẫn là kính.
 - **Cuộn tới đâu hiện tới đó** (mọi trang): từng khối trượt lên khi vào vùng nhìn, hàng/thẻ con nối
   đuôi nhau. Vẽ lại tại chỗ (đổi tab, lọc) thì hiện ngay.
 - **Ít icon hơn**: đầu thẻ, breadcrumb, link chữ, mục menu tầng 3 và tab 設定 chỉ còn chữ.
 - **Hiệu ứng hover**: icon nhích lên; chữ trong hàng/mục nhích 2px; link chữ có gạch chân mọc
   từ trái; "đèn" theo con trỏ kiểu Reveal của Windows (nền mục đang hover + viền các mục/thẻ lân
-  cận, kể cả thẻ nhỏ nằm trong thẻ lớn). Nút chỉ có icon (sao, ×…) thì chỉ đổi màu icon, không nền.
-  Tắt khi hệ điều hành bật giảm chuyển động.
+  cận, kể cả thẻ nhỏ nằm trong thẻ lớn và các ô nhập / ô tìm). Nút chỉ có icon (sao, ×…) thì chỉ
+  đổi màu icon, không nền. Bánh răng quay chậm 60° khi hover. Tắt khi hệ điều hành bật giảm chuyển động.
 - Đường nhánh của cây menu: 1px, góc vuông.
 - **Icon: toàn bộ lấy từ Solar, bản Outline** (161 icon).
 - **Không lấy nền ribbon** của JOY Analytics. Chỉ giữ 3 vệt loang màu rất nhẹ sau lớp kính: kính cần
@@ -76,7 +89,8 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
 - **Thêm chữ:** viết tiếng Nhật trong `t('…')` và thêm bản dịch vào `I18N_VI`. Thiếu bản dịch thì
   màn Tiếng Việt hiện chữ Nhật và `verify.mjs` báo đỏ.
 - **`verify.mjs`** quét 135 route × 日本語/Tiếng Việt × 1440px/390px, rồi chạy các thao tác chính (mở khối,
-  sang trang, ghim お気に入り, mở/đóng tất cả, tìm menu ở cả 2 ngôn ngữ, tìm toàn bộ, bánh răng → đổi
+  sang trang, ghim お気に入り, tab của 通知センター, mở/đóng tất cả, ô tìm menu gập/bung + tìm ở cả 2
+  ngôn ngữ, tìm toàn bộ, bánh răng → đổi
   ngôn ngữ + theme → vào 設定, đăng xuất, và ở 390px: dải icon → ngăn kéo → chọn trang). Nó báo đỏ khi
   có: lỗi/cảnh báo console, cuộn ngang, chữ chưa dịch. Cần Playwright (`npm i -g playwright` hoặc
   đặt `NODE_PATH`). Máy đi qua proxy thì thêm `PW_PROXY=http://host:port`; muốn cache font thì thêm
