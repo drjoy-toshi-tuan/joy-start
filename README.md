@@ -13,6 +13,11 @@ liquid glass, cây điều hướng, panel, control.
   (cùng hue) cho đủ tương phản 3:1. Theme **sáng / tối** (mặc định theo hệ điều hành); nền sáng sáng
   hơn, nền tối tối hơn bộ Ember của JOY Analytics.
 - **Song ngữ 日本語 / Tiếng Việt**. Ngôn ngữ, theme, khối đang mở, お気に入り nhớ trong `localStorage`.
+- **お気に入り**: sao hover = cam, đã ghim = sao đặc cam (Solar bản Bold, ngoại lệ duy nhất của quy tắc
+  "chỉ Outline"). Hover một hàng trong danh sách お気に入り hiện nút × để gỡ.
+- **Hiệu ứng hover**: icon nhảy lên + phóng nhẹ; và "đèn" theo con trỏ kiểu Reveal của Windows —
+  nền của mục đang hover sáng quanh chuột, viền của các mục lân cận sáng dần theo khoảng cách.
+  Tắt khi hệ điều hành bật giảm chuyển động.
 - **Icon: toàn bộ lấy từ Solar, bản Outline** (161 icon).
 - **Không lấy nền ribbon** của JOY Analytics. Chỉ giữ 3 vệt loang màu rất nhẹ sau lớp kính: kính cần
   một nền có sắc để còn đọc ra là kính. Muốn nền phẳng hẳn thì xoá khối `.jw-ambient` ở `styles.css`.
@@ -25,8 +30,11 @@ dùng font hệ thống.
 
 Bản online (GitHub Pages): **https://drjoy-toshi-tuan.github.io/joy-start/**
 
-Đường dẫn (hash): `#/home` · `#/<khối>/<nhóm>/<trang>` (theo `data-page` của bản gốc, ví dụ
-`#/todo/報告/上長報告`) · `#/settings/<tab>` · `#/announce/<id>` · `#/deals` · `#/search?q=…`.
+Đường dẫn (hash, **tiếng Anh**): `#/home` · `#/<khối>/<nhóm>/<trang>` (ví dụ `#/todo/reports/supervisor`)
+· `#/settings/<tab>` (`account` · `display` · `notifications` · `home` · `privacy` · `integrations` ·
+`security` · `permissions` · `data-sources`) · `#/announce/<id>` · `#/deals` · `#/search?q=…`.
+Slug của từng trang khai ở `slug:` trong `MENU` (`mockup/data.js`). Link cũ kiểu tiếng Nhật
+(`#/todo/報告/上長報告`) vẫn mở được và tự đổi sang route tiếng Anh.
 
 ## Cấu trúc
 
@@ -51,7 +59,8 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
 ```
 
 - **Thêm icon:** viết tên icon Solar (không có đuôi `-outline`) ở dạng `ic('tên')` hoặc `icon: 'tên'`
-  trong `app.js` / `data.js`, rồi chạy `sync-icons.mjs` và `build.mjs`. Script chỉ gom những tên
+  trong `app.js` / `data.js`, rồi chạy `sync-icons.mjs` và `build.mjs`. Thêm hậu tố `@bold`
+  (vd `ic('star@bold')`) thì lấy bản Bold. Script chỉ gom những tên
   viết NGUYÊN VĂN như vậy, nên icon chọn qua biến cũng phải xuất hiện nguyên văn ở đâu đó.
   Icon thiếu sẽ hiện cảnh báo `[icon] thiếu: …` trên console.
 - **Thêm chữ:** viết tiếng Nhật trong `t('…')` và thêm bản dịch vào `I18N_VI`. Thiếu bản dịch thì

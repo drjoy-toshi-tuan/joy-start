@@ -16,20 +16,21 @@ var HOME_TODAY = new Date(2026, 8, 27);
 
 /* §PROダクト — tên + tông màu + icon dùng chung mọi nơi */
 var PRODUCTS = [
-  { ja: '医薬連携', vi: 'Liên kết Y Dược', icon: 'pills', tone: 'plum' },
-  { ja: '労務支援', vi: 'Hỗ trợ Lao động', icon: 'clock-square', tone: 'green' },
-  { ja: 'AI電話', vi: 'Điện thoại AI', icon: 'phone-calling-rounded', tone: 'blue' },
-  { ja: 'スマート面会', vi: 'Gặp mặt thông minh', icon: 'chat-round-video', tone: 'rose' },
-  { ja: '院内メディア', vi: 'Truyền thông nội viện', icon: 'tv', tone: 'gold' }
+  { ja: '医薬連携', slug: 'pharma', vi: 'Liên kết Y Dược', icon: 'pills', tone: 'plum' },
+  { ja: '労務支援', slug: 'hr-support', vi: 'Hỗ trợ Lao động', icon: 'clock-square', tone: 'green' },
+  { ja: 'AI電話', slug: 'ai-phone', vi: 'Điện thoại AI', icon: 'phone-calling-rounded', tone: 'blue' },
+  { ja: 'スマート面会', slug: 'smart-visit', vi: 'Gặp mặt thông minh', icon: 'chat-round-video', tone: 'rose' },
+  { ja: '院内メディア', slug: 'hospital-media', vi: 'Truyền thông nội viện', icon: 'tv', tone: 'gold' }
 ];
 var PRODUCT_BY_JA = {};
 PRODUCTS.forEach(function (p) { PRODUCT_BY_JA[p.ja] = p; });
 function productKids() {
-  return PRODUCTS.map(function (p) { return { ja: p.ja, vi: p.vi, icon: p.icon }; });
+  return PRODUCTS.map(function (p) { return { ja: p.ja, slug: p.slug, vi: p.vi, icon: p.icon }; });
 }
 
 /* §MENU — cây 3 tầng (大 → 中 → 小). Nút có `children` là NHÓM, còn lại là TRANG.
-   Khoá trang = `key` của khối + đường đi bằng nhãn tiếng Nhật. */
+   Khoá trang (nội bộ) = `key` của khối + đường đi bằng nhãn tiếng Nhật.
+   ROUTE (URL) = `key` của khối + `slug` tiếng Anh của từng tầng, vd #/todo/reports/supervisor. */
 var TIP = {
   AEGT: L('AE：法人営業（Account Executive）／GT：見込み客育成推進（Growth Team）', 'AE: Kinh doanh doanh nghiệp (Account Executive) / GT: Nuôi dưỡng khách tiềm năng (Growth Team)'),
   LG: L('LG：リード獲得営業（Lead Generation）', 'LG: Kinh doanh thu hút khách tiềm năng (Lead Generation)'),
@@ -46,131 +47,131 @@ var TIP = {
 var MENU = [
   { key: 'home', ja: 'ホーム', vi: 'Trang chủ', icon: 'home-2' },
   { key: 'todo', ja: 'やること', vi: 'Việc cần làm', icon: 'checklist-minimalistic', children: [
-    { ja: '予定', vi: 'Lịch trình', icon: 'calendar' },
-    { ja: 'アクション', vi: 'Hành động', icon: 'bolt' },
-    { ja: '報告', vi: 'Báo cáo', icon: 'document-text', children: [
-      { ja: '上長報告', vi: 'Báo cáo cấp trên', icon: 'user-speak-rounded' },
-      { ja: '商談', vi: 'Đàm phán', icon: 'case-round' },
-      { ja: '打ち合わせ', vi: 'Cuộc họp', icon: 'users-group-two-rounded' },
-      { ja: '受注', vi: 'Nhận đơn hàng', icon: 'bill-check' },
-      { ja: '顧客クレーム', vi: 'Khiếu nại khách hàng', icon: 'chat-round-unread' },
-      { ja: 'インシデント', vi: 'Sự cố', icon: 'siren-rounded' }
+    { ja: '予定', slug: 'schedule', vi: 'Lịch trình', icon: 'calendar' },
+    { ja: 'アクション', slug: 'actions', vi: 'Hành động', icon: 'bolt' },
+    { ja: '報告', slug: 'reports', vi: 'Báo cáo', icon: 'document-text', children: [
+      { ja: '上長報告', slug: 'supervisor', vi: 'Báo cáo cấp trên', icon: 'user-speak-rounded' },
+      { ja: '商談', slug: 'sales-meetings', vi: 'Đàm phán', icon: 'case-round' },
+      { ja: '打ち合わせ', slug: 'meetings', vi: 'Cuộc họp', icon: 'users-group-two-rounded' },
+      { ja: '受注', slug: 'orders', vi: 'Nhận đơn hàng', icon: 'bill-check' },
+      { ja: '顧客クレーム', slug: 'complaints', vi: 'Khiếu nại khách hàng', icon: 'chat-round-unread' },
+      { ja: 'インシデント', slug: 'incidents', vi: 'Sự cố', icon: 'siren-rounded' }
     ] },
-    { ja: '申請', vi: 'Đơn đề nghị', icon: 'clipboard-text', children: [
-      { ja: '勤怠', vi: 'Chấm công', icon: 'clock-circle' },
-      { ja: '休暇', vi: 'Nghỉ phép', icon: 'sun-2' },
-      { ja: '経費', vi: 'Chi phí', icon: 'wallet-money' },
-      { ja: '出張', vi: 'Công tác', icon: 'plane' },
-      { ja: '備品｜端末', vi: 'Thiết bị｜Máy', icon: 'devices' },
-      { ja: '身上変更', vi: 'Thay đổi thông tin cá nhân', icon: 'pen-new-square' },
-      { ja: 'ソフトウェア利用', vi: 'Sử dụng phần mềm', icon: 'widget-add' },
-      { ja: 'お知らせ', vi: 'Đăng thông báo', icon: 'bell' }
+    { ja: '申請', slug: 'requests', vi: 'Đơn đề nghị', icon: 'clipboard-text', children: [
+      { ja: '勤怠', slug: 'attendance', vi: 'Chấm công', icon: 'clock-circle' },
+      { ja: '休暇', slug: 'leave', vi: 'Nghỉ phép', icon: 'sun-2' },
+      { ja: '経費', slug: 'expenses', vi: 'Chi phí', icon: 'wallet-money' },
+      { ja: '出張', slug: 'business-trips', vi: 'Công tác', icon: 'plane' },
+      { ja: '備品｜端末', slug: 'equipment', vi: 'Thiết bị｜Máy', icon: 'devices' },
+      { ja: '身上変更', slug: 'personal-info', vi: 'Thay đổi thông tin cá nhân', icon: 'pen-new-square' },
+      { ja: 'ソフトウェア利用', slug: 'software', vi: 'Sử dụng phần mềm', icon: 'widget-add' },
+      { ja: 'お知らせ', slug: 'announcements', vi: 'Đăng thông báo', icon: 'bell' }
     ] },
-    { ja: '承認', vi: 'Phê duyệt', icon: 'verified-check', badge: 3 }
+    { ja: '承認', slug: 'approvals', vi: 'Phê duyệt', icon: 'verified-check', badge: 3 }
   ] },
   { key: 'staff', ja: 'メンバー', vi: 'Thành viên', icon: 'users-group-rounded', children: [
-    { ja: '名簿', vi: 'Danh bạ', icon: 'user-id' },
-    { ja: '組織図', vi: 'Sơ đồ tổ chức', icon: 'structure' },
-    { ja: '座席', vi: 'Chỗ ngồi', icon: 'armchair-2' },
-    { ja: '活動拠点', vi: 'Địa điểm làm việc', icon: 'map-point' },
-    { ja: 'スキルマップ', vi: 'Bản đồ kỹ năng', icon: 'stars-minimalistic' },
-    { ja: 'ミツカリ', vi: 'Mitsucari', icon: 'face-scan-circle' }
+    { ja: '名簿', slug: 'directory', vi: 'Danh bạ', icon: 'user-id' },
+    { ja: '組織図', slug: 'org-chart', vi: 'Sơ đồ tổ chức', icon: 'structure' },
+    { ja: '座席', slug: 'seats', vi: 'Chỗ ngồi', icon: 'armchair-2' },
+    { ja: '活動拠点', slug: 'locations', vi: 'Địa điểm làm việc', icon: 'map-point' },
+    { ja: 'スキルマップ', slug: 'skill-map', vi: 'Bản đồ kỹ năng', icon: 'stars-minimalistic' },
+    { ja: 'ミツカリ', slug: 'mitsucari', vi: 'Mitsucari', icon: 'face-scan-circle' }
   ] },
   { key: 'recruit', ja: '採用', vi: 'Tuyển dụng', icon: 'user-plus-rounded', children: [
-    { ja: '計画', vi: 'Kế hoạch', icon: 'calendar-mark' },
-    { ja: '募集中', vi: 'Đang tuyển', icon: 'user-hand-up', children: [
-      { ja: 'ポジション一覧', vi: 'Danh sách vị trí', icon: 'list' },
-      { ja: '選考状況', vi: 'Tình trạng tuyển chọn', icon: 'filter' }
+    { ja: '計画', slug: 'plan', vi: 'Kế hoạch', icon: 'calendar-mark' },
+    { ja: '募集中', slug: 'openings', vi: 'Đang tuyển', icon: 'user-hand-up', children: [
+      { ja: 'ポジション一覧', slug: 'positions', vi: 'Danh sách vị trí', icon: 'list' },
+      { ja: '選考状況', slug: 'selection', vi: 'Tình trạng tuyển chọn', icon: 'filter' }
     ] },
-    { ja: '紹介キャンペーン', vi: 'Chiến dịch giới thiệu', icon: 'gift', children: [
-      { ja: '紹介する', vi: 'Giới thiệu ứng viên', icon: 'user-plus' },
-      { ja: '紹介実績', vi: 'Kết quả giới thiệu', icon: 'cup-star' }
+    { ja: '紹介キャンペーン', slug: 'referral', vi: 'Chiến dịch giới thiệu', icon: 'gift', children: [
+      { ja: '紹介する', slug: 'refer', vi: 'Giới thiệu ứng viên', icon: 'user-plus' },
+      { ja: '紹介実績', slug: 'referral-results', vi: 'Kết quả giới thiệu', icon: 'cup-star' }
     ] },
-    { ja: '実績', vi: 'Kết quả', icon: 'chart', children: [
-      { ja: '入社人数', vi: 'Số người vào công ty', icon: 'user-check-rounded' },
-      { ja: 'コスト', vi: 'Chi phí', icon: 'banknote' }
+    { ja: '実績', slug: 'results', vi: 'Kết quả', icon: 'chart', children: [
+      { ja: '入社人数', slug: 'hires', vi: 'Số người vào công ty', icon: 'user-check-rounded' },
+      { ja: 'コスト', slug: 'costs', vi: 'Chi phí', icon: 'banknote' }
     ] }
   ] },
   { key: 'train', ja: '研修', vi: 'Đào tạo', icon: 'square-academic-cap', children: [
-    { ja: '共通', vi: 'Chung', icon: 'book-minimalistic', children: [
-      { ja: '入社時', vi: 'Khi vào công ty', icon: 'flag' },
-      { ja: '1ヶ月', vi: '1 tháng', icon: 'calendar-minimalistic' },
-      { ja: '3ヶ月', vi: '3 tháng', icon: 'calendar-minimalistic' },
-      { ja: '6ヶ月', vi: '6 tháng', icon: 'calendar-minimalistic' },
-      { ja: '12ヶ月', vi: '12 tháng', icon: 'calendar-minimalistic' }
+    { ja: '共通', slug: 'common', vi: 'Chung', icon: 'book-minimalistic', children: [
+      { ja: '入社時', slug: 'joining', vi: 'Khi vào công ty', icon: 'flag' },
+      { ja: '1ヶ月', slug: '1-month', vi: '1 tháng', icon: 'calendar-minimalistic' },
+      { ja: '3ヶ月', slug: '3-months', vi: '3 tháng', icon: 'calendar-minimalistic' },
+      { ja: '6ヶ月', slug: '6-months', vi: '6 tháng', icon: 'calendar-minimalistic' },
+      { ja: '12ヶ月', slug: '12-months', vi: '12 tháng', icon: 'calendar-minimalistic' }
     ] },
-    { ja: '役割別', vi: 'Theo vai trò', icon: 'user-hands', children: [
-      { ja: '管理職', vi: 'Quản lý', icon: 'crown-minimalistic' },
-      { ja: 'AE｜GT', vi: 'AE｜GT', icon: 'case-round', tip: TIP.AEGT },
-      { ja: 'LG', vi: 'LG', icon: 'magnet', tip: TIP.LG },
-      { ja: 'CS｜OB', vi: 'CS｜OB', icon: 'hand-heart', tip: TIP.CSOB },
-      { ja: 'TA', vi: 'TA', icon: 'user-plus-rounded', tip: TIP.TA }
+    { ja: '役割別', slug: 'by-role', vi: 'Theo vai trò', icon: 'user-hands', children: [
+      { ja: '管理職', slug: 'managers', vi: 'Quản lý', icon: 'crown-minimalistic' },
+      { ja: 'AE｜GT', slug: 'ae-gt', vi: 'AE｜GT', icon: 'case-round', tip: TIP.AEGT },
+      { ja: 'LG', slug: 'lg', vi: 'LG', icon: 'magnet', tip: TIP.LG },
+      { ja: 'CS｜OB', slug: 'cs-ob', vi: 'CS｜OB', icon: 'hand-heart', tip: TIP.CSOB },
+      { ja: 'TA', slug: 'ta', vi: 'TA', icon: 'user-plus-rounded', tip: TIP.TA }
     ] },
-    { ja: '事業部別', vi: 'Theo khối kinh doanh', icon: 'buildings-2', children: productKids() },
-    { ja: 'AIロープレ', vi: 'Luyện nhập vai AI', icon: 'microphone-large' }
+    { ja: '事業部別', slug: 'by-division', vi: 'Theo khối kinh doanh', icon: 'buildings-2', children: productKids() },
+    { ja: 'AIロープレ', slug: 'ai-roleplay', vi: 'Luyện nhập vai AI', icon: 'microphone-large' }
   ] },
   { key: 'rule', ja: 'ルール', vi: 'Quy định', icon: 'book-bookmark', children: [
-    { ja: '就業規則', vi: 'Nội quy lao động', icon: 'document' },
-    { ja: '社内規程', vi: 'Quy chế nội bộ', icon: 'shield-check' },
-    { ja: '業務マニュアル', vi: 'Hướng dẫn nghiệp vụ', icon: 'book-2' },
-    { ja: '書式', vi: 'Biểu mẫu', icon: 'documents' },
-    { ja: 'FAQ', vi: 'FAQ', icon: 'question-circle' }
+    { ja: '就業規則', slug: 'work-rules', vi: 'Nội quy lao động', icon: 'document' },
+    { ja: '社内規程', slug: 'policies', vi: 'Quy chế nội bộ', icon: 'shield-check' },
+    { ja: '業務マニュアル', slug: 'manuals', vi: 'Hướng dẫn nghiệp vụ', icon: 'book-2' },
+    { ja: '書式', slug: 'forms', vi: 'Biểu mẫu', icon: 'documents' },
+    { ja: 'FAQ', slug: 'faq', vi: 'FAQ', icon: 'question-circle' }
   ] },
   { key: 'health', ja: '健康JOY', vi: 'Sức khỏe JOY', icon: 'heart-pulse', children: [
-    { ja: '記録', vi: 'Ghi chép', icon: 'notebook-minimalistic' },
-    { ja: 'ランキング', vi: 'Xếp hạng', icon: 'ranking' },
-    { ja: '部活', vi: 'Câu lạc bộ', icon: 'football' },
-    { ja: '制度｜サポート', vi: 'Chế độ｜Hỗ trợ', icon: 'hand-heart' }
+    { ja: '記録', slug: 'records', vi: 'Ghi chép', icon: 'notebook-minimalistic' },
+    { ja: 'ランキング', slug: 'ranking', vi: 'Xếp hạng', icon: 'ranking' },
+    { ja: '部活', slug: 'clubs', vi: 'Câu lạc bộ', icon: 'football' },
+    { ja: '制度｜サポート', slug: 'support', vi: 'Chế độ｜Hỗ trợ', icon: 'hand-heart' }
   ] },
   { key: 'perf', ja: '目標｜結果', vi: 'Mục tiêu｜Kết quả', icon: 'target', children: [
-    { ja: '全社', vi: 'Toàn công ty', icon: 'buildings-3', children: [
-      { ja: 'PL', vi: 'PL', icon: 'graph-up', tip: TIP.PL },
-      { ja: '利用施設', vi: 'Cơ sở sử dụng', icon: 'hospital' },
-      { ja: '利用ユーザー', vi: 'Người dùng', icon: 'users-group-rounded' },
-      { ja: 'トスアップ', vi: 'Toss-up', icon: 'transfer-horizontal' },
-      { ja: '導入マップ', vi: 'Bản đồ triển khai', icon: 'map' }
+    { ja: '全社', slug: 'company', vi: 'Toàn công ty', icon: 'buildings-3', children: [
+      { ja: 'PL', slug: 'pl', vi: 'PL', icon: 'graph-up', tip: TIP.PL },
+      { ja: '利用施設', slug: 'facilities', vi: 'Cơ sở sử dụng', icon: 'hospital' },
+      { ja: '利用ユーザー', slug: 'users', vi: 'Người dùng', icon: 'users-group-rounded' },
+      { ja: 'トスアップ', slug: 'toss-up', vi: 'Toss-up', icon: 'transfer-horizontal' },
+      { ja: '導入マップ', slug: 'adoption-map', vi: 'Bản đồ triển khai', icon: 'map' }
     ] },
-    { ja: '事業部', vi: 'Khối kinh doanh', icon: 'buildings-2', children: productKids() },
-    { ja: '個人', vi: 'Cá nhân', icon: 'user-rounded', children: [
-      { ja: 'AE', vi: 'AE', icon: 'case-round', tip: TIP.AE },
-      { ja: 'GT', vi: 'GT', icon: 'graph-new-up', tip: TIP.GT },
-      { ja: 'LG', vi: 'LG', icon: 'magnet', tip: TIP.LG },
-      { ja: 'OB', vi: 'OB', icon: 'rocket', tip: TIP.OB },
-      { ja: 'CS', vi: 'CS', icon: 'hand-heart', tip: TIP.CS },
-      { ja: 'TA', vi: 'TA', icon: 'user-plus-rounded', tip: TIP.TA },
-      { ja: 'PR', vi: 'PR', icon: 'microphone-2', tip: TIP.PR }
+    { ja: '事業部', slug: 'division', vi: 'Khối kinh doanh', icon: 'buildings-2', children: productKids() },
+    { ja: '個人', slug: 'individual', vi: 'Cá nhân', icon: 'user-rounded', children: [
+      { ja: 'AE', slug: 'ae', vi: 'AE', icon: 'case-round', tip: TIP.AE },
+      { ja: 'GT', slug: 'gt', vi: 'GT', icon: 'graph-new-up', tip: TIP.GT },
+      { ja: 'LG', slug: 'lg', vi: 'LG', icon: 'magnet', tip: TIP.LG },
+      { ja: 'OB', slug: 'ob', vi: 'OB', icon: 'rocket', tip: TIP.OB },
+      { ja: 'CS', slug: 'cs', vi: 'CS', icon: 'hand-heart', tip: TIP.CS },
+      { ja: 'TA', slug: 'ta', vi: 'TA', icon: 'user-plus-rounded', tip: TIP.TA },
+      { ja: 'PR', slug: 'pr', vi: 'PR', icon: 'microphone-2', tip: TIP.PR }
     ] }
   ] },
   { key: 'cs', ja: '顧客対応', vi: 'Khách hàng', icon: 'hand-shake', children: [
-    { ja: '施設', vi: 'Cơ sở y tế', icon: 'hospital' },
-    { ja: 'コンタクト', vi: 'Liên hệ', icon: 'call-chat-rounded' },
-    { ja: 'リード', vi: 'Khách tiềm năng', icon: 'magnet' },
-    { ja: '案件', vi: 'Cơ hội', icon: 'case', children: productKids() },
-    { ja: 'オンボーディング', vi: 'Onboarding', icon: 'rocket-2', children: productKids() },
-    { ja: 'リテンション', vi: 'Duy trì khách hàng', icon: 'refresh-circle', children: productKids() },
-    { ja: '料金シミュレーション', vi: 'Mô phỏng chi phí', icon: 'calculator' },
-    { ja: '見積｜請求', vi: 'Báo giá｜Hóa đơn', icon: 'bill-list' },
-    { ja: '学会', vi: 'Hội nghị học thuật', icon: 'presentation-graph' },
-    { ja: 'ユーザー会', vi: 'Hội người dùng', icon: 'users-group-two-rounded' }
+    { ja: '施設', slug: 'facilities', vi: 'Cơ sở y tế', icon: 'hospital' },
+    { ja: 'コンタクト', slug: 'contacts', vi: 'Liên hệ', icon: 'call-chat-rounded' },
+    { ja: 'リード', slug: 'leads', vi: 'Khách tiềm năng', icon: 'magnet' },
+    { ja: '案件', slug: 'deals', vi: 'Cơ hội', icon: 'case', children: productKids() },
+    { ja: 'オンボーディング', slug: 'onboarding', vi: 'Onboarding', icon: 'rocket-2', children: productKids() },
+    { ja: 'リテンション', slug: 'retention', vi: 'Duy trì khách hàng', icon: 'refresh-circle', children: productKids() },
+    { ja: '料金シミュレーション', slug: 'pricing', vi: 'Mô phỏng chi phí', icon: 'calculator' },
+    { ja: '見積｜請求', slug: 'quotes-invoices', vi: 'Báo giá｜Hóa đơn', icon: 'bill-list' },
+    { ja: '学会', slug: 'conferences', vi: 'Hội nghị học thuật', icon: 'presentation-graph' },
+    { ja: 'ユーザー会', slug: 'user-groups', vi: 'Hội người dùng', icon: 'users-group-two-rounded' }
   ] },
   { key: 'dev', ja: '開発', vi: 'Phát triển', icon: 'code-square', children: [
-    { ja: 'ロードマップ', vi: 'Lộ trình', icon: 'route' },
-    { ja: 'チケット', vi: 'Ticket', icon: 'ticket' },
-    { ja: '要望一覧', vi: 'Danh sách yêu cầu', icon: 'lightbulb' },
-    { ja: 'リリースノート', vi: 'Ghi chú phát hành', icon: 'notes' },
-    { ja: '障害', vi: 'Lỗi hệ thống', icon: 'bug' }
+    { ja: 'ロードマップ', slug: 'roadmap', vi: 'Lộ trình', icon: 'route' },
+    { ja: 'チケット', slug: 'tickets', vi: 'Ticket', icon: 'ticket' },
+    { ja: '要望一覧', slug: 'requests', vi: 'Danh sách yêu cầu', icon: 'lightbulb' },
+    { ja: 'リリースノート', slug: 'release-notes', vi: 'Ghi chú phát hành', icon: 'notes' },
+    { ja: '障害', slug: 'outages', vi: 'Lỗi hệ thống', icon: 'bug' }
   ] },
   { key: 'inventory', ja: '在庫', vi: 'Kho', icon: 'box', children: [
-    { ja: '在庫一覧', vi: 'Danh sách tồn kho', icon: 'box-minimalistic' },
-    { ja: '顧客貸与端末', vi: 'Thiết bị cho khách mượn', icon: 'tablet' },
-    { ja: 'ライセンス', vi: 'Giấy phép', icon: 'key' },
-    { ja: 'パソコン', vi: 'Máy tính', icon: 'laptop' },
-    { ja: 'スマホ', vi: 'Điện thoại', icon: 'smartphone' },
-    { ja: 'パンフレット', vi: 'Tài liệu quảng cáo', icon: 'notebook-2' }
+    { ja: '在庫一覧', slug: 'stock', vi: 'Danh sách tồn kho', icon: 'box-minimalistic' },
+    { ja: '顧客貸与端末', slug: 'loaner-devices', vi: 'Thiết bị cho khách mượn', icon: 'tablet' },
+    { ja: 'ライセンス', slug: 'licenses', vi: 'Giấy phép', icon: 'key' },
+    { ja: 'パソコン', slug: 'pcs', vi: 'Máy tính', icon: 'laptop' },
+    { ja: 'スマホ', slug: 'phones', vi: 'Điện thoại', icon: 'smartphone' },
+    { ja: 'パンフレット', slug: 'brochures', vi: 'Tài liệu quảng cáo', icon: 'notebook-2' }
   ] },
   { key: 'incident', ja: 'インシデント', vi: 'Sự cố', icon: 'danger-triangle', children: [
-    { ja: '台帳', vi: 'Sổ theo dõi', icon: 'list-check', badge: 2 },
-    { ja: '集計', vi: 'Tổng hợp', icon: 'pie-chart-2' }
+    { ja: '台帳', slug: 'ledger', vi: 'Sổ theo dõi', icon: 'list-check', badge: 2 },
+    { ja: '集計', slug: 'summary', vi: 'Tổng hợp', icon: 'pie-chart-2' }
   ] },
   { key: 'link', ja: 'リンク', vi: 'Liên kết', icon: 'link-round' }
 ];
@@ -590,15 +591,15 @@ var TODO_ACTIONS = [
 
 /* §設定 */
 var SETTINGS_TABS = [
-  { id: 'アカウント', icon: 'user-circle' },
-  { id: '表示', icon: 'palette' },
-  { id: '通知', icon: 'bell' },
-  { id: 'ホーム', icon: 'widget' },
-  { id: 'プライバシー', icon: 'lock-keyhole' },
-  { id: '連携', icon: 'link-circle' },
-  { id: 'セキュリティ', icon: 'shield-keyhole' },
-  { id: '権限', icon: 'key-square' },
-  { id: 'データソース', icon: 'database' }
+  { id: 'アカウント', slug: 'account', icon: 'user-circle' },
+  { id: '表示', slug: 'display', icon: 'palette' },
+  { id: '通知', slug: 'notifications', icon: 'bell' },
+  { id: 'ホーム', slug: 'home', icon: 'widget' },
+  { id: 'プライバシー', slug: 'privacy', icon: 'lock-keyhole' },
+  { id: '連携', slug: 'integrations', icon: 'link-circle' },
+  { id: 'セキュリティ', slug: 'security', icon: 'shield-keyhole' },
+  { id: '権限', slug: 'permissions', icon: 'key-square' },
+  { id: 'データソース', slug: 'data-sources', icon: 'database' }
 ];
 // ⚠ Email mẫu phải là @example.com (RFC 2606) — repo này PUBLIC, email @drjoy.jp thật bị build chặn.
 var SETTINGS_ME = { name: '石松 宏章', dept: 'AI電話事業部', job: '代表取締役社長', site: 'JP（東京本社）', mail: 'ishimatsu.h@example.com' };

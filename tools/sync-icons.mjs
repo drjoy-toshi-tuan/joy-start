@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// Sinh `mockup/icons.js` từ gói Solar Icons — CHỈ bản OUTLINE.
+// Sinh `mockup/icons.js` từ gói Solar Icons — bản OUTLINE (mặc định).
 //
 //   node tools/sync-icons.mjs <đường dẫn tới Solar.zip | thư mục đã giải nén>
 //
@@ -9,6 +9,8 @@
 //   · icon: 'ten-icon'        — khai trong dữ liệu (menu, thẻ, tab…)
 // rồi chép ĐÚNG những icon đó từ file `solar--<ten>-outline.svg`. Thêm icon mới =
 // viết tên vào code rồi chạy lại script; không sửa tay `icons.js`.
+// Ngoại lệ có chủ ý: tên kèm hậu tố `@bold` (vd `star@bold`) lấy bản BOLD
+// `solar--<ten>-bold.svg` — chỉ dùng cho trạng thái "đã chọn" (sao お気に入り đã ghim).
 //
 // ⚠ Từ chối (exit 1) khi: tên không có bản outline trong gói · body có màu cứng
 //   (#…) · không dùng currentColor · mang `id`/`url(` — icon phải ĂN MÀU chữ để
@@ -37,7 +39,7 @@ if (!source) {
 const used = new Set();
 for (const rel of SRC_FILES) {
   const code = readFileSync(join(ROOT, rel), 'utf8');
-  for (const re of [/\bic\(\s*['"]([a-z0-9-]+)['"]/g, /\bicon\s*:\s*['"]([a-z0-9-]+)['"]/g]) {
+  for (const re of [/\bic\(\s*['"]([a-z0-9-]+(?:@bold)?)['"]/g, /\bicon\s*:\s*['"]([a-z0-9-]+(?:@bold)?)['"]/g]) {
     for (const m of code.matchAll(re)) used.add(m[1]);
   }
 }
@@ -64,7 +66,7 @@ function readZip(file) {
     const local = buf.readUInt32LE(p + 42);
     const name = buf.toString('utf8', p + 46, p + 46 + nameLen);
     p += 46 + nameLen + extraLen + commentLen;
-    if (!name.endsWith('-outline.svg')) continue;
+    if (!name.endsWith('-outline.svg') && !name.endsWith('-bold.svg')) continue;
     const lNameLen = buf.readUInt16LE(local + 26);
     const lExtraLen = buf.readUInt16LE(local + 28);
     const start = local + 30 + lNameLen + lExtraLen;
@@ -79,7 +81,7 @@ function readZip(file) {
 function readDir(dir) {
   const out = new Map();
   for (const f of readdirSync(dir)) {
-    if (f.endsWith('-outline.svg')) out.set(f, readFileSync(join(dir, f), 'utf8'));
+    if (f.endsWith('-outline.svg') || f.endsWith('-bold.svg')) out.set(f, readFileSync(join(dir, f), 'utf8'));
   }
   return out;
 }
@@ -94,8 +96,10 @@ if (!pack.size) {
 const bodies = {};
 const errors = [];
 for (const name of [...used].sort()) {
-  const svg = pack.get(`solar--${name}-outline.svg`);
-  if (!svg) { errors.push(`không có bản outline: ${name}`); continue; }
+  const bold = name.endsWith('@bold');
+  const file = bold ? `solar--${name.slice(0, -5)}-bold.svg` : `solar--${name}-outline.svg`;
+  const svg = pack.get(file);
+  if (!svg) { errors.push(`không có ${bold ? 'bản bold' : 'bản outline'}: ${name}`); continue; }
   const body = svg
     .replace(/^[\s\S]*?<svg[^>]*>/, '')
     .replace(/<\/svg>\s*$/, '')
@@ -112,7 +116,7 @@ if (errors.length) {
 }
 
 const header = `// ⚠ FILE SINH TỰ ĐỘNG — đừng sửa tay. Chạy lại: node tools/sync-icons.mjs <Solar.zip>
-// Solar Icons (bản OUTLINE) — 480 Design, CC BY 4.0 — ${Object.keys(bodies).length} icon.
+// Solar Icons (bản OUTLINE; tên \`…@bold\` = bản BOLD) — 480 Design, CC BY 4.0 — ${Object.keys(bodies).length} icon.
 `;
 const lines = Object.entries(bodies).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
 writeFileSync(OUT, `${header}var ICONS = {\n${lines.join('\n')}\n};\n`);

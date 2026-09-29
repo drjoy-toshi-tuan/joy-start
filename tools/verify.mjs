@@ -72,7 +72,6 @@ async function go(page, hash) {
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
-const enc = (k) => k.split('/').map(encodeURIComponent).join('/');
 let routes = null;
 
 for (const lang of ['ja', 'vi']) {
@@ -82,9 +81,11 @@ for (const lang of ['ja', 'vi']) {
     if (!routes) {
       const meta = await page.evaluate(() => window.__JOYSTART__);
       routes = ['#/home', '#/deals', '#/search?q=AI', '#/search?q=lich']
-        .concat(meta.settings.map((s) => '#/settings/' + encodeURIComponent(s)))
+        .concat(meta.settings.map((s) => '#/settings/' + s))
         .concat(meta.announce.map((a) => '#/announce/' + a))
-        .concat(meta.pages.filter((k) => k !== 'home').map((k) => '#/' + enc(k)));
+        .concat(meta.routes.filter((r) => r !== '#/home'));
+      // Route phải là tiếng Anh thuần (a-z, 0-9, -, /)
+      routes.filter((r) => !/^#\/[a-z0-9/-]+(\?[a-z]+=[A-Za-z]+)?$/.test(r)).forEach((r) => fail('route', `không phải tiếng Anh: ${r}`));
     }
     for (const r of routes) {
       logs.length = 0;
@@ -115,12 +116,26 @@ let steps = 0;
     await page.waitForSelector('.jw-sn-block--open .jw-tree-kids');
   });
   await step('sang 上長報告 từ cây', async () => {
-    await page.click('.jw-tree-leaf[href*="%E4%B8%8A%E9%95%B7"]');
-    await page.waitForFunction(() => location.hash.includes('%E4%B8%8A%E9%95%B7'));
+    await page.click('.jw-tree-leaf[href="#/todo/reports/supervisor"]');
+    await page.waitForFunction(() => location.hash === '#/todo/reports/supervisor');
   });
   await step('ghim お気に入り', async () => {
     await page.click('.jw-page-actions [data-act="fav"]');
-    await page.waitForSelector('.jw-sn-favs a[href*="%E4%B8%8A%E9%95%B7"]');
+    await page.waitForSelector('.jw-sn-favs a[href="#/todo/reports/supervisor"]');
+    await page.waitForSelector('.jw-page-actions [data-act="fav"][aria-pressed="true"]');
+  });
+  await step('gỡ お気に入り bằng nút × trong danh sách', async () => {
+    const row = '.jw-sn-fav-item:has(a[href="#/todo/reports/supervisor"])';
+    await page.hover(row);
+    await page.click(row + ' .jw-sn-fav-x');
+    await page.waitForFunction(() => !document.querySelector('.jw-sn-favs a[href="#/todo/reports/supervisor"]'));
+    await page.waitForSelector('.jw-page-actions [data-act="fav"][aria-pressed="false"]');
+  });
+  await step('link cũ (route tiếng Nhật) tự đổi sang route tiếng Anh', async () => {
+    await page.evaluate(() => { location.hash = '#/' + ['todo', '報告', '上長報告'].map(encodeURIComponent).join('/'); });
+    await page.waitForFunction(() => location.hash === '#/todo/reports/supervisor');
+    await page.evaluate(() => { location.hash = '#/settings/' + encodeURIComponent('通知'); });
+    await page.waitForFunction(() => location.hash === '#/settings/notifications');
   });
   await step('mở tất cả / đóng tất cả', async () => {
     await page.click('[data-act="expand-all"]');
@@ -160,7 +175,12 @@ let steps = 0;
     await page.click('#setBtn');
     await page.waitForSelector('.jw-menu--open #setGo');
     await page.click('#setGo');
-    await page.waitForFunction(() => location.hash.startsWith('#/settings'));
+    await page.waitForFunction(() => location.hash.startsWith('#/settings/') && !document.querySelector('#menuPanel.jw-menu--open'));
+    // đang đứng sẵn ở 設定 mà bấm lại ⇒ panel vẫn phải đóng
+    await page.click('#setBtn');
+    await page.waitForSelector('.jw-menu--open #setGo');
+    await page.click('#setGo');
+    await page.waitForFunction(() => !document.querySelector('#menuPanel.jw-menu--open'));
   });
   await step('tìm trong side panel (vi: kho khớp)', async () => {
     await page.fill('#sideFind', 'kho');
@@ -168,7 +188,7 @@ let steps = 0;
     await page.click('[data-act="side-find-x"]');
   });
   await step('đăng xuất → đăng nhập lại', async () => {
-    await go(page, '#/settings/' + encodeURIComponent('アカウント'));
+    await go(page, '#/settings/account');
     await page.click('#setBody [data-act="logout"]');
     await page.click('[data-act="logout-do"]');
     await page.waitForSelector('#loggedOut');
@@ -186,8 +206,8 @@ let steps = 0;
     await page.waitForSelector('.jw-sidenav--rail');
     await page.click('.jw-sn-top[data-k="todo"]');
     await page.waitForSelector('html[data-drawer] .jw-sidenav--drawer .jw-sn-block--open .jw-tree-kids');
-    await page.click('.jw-tree-leaf[href*="%E4%B8%8A%E9%95%B7"]');
-    await page.waitForFunction(() => location.hash.includes('%E4%B8%8A%E9%95%B7') && !document.documentElement.hasAttribute('data-drawer'));
+    await page.click('.jw-tree-leaf[href="#/todo/reports/supervisor"]');
+    await page.waitForFunction(() => location.hash === '#/todo/reports/supervisor' && !document.documentElement.hasAttribute('data-drawer'));
     await page.waitForSelector('.jw-sidenav--rail');
   });
   await step('ngăn kéo: bánh răng mở panel cài đặt nổi TRÊN ngăn kéo', async () => {
@@ -206,8 +226,8 @@ let steps = 0;
 if (shotDir) {
   mkdirSync(shotDir, { recursive: true });
   const shots = [
-    ['home', '#/home'], ['todo', '#/' + enc('todo/予定')], ['ranking', '#/' + enc('health/ランキング')],
-    ['announce', '#/announce/a12'], ['settings', '#/settings/' + encodeURIComponent('通知')], ['placeholder', '#/' + enc('incident/台帳')]
+    ['home', '#/home'], ['todo', '#/todo/schedule'], ['ranking', '#/health/ranking'],
+    ['announce', '#/announce/a12'], ['settings', '#/settings/notifications'], ['placeholder', '#/incident/ledger']
   ];
   for (const lang of ['ja', 'vi']) {
     for (const theme of ['light', 'dark']) {

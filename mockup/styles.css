@@ -74,6 +74,10 @@
   --table-line: color-mix(in srgb, var(--ink) 14%, transparent);
   --table-line-head: color-mix(in srgb, var(--ink) 28%, transparent);
   --sn-panel-bg: #f9f7f3;
+  /* Hiệu ứng "đèn" theo con trỏ (Reveal kiểu Windows): viền + nền sáng lên quanh chuột */
+  --rv-r: 96px;
+  --rv-edge: rgba(240, 140, 0, 0.75);
+  --rv-fill: rgba(240, 140, 0, 0.1);
   --glass-fill-pop: rgba(255, 255, 255, 0.9);
 
   /* Tông cho nhãn phân loại (danh mục お知らせ · プロダクト · trạng thái).
@@ -156,6 +160,8 @@
   --bloom-2: rgba(240, 120, 0, 0.09);
   --bloom-3: rgba(90, 120, 140, 0.1);
   --sn-panel-bg: #1d1b19;
+  --rv-edge: rgba(255, 190, 120, 0.6);
+  --rv-fill: rgba(255, 200, 150, 0.09);
   --glass-fill-pop: rgba(30, 28, 26, 0.92);
 
   --tone-orange: #ffa733;
@@ -275,7 +281,9 @@ h1, h2, h3, h4 {
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(158deg, var(--rim-hi) 0%, var(--rim-hi) 12%, var(--rim-mid) 44%, var(--rim-lo) 86%, var(--rim-lo) 100%);
+  background:
+    radial-gradient(var(--rv-r) circle at var(--mx, -999px) var(--my, -999px), var(--rv-edge-on, transparent), transparent 70%),
+    linear-gradient(158deg, var(--rim-hi) 0%, var(--rim-hi) 12%, var(--rim-mid) 44%, var(--rim-lo) 86%, var(--rim-lo) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -467,6 +475,8 @@ h1, h2, h3, h4 {
 }
 .jw-slide:hover { --rim-fill: var(--slide-track-hi); --track-thumb: var(--track-thumb-hi); }
 .jw-slide--wide { width: 10.25rem; }
+/* 表示: ngôn ngữ + theme cùng một bề ngang */
+.jw-seg:is([data-seg='setLang'], [data-seg='setTheme']) { width: 16rem; }
 .jw-slide-thumb {
   --rim-fill: var(--track-thumb);
   --rim-shadow: var(--thumb-shadow);
@@ -677,6 +687,23 @@ h1, h2, h3, h4 {
   transition: background 0.16s ease, color 0.16s ease;
 }
 .jw-sn-fav:hover { background: var(--glass-fill); color: var(--ink); }
+button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.jw-sn-fav-item { position: relative; }
+.jw-sn-fav-item .jw-sn-fav-path { transition: opacity 0.12s ease; }
+.jw-sn-fav-x {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0; border: 0; border-radius: 7px;
+  background: none; color: var(--ink-3); cursor: pointer; opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+.jw-sn-fav-item:hover .jw-sn-fav-x, .jw-sn-fav-x:focus-visible { opacity: 1; }
+.jw-sn-fav-item:hover .jw-sn-fav-path, .jw-sn-fav-item:focus-within .jw-sn-fav-path { opacity: 0; }
+.jw-sn-fav-x:hover { background: color-mix(in srgb, var(--crit) 14%, transparent); color: var(--crit); }
+@media (hover: none) {
+  .jw-sn-fav-x { opacity: 0.7; }
+  .jw-sn-fav-path { display: none; }
+}
 .jw-sn-fav > svg { color: var(--accent-text); }
 .jw-sn-fav-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-weight: 600; }
 .jw-sn-fav-path { flex: 0 1 auto; min-width: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.68rem; color: var(--ink-3); }
@@ -716,16 +743,17 @@ h1, h2, h3, h4 {
 .jw-sn-block--open > .jw-sn-top .jw-sn-caret { transform: rotate(180deg); }
 .jw-sn-block--here > .jw-sn-top { color: var(--accent-text); }
 .jw-sn-block--here > .jw-sn-top .jw-sn-topico { color: var(--accent-text); }
-.jw-sn-block--here > .jw-sn-top::after {
+.jw-sn-block { position: relative; }
+.jw-sn-block--here::after {
   content: '';
   position: absolute;
   left: 3px;
-  top: 50%;
+  top: 12px;
   width: 3px;
   height: 16px;
-  margin-top: -8px;
   border-radius: 3px;
   background: var(--accent);
+  pointer-events: none;
 }
 .jw-sn-body {
   display: flex;
@@ -896,8 +924,9 @@ h1, h2, h3, h4 {
   transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
 :is(.jw-tree-item, .jw-tree-kid, .jw-linkbtn):hover .jw-fav, .jw-fav:focus-visible { opacity: 1; }
-.jw-fav:hover { background: var(--glass-fill); color: var(--accent-text); }
-.jw-fav[aria-pressed='true'] { opacity: 1; color: var(--accent-text); }
+/* Sao: hover = cam Dr.JOY; đã ghim = sao ĐẶC cam (Solar Bold). */
+.jw-fav:hover { background: var(--glass-fill); color: var(--accent); }
+.jw-fav[aria-pressed='true'] { opacity: 1; color: var(--accent); }
 @media (hover: none) { .jw-fav { opacity: 0.5; } }
 
 /* DẢI GẬP (rail) — chép `.jw-sidenav--rail` */
@@ -931,12 +960,14 @@ h1, h2, h3, h4 {
 .jw-sidenav--rail .jw-sn-top[aria-current='page'] { background: var(--accent-fill); color: var(--on-accent); }
 .jw-sidenav--rail .jw-sn-block--here > .jw-sn-top .jw-sn-topico,
 .jw-sidenav--rail .jw-sn-top[aria-current='page'] .jw-sn-topico { color: var(--on-accent); }
-.jw-sidenav--rail .jw-sn-block--here > .jw-sn-top::after { display: none; }
-.jw-sidenav--rail .jw-sn-top[data-count]::before {
+.jw-sidenav--rail .jw-sn-block--here::after { display: none; }
+.jw-sidenav--rail .jw-sn-block--count::after {
   content: '';
+  display: block;
   position: absolute;
   top: 5px;
-  right: 5px;
+  left: auto;
+  right: calc(50% - 14px);
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -971,16 +1002,15 @@ h1, h2, h3, h4 {
   line-height: 1.2;
   color: var(--ink);
 }
+/* Icon cạnh tiêu đề trang: CHỈ icon (không nền, không viền kính) */
 .jw-page-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 12px;
-  color: var(--accent-text);
+  color: var(--accent);
 }
+.jw-page-icon svg { width: 1.7rem; height: 1.7rem; }
 .jw-page-desc { margin: 0.3rem 0 0; max-width: 64ch; font-size: 0.96rem; color: var(--ink-2); }
 .jw-page-actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; margin-inline-start: auto; }
 
@@ -1747,7 +1777,8 @@ select.jw-input { cursor: pointer; }
 .jw-link-open { display: inline-flex; align-items: center; gap: 0.35rem; height: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .jw-link-open > svg { color: var(--ink-3); }
 .jw-linkbtn:hover .jw-link-open > svg { color: var(--accent-text); }
-.jw-star-on { color: var(--accent-text); }
+.jw-star-on { color: var(--accent); }
+.jw-btn[data-act='fav']:hover svg, .jw-linkbtn .jw-fav:hover { color: var(--accent); }
 .jw-btn--ghost[aria-pressed='true'] { --rim-fill: color-mix(in srgb, var(--accent) 12%, var(--glass-fill-ctl)); color: var(--accent-text); }
 .jw-iconbtn:disabled { opacity: 0.35; cursor: default; background: none; color: var(--ink-3); }
 
@@ -1960,7 +1991,7 @@ select.jw-input { cursor: pointer; }
   }
   .jw-screen { padding-top: 1.1rem; }
   .jw-page-title { font-size: 1.35rem; }
-  .jw-page-icon { width: 1.8rem; height: 1.8rem; }
+  .jw-page-icon svg { width: 1.45rem; height: 1.45rem; }
   .jw-panel { padding: 0.95rem 0.9rem 1rem; border-radius: 18px; }
   .jw-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .jw-countchip { justify-content: flex-start; min-width: 0; padding: 0 0.7rem; font-size: 0.78rem; }
@@ -1979,6 +2010,59 @@ select.jw-input { cursor: pointer; }
   .jw-link-label { width: auto; padding-top: 0; }
   .jw-support-name { width: 100%; }
   .jw-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ==========================================================================
+   §HIỆU ỨNG HOVER
+   1) ĐÈN theo con trỏ (Reveal kiểu Windows): app.js ghi --mx/--my (toạ độ chuột TÍNH
+      TRONG phần tử) và bật `data-rv` cho mọi phần tử nằm trong bán kính --rv-r quanh chuột
+      ⇒ VIỀN của cả các phần tử lân cận sáng lên theo khoảng cách; phần tử đang hover thì
+      NỀN sáng thêm một vệt quanh chuột. Viền = ::before (control kính: lớp thêm trong
+      `.jw-rim::before`), khoét giữa bằng mask như gờ kính.
+   2) ICON NHẢY: hover ⇒ icon bật lên + phóng nhẹ (đường cong vượt đích = cú nảy).
+   ========================================================================== */
+:is(.jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear) { position: relative; }
+/* :where() = độ ưu tiên 0 ⇒ `[data-rv]::before` bên dưới luôn thắng được opacity */
+:where(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear, .jw-panel:not(.jw-panel--flat))::before,
+:where(a.jw-rowi, button.jw-rowi)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: radial-gradient(var(--rv-r) circle at var(--mx, -999px) var(--my, -999px), var(--rv-edge), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+/* Panel có viền kính 1px ⇒ đèn phủ ĐÚNG lên viền đó */
+.jw-panel:not(.jw-panel--flat)::before { inset: -1px; }
+[data-rv]::before, [data-rv]:where(a.jw-rowi, button.jw-rowi)::after { opacity: 1; }
+.jw-rim[data-rv] { --rv-edge-on: var(--rv-edge); }
+:is(.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear, .jw-rim, a.jw-rowi, button.jw-rowi)[data-rv]:hover {
+  background-image: radial-gradient(calc(var(--rv-r) * 0.85) circle at var(--mx) var(--my), var(--rv-fill), transparent 100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.jw-sn-topico, .jw-tree-icon, .jw-tree-leaf > svg, .jw-sn-fav > svg, .jw-sn-hit-ico, .jw-sn-tool > svg, .jw-sn-toggle > svg,
+      .jw-sn-fav-x > svg, .jw-fav > svg, .jw-menu-item > svg, .jw-btn > svg, .jw-countchip > svg, .jw-cta > svg, .jw-tab > svg,
+      .jw-seg-opt > svg, .jw-sn-me .jw-avatar, .jw-brand-mark, .jw-link-open > svg) {
+    transition: transform 0.22s ease, color 0.16s ease;
+  }
+  :is(.jw-sn-top:hover .jw-sn-topico, .jw-tree-row:hover .jw-tree-icon, .jw-tree-leaf:hover > svg, .jw-sn-fav:hover > svg,
+      .jw-sn-hit:hover .jw-sn-hit-ico, .jw-sn-tool:hover > svg, .jw-sn-toggle:hover > svg, .jw-sn-fav-x:hover > svg,
+      .jw-fav:hover > svg, .jw-menu-item:hover > svg, .jw-btn:hover > svg, .jw-countchip:hover > svg, .jw-cta:hover > svg,
+      .jw-tab:hover > svg, .jw-seg-opt:hover > svg, .jw-sn-me:hover .jw-avatar, .jw-brandhome:hover .jw-brand-mark,
+      .jw-link-open:hover > svg) {
+    transform: translateY(-2px) scale(1.14);
+    transition: transform 0.38s cubic-bezier(0.34, 1.9, 0.5, 1), color 0.16s ease;
+  }
+  /* Bánh răng: hover = xoay nhẹ (mở panel = xoay hẳn, khai ở §SIDE PANEL) */
+  .jw-sn-gear:not([aria-expanded='true']):hover svg { transform: rotate(40deg) scale(1.1); }
 }
 
 @media (prefers-reduced-motion: reduce) {

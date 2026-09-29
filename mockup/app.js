@@ -91,27 +91,35 @@
   var PAGES = {};
   var PAGE_LIST = [];
   var BLOCKS = {};
+  // Route tiếng Anh: `key` khối + `slug` từng tầng (#/todo/reports/supervisor). Khoá NỘI BỘ vẫn là
+  // đường đi tiếng Nhật (dữ liệu, お気に入り đã lưu… đều trỏ theo khoá đó).
+  var PAGE_BY_PATH = {};
   MENU.forEach(function (b) {
     BLOCKS[b.key] = b;
-    if (!b.children) { addPage(b.key, b, b, null, []); return; }
+    if (!b.children) { addPage(b.key, b.key, b, b, null, []); return; }
     b.children.forEach(function (n) {
       if (n.children) {
         n.firstKey = b.key + '/' + n.ja + '/' + n.children[0].ja;
-        n.children.forEach(function (k) { addPage(b.key + '/' + n.ja + '/' + k.ja, k, b, n, [b, n]); });
+        n.children.forEach(function (k) { addPage(b.key + '/' + n.ja + '/' + k.ja, b.key + '/' + n.slug + '/' + k.slug, k, b, n, [b, n]); });
       } else {
-        addPage(b.key + '/' + n.ja, n, b, null, [b]);
+        addPage(b.key + '/' + n.ja, b.key + '/' + n.slug, n, b, null, [b]);
       }
     });
   });
-  function addPage(key, node, block, group, trail) {
-    var p = { key: key, node: node, block: block, group: group, trail: trail };
+  function addPage(key, path, node, block, group, trail) {
+    if (!/^[a-z0-9/-]+$/.test(path) || PAGE_BY_PATH[path]) console.warn('[route] slug thiếu/trùng: ' + key + ' → ' + path);
+    var p = { key: key, path: path, node: node, block: block, group: group, trail: trail };
     PAGES[key] = p;
+    PAGE_BY_PATH[path] = p;
     PAGE_LIST.push(p);
   }
+  var SET_SLUG = {}, SET_BY_SLUG = {};
+  SETTINGS_TABS.forEach(function (x) { SET_SLUG[x.id] = x.slug; SET_BY_SLUG[x.slug] = x.id; });
+  function setHref(id, row) { return '#/settings/' + (SET_SLUG[id] || 'account') + (row ? '?row=' + encodeURIComponent(row) : ''); }
   function pathLabel(p) { return p.trail.map(nm).join(' › '); }
   function fullLabel(p) { return p.trail.map(nm).concat([nm(p.node)]).join(' › '); }
   function enc(key) { return key.split('/').map(encodeURIComponent).join('/'); }
-  function href(key) { return '#/' + enc(key); }
+  function href(key) { return '#/' + (PAGES[key] ? PAGES[key].path : enc(key)); }
   var LINK_BY_KEY = {};
   LINK_GROUPS.forEach(function (g) {
     g.items.forEach(function (it) { LINK_BY_KEY[it.key] = { group: g, item: it }; });
@@ -190,15 +198,16 @@
     var head = parts[0] || 'home';
     if (head === 'home') return { name: 'home' };
     if (head === 'settings') {
-      var tab = parts[1] || 'アカウント';
-      var okTab = SETTINGS_TABS.some(function (x) { return x.id === tab; });
-      return { name: 'settings', tab: okTab ? tab : 'アカウント', row: params.row || '' };
+      // slug tiếng Anh; tên tab tiếng Nhật (link cũ) vẫn nhận rồi đổi URL sang slug
+      var tab = SET_BY_SLUG[parts[1]] || (SET_SLUG[parts[1]] ? parts[1] : 'アカウント');
+      return { name: 'settings', tab: tab, row: params.row || '', legacy: !!parts[1] && !SET_BY_SLUG[parts[1]] };
     }
     if (head === 'announce' && parts[1]) return { name: 'announce', id: parts[1] };
     if (head === 'deals') return { name: 'deals' };
     if (head === 'search') return { name: 'search', q: params.q || '' };
-    var key = parts.join('/');
-    if (PAGES[key]) return { name: 'page', key: key };
+    var path = parts.join('/');
+    if (PAGE_BY_PATH[path]) return { name: 'page', key: PAGE_BY_PATH[path].key };
+    if (PAGES[path]) return { name: 'page', key: path, legacy: true };
     return { name: 'home', fallback: true };
   }
   function go(h) { if (location.hash === h) onRoute(); else location.hash = h; }
@@ -213,6 +222,10 @@
     var r = parseHash();
     if (r.fallback && location.hash && location.hash !== '#/home') {
       try { history.replaceState(null, '', '#/home'); } catch (e) { /* file:// */ }
+    }
+    // Link cũ (route tiếng Nhật) ⇒ thay URL bằng route tiếng Anh, không thêm bước vào lịch sử
+    if (r.legacy) {
+      try { history.replaceState(null, '', r.name === 'page' ? href(r.key) : setHref(r.tab, r.row)); } catch (e) { /* file:// */ }
     }
     ROUTE = r;
     closeFloating();
@@ -252,9 +265,9 @@
       '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('言語') + '</span>' +
         slide('lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, 'jw-slide--wide', t('言語')) + '</div>' +
       '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('テーマ') + '</span>' +
-        slide('theme', [{ v: 'light', icon: ic('sun', 17), title: t('ライト') }, { v: 'dark', icon: ic('moon', 17), title: t('ダーク') }], theme, '', t('テーマ')) + '</div>' +
+        slide('theme', [{ v: 'light', icon: ic('sun', 17), title: t('ライト') }, { v: 'dark', icon: ic('moon', 17), title: t('ダーク') }], theme, 'jw-slide--wide', t('テーマ')) + '</div>' +
       '<div class="jw-menu-sep"></div>' +
-      '<a class="jw-menu-item jw-menu-item--go jw-rim" id="setGo" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' +
+      '<a class="jw-menu-item jw-menu-item--go jw-rim" id="setGo" data-act="setgo" href="' + setHref('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' +
         ic('settings', 18) + '<span>' + t('設定画面を開く') + '</span>' + ic('alt-arrow-right', 15) + '</a>';
   }
   function openMenu() {
@@ -305,7 +318,7 @@
   function favBtn(k) {
     var on = S.favs.indexOf(k) >= 0;
     return '<button type="button" class="jw-fav" data-act="fav" data-k="' + esc(k) + '" aria-pressed="' + on + '" aria-label="' +
-      esc(on ? t('お気に入りから外す') : t('お気に入りに追加')) + '" title="' + esc(on ? t('お気に入りから外す') : t('お気に入りに追加')) + '">' + ic('star', 14) + '</button>';
+      esc(on ? t('お気に入りから外す') : t('お気に入りに追加')) + '" title="' + esc(on ? t('お気に入りから外す') : t('お気に入りに追加')) + '">' + (on ? ic('star@bold', 14) : ic('star', 14)) + '</button>';
   }
   function tipAttr(n) { return n.tip ? ' data-tip="' + esc(tr(n.tip)) + '"' : ''; }
   function rowItem(k, n) {
@@ -341,24 +354,28 @@
     }
     var open = !!S.open[b.key] && !rail;
     var badge = blockBadge(b);
-    return '<div class="jw-sn-block' + (open ? ' jw-sn-block--open' : '') + (here ? ' jw-sn-block--here' : '') + '">' +
+    return '<div class="jw-sn-block' + (open ? ' jw-sn-block--open' : '') + (here ? ' jw-sn-block--here' : '') + (badge ? ' jw-sn-block--count' : '') + '">' +
       '<button type="button" class="jw-sn-top" data-act="block" data-k="' + b.key + '"' + (rail ? ' aria-label="' + esc(nm(b)) + '"' : ' aria-expanded="' + open + '"') + railTip + (badge ? ' data-count="' + badge + '"' : '') + '>' +
         '<span class="jw-sn-topico">' + ic(b.icon, 18) + '</span><span class="jw-sn-topname">' + esc(nm(b)) + '</span>' +
         (badge && !open ? '<span class="jw-count" aria-label="' + esc(t('{n}件', { n: badge })) + '">' + badge + '</span>' : '') +
         '<span class="jw-sn-caret">' + ic('alt-arrow-down', 14) + '</span></button>' +
       (open ? treeHtml(b) : '') + '</div>';
   }
+  // Hàng お気に入り: hover hiện nút × để gỡ khỏi danh sách (nút đứng CẠNH link, không lồng trong nó)
+  function favRemove(k) {
+    return '<button type="button" class="jw-sn-fav-x" data-act="fav" data-k="' + esc(k) + '" aria-label="' + esc(t('お気に入りから外す')) + '" data-tip="' + esc(t('お気に入りから外す')) + '">' + ic('close', 13) + '</button>';
+  }
   function favsHtml() {
     var rows = S.favs.map(function (k) {
       var p = PAGES[k];
       var l = LINK_BY_KEY[k];
       if (l) {
-        return '<button type="button" class="jw-sn-fav" data-act="extlink" data-k="' + esc(k) + '">' + ic('link-round', 14) +
-          '<span class="jw-sn-fav-name">' + esc(tr(l.item.label)) + '</span><span class="jw-sn-fav-path">' + esc(tr(l.group.label)) + '</span></button>';
+        return '<div class="jw-sn-fav-item"><button type="button" class="jw-sn-fav" data-act="extlink" data-k="' + esc(k) + '">' + ic('link-round', 14) +
+          '<span class="jw-sn-fav-name">' + esc(tr(l.item.label)) + '</span><span class="jw-sn-fav-path">' + esc(tr(l.group.label)) + '</span></button>' + favRemove(k) + '</div>';
       }
       if (!p) return '';
-      return '<a class="jw-sn-fav" href="' + href(k) + '">' + ic(p.node.icon, 14) +
-        '<span class="jw-sn-fav-name">' + esc(nm(p.node)) + '</span><span class="jw-sn-fav-path">' + esc(pathLabel(p)) + '</span></a>';
+      return '<div class="jw-sn-fav-item"><a class="jw-sn-fav" href="' + href(k) + '">' + ic(p.node.icon, 14) +
+        '<span class="jw-sn-fav-name">' + esc(nm(p.node)) + '</span><span class="jw-sn-fav-path">' + esc(pathLabel(p)) + '</span></a>' + favRemove(k) + '</div>';
     }).join('');
     return rows ? '<div class="jw-sn-favs"><div class="jw-sn-sec">' + ic('star', 12) + t('お気に入り') + '</div>' + rows + '</div>' : '';
   }
@@ -414,7 +431,7 @@
       '</div>') +
       '<div class="jw-sn-scroll" id="sideScroll" data-fade-y><div class="jw-sn-content" id="sideBody">' + sideBodyHtml() + '</div></div>' +
       '<div class="jw-sn-foot">' +
-        '<a class="jw-sn-me" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (onAccount ? ' aria-current="page"' : '') +
+        '<a class="jw-sn-me" href="' + setHref('アカウント') + '"' + (onAccount ? ' aria-current="page"' : '') +
           ' aria-label="' + esc(me.name + ' — ' + t('アカウント')) + '"' + (rail ? ' data-tip="' + esc(me.name) + '"' : '') + '>' +
           '<span class="jw-avatar">' + avatarSvg(HEALTH_AVATARS[me.name]) + '</span>' +
           '<span class="jw-sn-who"><span class="jw-sn-name">' + esc(me.name) + '</span><span class="jw-sn-mail">' + esc(me.mail) + '</span></span></a>' +
@@ -457,7 +474,7 @@
       }).join('') + '</nav>';
     }
     return '<header class="jw-page-head">' + eb +
-      '<div class="jw-page-row"><h1 class="jw-page-title">' + (o.icon ? '<span class="jw-page-icon jw-pane">' + o.icon + '</span>' : '') +
+      '<div class="jw-page-row"><h1 class="jw-page-title">' + (o.icon ? '<span class="jw-page-icon">' + o.icon + '</span>' : '') +
       '<span>' + esc(o.title) + '</span></h1>' + (o.actions ? '<div class="jw-page-actions">' + o.actions + '</div>' : '') + '</div>' +
       (o.desc ? '<p class="jw-page-desc">' + esc(o.desc) + '</p>' : '') + '</header>';
   }
@@ -467,7 +484,7 @@
     });
     var fav = S.favs.indexOf(p.key) >= 0;
     var favAction = '<button type="button" class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" data-act="fav" data-k="' + esc(p.key) + '" aria-pressed="' + fav + '">' +
-      ic('star', 15, fav ? 'jw-star-on' : '') + (fav ? t('お気に入り済み') : t('お気に入り')) + '</button>';
+      (fav ? ic('star@bold', 15, 'jw-star-on') : ic('star', 15)) + (fav ? t('お気に入り済み') : t('お気に入り')) + '</button>';
     return pageHead({
       crumbs: crumbs,
       title: nm(p.node),
@@ -951,7 +968,7 @@
     var rows = (HEALTH_RANKING[S.rankCat] || []).filter(function (r) {
       return S.rankLoc === '全社' || (S.rankLoc === 'VN' ? r.site === 'VN' : r.site !== 'VN');
     });
-    return pageInfoHead(p, '<a class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" href="#/settings/' + encodeURIComponent('プライバシー') + '">' + ic('settings-minimalistic', 15) + t('参加設定') + '</a>') +
+    return pageInfoHead(p, '<a class="jw-btn jw-btn--ghost jw-btn--sm jw-rim" href="' + setHref('プライバシー') + '">' + ic('settings-minimalistic', 15) + t('参加設定') + '</a>') +
       '<div class="jw-grid2">' +
         panel({ icon: ic('ranking', 18), title: t('今月のランキング'), body:
           '<div class="jw-row-actions" style="justify-content:flex-start">' + seg('rank-cat', catOpts(), S.rankCat, t('部門'), 'rankCat') +
@@ -990,7 +1007,7 @@
       return '<div class="jw-link-row"><div class="jw-link-label">' + esc(tr(g.label)) + '</div><div class="jw-link-btns">' + items.map(function (it) {
         var fav = S.favs.indexOf(it.key) >= 0;
         return '<span class="jw-linkbtn jw-rim"><button type="button" class="jw-link-open" data-act="extlink" data-k="' + esc(it.key) + '">' + esc(tr(it.label)) + ic('arrow-right-up', 14) + '</button>' +
-          '<button type="button" class="jw-fav" data-act="fav" data-k="' + esc(it.key) + '" aria-pressed="' + fav + '" aria-label="' + esc(fav ? t('お気に入りから外す') : t('お気に入りに追加')) + '" title="' + esc(fav ? t('お気に入りから外す') : t('お気に入りに追加')) + '">' + ic('star', 14) + '</button></span>';
+          '<button type="button" class="jw-fav" data-act="fav" data-k="' + esc(it.key) + '" aria-pressed="' + fav + '" aria-label="' + esc(fav ? t('お気に入りから外す') : t('お気に入りに追加')) + '" title="' + esc(fav ? t('お気に入りから外す') : t('お気に入りに追加')) + '">' + (fav ? ic('star@bold', 14) : ic('star', 14)) + '</button></span>';
       }).join('') + '</div></div>';
     }).join('');
     return rows ? panel({ body: rows }) : '<p class="jw-empty">' + t('該当なし') + '</p>';
@@ -1147,7 +1164,7 @@
   function pageSettings() {
     var tab = ROUTE.tab;
     var tabs = '<div class="jw-tabs" role="tablist" id="setTabs" data-keep data-fade-x aria-label="' + esc(t('設定')) + '">' + SETTINGS_TABS.map(function (x) {
-      return '<a class="jw-tab" role="tab" aria-selected="' + (x.id === tab) + '" href="#/settings/' + encodeURIComponent(x.id) + '">' + ic(x.icon, 15) + esc(t(x.id)) + '</a>';
+      return '<a class="jw-tab" role="tab" aria-selected="' + (x.id === tab) + '" href="' + setHref(x.id) + '">' + ic(x.icon, 15) + esc(t(x.id)) + '</a>';
     }).join('') + '</div>';
     return pageHead({ crumbs: [{ label: t('ホーム'), href: '#/home', icon: ic('home-2', 13) }], title: t('設定'), icon: ic('settings', 20) }) +
       '<div class="jw-stack">' + setBox(tabs) + '<div class="jw-stack" id="setBody">' + SETTINGS_BODY[tab]() + '</div></div>';
@@ -1322,6 +1339,7 @@
     var k = el.getAttribute('data-k');
     switch (act) {
       case 'setpop': if (S.menuOpen) closeMenu(); else openMenu(); break;
+      case 'setgo': e.preventDefault(); closeMenu(); S.drawer = false; go(el.getAttribute('href')); break;
       case 'menu-close': closeMenu(); break;
       case 'lang': setLang(v); break;
       case 'theme': setTheme(v); break;
@@ -1410,7 +1428,7 @@
       case 'rank-loc': S.rankLoc = v; renderPage(false); break;
       case 'club-join': toast(t('{c}に参加しました（モック）', { c: el.getAttribute('data-name') }), ic('check-circle', 16)); break;
       case 'deal-tab': S.dealProd = v; renderPage(false); break;
-      case 'ds-line': go('#/settings/' + encodeURIComponent('データソース') + '?row=' + el.getAttribute('data-row')); break;
+      case 'ds-line': go(setHref('データソース', el.getAttribute('data-row'))); break;
       case 'ds-folder': S.missingFolder = el.getAttribute('data-folder'); renderPage(false); break;
 
       case 'set-lang': setLang(v); break;
@@ -1533,6 +1551,47 @@
     }
   });
 
+  // ── §Đèn theo con trỏ (Reveal kiểu Windows) ──
+  // Mỗi khung hình: mọi phần tử (trong cùng vùng với con trỏ) cách chuột ≤ RV_R px được bật
+  // `data-rv` + toạ độ chuột TÍNH TRONG nó (--mx/--my) ⇒ CSS vẽ viền sáng dần theo khoảng cách.
+  // Chỉ chuột (không chạm), và một lượt đọc hết rồi mới ghi (tránh layout thrash).
+  var RV_SEL = '.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear, .jw-rim, a.jw-rowi, button.jw-rowi, .jw-panel:not(.jw-panel--flat)';
+  var RV_R = 96;
+  var rvLit = [], rvPt = null, rvRaf = 0;
+  var rvOff = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function rvSchedule() { if (!rvRaf) rvRaf = requestAnimationFrame(rvFrame); }
+  function rvFrame() {
+    rvRaf = 0;
+    var next = [];
+    var scope = rvPt && rvPt.t && rvPt.t.closest ? rvPt.t.closest('.jw-sidenav, .jw-menu, .jw-main, .jw-dialog') : null;
+    if (scope) {
+      var x = rvPt.x, y = rvPt.y, els = scope.querySelectorAll(RV_SEL);
+      for (var i = 0; i < els.length; i++) {
+        var r = els[i].getBoundingClientRect();
+        if (!r.width) continue;
+        var dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom);
+        if (dx * dx + dy * dy <= RV_R * RV_R) next.push([els[i], x - r.left, y - r.top]);
+      }
+    }
+    var keep = next.map(function (n) { return n[0]; });
+    rvLit.forEach(function (el) { if (keep.indexOf(el) < 0) el.removeAttribute('data-rv'); });
+    next.forEach(function (n) {
+      n[0].style.setProperty('--mx', Math.round(n[1]) + 'px');
+      n[0].style.setProperty('--my', Math.round(n[2]) + 'px');
+      if (!n[0].hasAttribute('data-rv')) n[0].setAttribute('data-rv', '');
+    });
+    rvLit = keep;
+  }
+  if (!rvOff) {
+    document.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      rvPt = { x: e.clientX, y: e.clientY, t: e.target };
+      rvSchedule();
+    }, { passive: true });
+    document.documentElement.addEventListener('mouseleave', function () { rvPt = null; rvSchedule(); });
+    document.addEventListener('scroll', function () { if (rvPt) rvSchedule(); }, true);
+  }
+
   // ── §Tooltip ──
   // Tên mục trong cây / お気に入り / kết quả tìm bị cắt "…" (hay gặp ở tiếng Việt) ⇒ tooltip
   // hiện TÊN ĐẦY ĐỦ, kèm lời giải thích ở dòng dưới nếu mục có data-tip. Không bị cắt thì y như cũ.
@@ -1566,5 +1625,5 @@
   if (!location.hash) { try { history.replaceState(null, '', '#/home'); } catch (e) { /* file:// */ } }
   onRoute();
   // Cho script kiểm (tools/verify.mjs) đọc danh sách trang + chữ chưa dịch
-  window.__JOYSTART__ = { pages: PAGE_LIST.map(function (p) { return p.key; }), missing: I18N_MISSING, announce: ANNOUNCEMENTS.map(function (a) { return a.id; }), settings: SETTINGS_TABS.map(function (x) { return x.id; }) };
+  window.__JOYSTART__ = { pages: PAGE_LIST.map(function (p) { return p.key; }), routes: PAGE_LIST.map(function (p) { return '#/' + p.path; }), missing: I18N_MISSING, announce: ANNOUNCEMENTS.map(function (a) { return a.id; }), settings: SETTINGS_TABS.map(function (x) { return x.slug; }) };
 })();
