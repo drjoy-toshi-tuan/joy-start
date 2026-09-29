@@ -105,7 +105,8 @@ create table core.employees (                  -- = staff_master
   job_type_code  text references core.job_types (code),
   position_code  text references core.positions (code),  -- 役職 hiện tại
   employment_type text not null default 'full_time'
-                   check (employment_type in ('full_time', 'contract', 'part_time', 'dispatch', 'intern', 'outsourcing')),
+                   check (employment_type in ('full_time', 'contract', 'part_time', 'dispatch', 'intern', 'outsourcing', 'system')),
+                                                         -- 'system' = tài khoản dùng chung (vd デジタル戦略), không phải nhân viên
   grade          text,                                   -- 等級
   site_code      text references core.sites (code),
   manager_id     uuid references core.employees (id),    -- 上長 ⇒ tuyến duyệt mặc định
@@ -285,6 +286,39 @@ begin
   perform private.apply_due_assignments();
   return a;
 end $$;
+
+-- ── Quản trị viên đầu tiên (bootstrap) ──
+-- Danh sách email được chỉ định TRƯỚC (vd tài khoản Google của デジタル戦略). Chỉ DB owner ghi được
+-- (migration / SQL editor), app không ghi được. Lần đầu đăng nhập ⇒ tự có admin (cấp quyền cho người khác).
+create table core.bootstrap_admins (
+  email     text primary key,
+  note      text,
+  added_at  timestamptz not null default now()
+);
+
+-- Khi có tài khoản đăng nhập mới: nối với staff_master theo email; email bootstrap thì cấp admin.
+-- Người không có trong staff_master và không phải bootstrap ⇒ đăng nhập được nhưng private.me() = null
+-- ⇒ không xem được gì cho tới khi 人事 thêm vào staff_master.
+create or replace function private.on_auth_user_created() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare emp uuid;
+begin
+  update core.employees set user_id = new.id
+   where lower(email) = lower(new.email) and user_id is null
+  returning id into emp;
+  if exists (select 1 from core.bootstrap_admins b where lower(b.email) = lower(new.email)) then
+    if emp is null then
+      insert into core.employees (user_id, email, name_ja, employment_type)
+      values (new.id, new.email, split_part(new.email, '@', 1), 'system')
+      on conflict (email) do update set user_id = excluded.user_id
+      returning id into emp;
+    end if;
+    insert into core.user_roles (employee_id, role_code) values (emp, 'admin') on conflict do nothing;
+  end if;
+  return new;
+end $$;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function private.on_auth_user_created();
 
 -- ============================================================================
 -- §core — cài đặt cá nhân (thay cho localStorage joystart_* của mockup)

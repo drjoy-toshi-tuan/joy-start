@@ -114,3 +114,7 @@ insert into ai.agents (code, name_ja, name_vi, description, model, allowed_tools
 -- Bảng giá model: ĐIỀN GIÁ THẬT theo hợp đồng trước khi chạy (giá Jev theo công bố 9/2026: input $0.042 / 1M, output không tính).
 insert into ai.model_prices (provider, model, input_per_m, output_per_m, valid_from) values
   ('typesafe', 'jev', 0.042, 0, '2026-09-15');
+
+-- Quản trị viên đầu tiên: điền email THẬT được chỉ định (vd tài khoản Google của デジタル戦略) khi triển khai.
+-- ⚠ Repo public ⇒ không commit email thật; chạy câu này trực tiếp trên SQL editor của từng môi trường.
+-- insert into core.bootstrap_admins (email, note) values ('<email>', 'デジタル戦略 共有アカウント');

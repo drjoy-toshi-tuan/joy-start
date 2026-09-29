@@ -242,7 +242,23 @@ const [bud] = await q(`select private.check_ai_budgets() as n`);
 const [bud2] = await q(`select private.check_ai_budgets() as n`);
 check('ngân sách: vượt 80% ⇒ báo 1 lần trong ngày', bud.n === 1 && bud2.n === 0, { bud, bud2 });
 
-// 7. Không có bảng nào quên bật RLS
+// 7. Quản trị viên đầu tiên: email chỉ định trước ⇒ đăng nhập lần đầu tự có admin, rồi cấp quyền cho người khác
+await db.exec(`insert into core.bootstrap_admins (email, note) values ('digital@example.com', 'デジタル戦略');
+  insert into auth.users values ('${U(9)}', 'Digital@example.com');`);
+await as(9, async () => {
+  const [me] = await q(`select e.employment_type, private.has_role('admin') as admin from core.employees e where e.id = private.me()`);
+  check('bootstrap: tài khoản chỉ định có admin ngay khi đăng nhập lần đầu', me && me.admin === true && me.employment_type === 'system', me);
+  await q(`insert into core.user_roles (employee_id, role_code) values ('20000000-0000-0000-0000-000000000004', 'hr_admin')`);
+  const [r] = await q(`select count(*)::int as n from core.user_roles where employee_id = '20000000-0000-0000-0000-000000000004'`);
+  check('bootstrap: cấp được quyền cho người đăng nhập sau', r.n === 1, r);
+});
+await as(4, async () => {
+  let err = null;
+  try { await q(`insert into core.bootstrap_admins (email) values ('me@example.com')`); } catch (x) { err = x.message; }
+  check('app không tự thêm được vào danh sách bootstrap', !!err, err);
+});
+
+// 8. Không có bảng nào quên bật RLS
 const noRls = await q(`select n.nspname || '.' || c.relname as t from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where c.relkind = 'r' and n.nspname in ('core','crm','app','ext','ai','audit') and not c.relrowsecurity`);
 check('mọi bảng đều bật RLS', noRls.length === 0, noRls);
