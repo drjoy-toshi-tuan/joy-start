@@ -948,6 +948,37 @@ create table ai.messages (
   created_at       timestamptz not null default now()
 );
 
+-- Agent chuyên trách của Pilot: mỗi agent chỉ có bộ công cụ + model của riêng nó (ít công cụ ⇒ chính xác hơn, rẻ hơn)
+create table ai.agents (
+  code           text primary key,            -- 'request' 'schedule' 'crm' 'policy_qa' 'search' 'announce' 'incident' 'general'
+  name_ja        text not null,
+  name_vi        text not null,
+  description    text not null,               -- đưa cho Jev làm mô tả lựa chọn (Choice option)
+  model          text not null,               -- model OpenAI dùng cho agent này
+  allowed_tools  text[] not null default '{}', -- 'joy-start.submit_request' 'drjoy.create-attendance-leave-request' …
+  can_write      boolean not null default false,
+  active         boolean not null default true,
+  prompt_version text
+);
+
+-- Quyết định định tuyến của Jev (TypeSafe) cho từng câu hỏi — để đo độ chính xác, chỉnh ngưỡng, tính chi phí
+create table ai.routing_decisions (
+  id               bigint generated always as identity primary key,
+  message_id       bigint references ai.messages (id) on delete cascade,
+  employee_id      uuid not null references core.employees (id),
+  router           text not null default 'jev',    -- 'jev' · 'llm_fallback' · 'user_pick'
+  agent_code       text references ai.agents (code),
+  probabilities    jsonb,                          -- {"request":0.91,"schedule":0.05,…}
+  confidence       real,
+  flags            jsonb,                          -- {"needs_write":0.97,"has_personal_info":0.02,"complexity":2}
+  model_tier       text check (model_tier in ('small', 'large')),
+  fell_back        boolean not null default false,  -- confidence thấp ⇒ hỏi lại người dùng / router LLM
+  latency_ms       int,
+  corrected_agent  text references ai.agents (code),  -- người dùng / người review sửa lại ⇒ dữ liệu đánh giá
+  created_at       timestamptz not null default now()
+);
+create index on ai.routing_decisions (created_at);
+
 -- Mỗi lần Pilot gọi tool/MCP đều ghi lại (ai gọi, tool gì, tham số, kết quả tóm tắt) — để kiểm toán
 create table ai.tool_calls (
   id           bigint generated always as identity primary key,
@@ -960,6 +991,87 @@ create table ai.tool_calls (
   summary      text,
   created_at   timestamptz not null default now()
 );
+
+-- ── Log sử dụng + tiêu thụ token: MỖI lần gọi model (OpenAI · Jev · embedding) là 1 dòng ──
+create table ai.model_prices (                    -- bảng giá (USD / 1 triệu token), có hiệu lực theo ngày
+  provider         text not null,                 -- 'openai' · 'typesafe'
+  model            text not null,
+  input_per_m      numeric(12, 6) not null,
+  cached_per_m     numeric(12, 6),
+  output_per_m     numeric(12, 6) not null default 0,
+  valid_from       date not null default current_date,
+  primary key (provider, model, valid_from)
+);
+
+create table ai.usage_events (
+  id                bigint generated always as identity primary key,
+  at                timestamptz not null default now(),
+  employee_id       uuid references core.employees (id),        -- null = job hệ thống (dịch nháp tự động, lập chỉ mục…)
+  department_id     uuid references core.departments (id),      -- chụp lại lúc gọi (điều chuyển sau không làm lệch số)
+  feature           text not null check (feature in ('pilot', 'routing', 'label', 'translate', 'embedding', 'summary', 'other')),
+  provider          text not null,
+  model             text not null,
+  agent_code        text references ai.agents (code),
+  conversation_id   uuid references ai.conversations (id) on delete set null,
+  message_id        bigint references ai.messages (id) on delete set null,
+  input_tokens      int not null default 0,
+  cached_tokens     int not null default 0,
+  output_tokens     int not null default 0,
+  cost_usd          numeric(12, 6),                -- tính tự động từ ai.model_prices khi ghi
+  latency_ms        int,
+  status            text not null default 'ok' check (status in ('ok', 'error', 'blocked', 'fallback')),
+  error             text,
+  request_id        text                           -- id request phía nhà cung cấp, để đối chiếu hoá đơn
+);
+create index on ai.usage_events (at);
+create index on ai.usage_events (department_id, at);
+create index on ai.usage_events (employee_id, at);
+
+create or replace function private.price_usage() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare pr ai.model_prices;
+begin
+  if new.department_id is null and new.employee_id is not null then
+    select e.department_id into new.department_id from core.employees e where e.id = new.employee_id;
+  end if;
+  if new.cost_usd is null then
+    select * into pr from ai.model_prices
+     where provider = new.provider and model = new.model and valid_from <= new.at::date
+     order by valid_from desc limit 1;
+    if found then
+      new.cost_usd := ((new.input_tokens - new.cached_tokens) * pr.input_per_m
+                       + new.cached_tokens * coalesce(pr.cached_per_m, pr.input_per_m)
+                       + new.output_tokens * pr.output_per_m) / 1000000.0;
+    end if;
+  end if;
+  return new;
+end $$;
+create trigger usage_price before insert on ai.usage_events for each row execute function private.price_usage();
+
+-- Ngân sách theo tháng (toàn công ty / phòng ban / cá nhân); vượt alert_ratio ⇒ thông báo cho người phụ trách
+create table ai.budgets (
+  id             bigint generated always as identity primary key,
+  scope          text not null check (scope in ('company', 'department', 'employee')),
+  scope_id       uuid,                           -- department_id / employee_id; null khi company
+  monthly_usd    numeric(12, 2) not null,
+  alert_ratio    numeric(3, 2) not null default 0.8,
+  notify_id      uuid references core.employees (id),
+  last_alerted   date,
+  unique (scope, scope_id)
+);
+
+-- Log dùng JOY START (màn hình nào, thao tác gì) — để biết tính năng nào được dùng / bỏ phí
+create table app.usage_events (
+  id           bigint generated always as identity primary key,
+  at           timestamptz not null default now(),
+  employee_id  uuid not null references core.employees (id) default private.me(),
+  page_key     text not null,                   -- 'todo/申請/経費' · 'home' · 'search'
+  action       text not null default 'view',    -- 'view' · 'submit' · 'search' · 'pilot_open' …
+  device       text check (device in ('pc', 'mobile')),
+  meta         jsonb
+);
+create index on app.usage_events (at);
+create index on app.usage_events (page_key, at);
 
 -- Chỉ mục tài liệu cho tìm kiếm ngữ nghĩa (ルール · 業務マニュアル · FAQ · リリースノート)
 create table ai.documents (
@@ -1049,6 +1161,44 @@ begin
   end if;
   insert into crm.deal_financials (deal_id, total_amount, mrr, initial_fee) values (p_deal, p_total, p_mrr, p_initial)
   on conflict (deal_id) do update set total_amount = excluded.total_amount, mrr = excluded.mrr, initial_fee = excluded.initial_fee;
+end $$;
+
+-- Tổng hợp AI theo ngày × phòng ban × tính năng × agent × model. Quyền ai.usage: △ = phòng ban mình, ○ = toàn công ty;
+-- không có quyền thì chỉ thấy số của chính mình.
+create or replace function ai.usage_summary(p_from date, p_to date)
+returns table (day date, department_id uuid, feature text, agent_code text, provider text, model text,
+               calls bigint, users bigint, input_tokens bigint, output_tokens bigint, cost_usd numeric, avg_latency_ms int, errors bigint)
+language sql stable security definer set search_path = '' as $$
+  select (u.at at time zone 'Asia/Tokyo')::date, u.department_id, u.feature, u.agent_code, u.provider, u.model,
+         count(*), count(distinct u.employee_id), sum(u.input_tokens), sum(u.output_tokens),
+         round(sum(coalesce(u.cost_usd, 0)), 4), avg(u.latency_ms)::int, count(*) filter (where u.status = 'error')
+  from ai.usage_events u
+  where u.at >= p_from and u.at < p_to + 1
+    and (private.can_see('ai.usage', u.department_id) or u.employee_id = private.me())
+  group by 1, 2, 3, 4, 5, 6
+  order by 1, 2
+$$;
+
+-- Job (pg_cron mỗi giờ): so chi phí tháng này với ngân sách, vượt ngưỡng thì báo (1 lần / ngày)
+create or replace function private.check_ai_budgets() returns int
+language plpgsql security definer set search_path = '' as $$
+declare b ai.budgets; spent numeric; n int := 0;
+begin
+  for b in select * from ai.budgets loop
+    select coalesce(sum(u.cost_usd), 0) into spent from ai.usage_events u
+     where u.at >= date_trunc('month', now())
+       and (b.scope = 'company'
+            or (b.scope = 'department' and u.department_id in (select private.dept_subtree(b.scope_id)))
+            or (b.scope = 'employee' and u.employee_id = b.scope_id));
+    if spent >= b.monthly_usd * b.alert_ratio and b.notify_id is not null
+       and (b.last_alerted is null or b.last_alerted < current_date) then
+      perform private.notify(b.notify_id, 'system', 'AI 利用額が予算の ' || round(100 * spent / b.monthly_usd) || '% に到達',
+        'Chi phí AI đã đạt ' || round(100 * spent / b.monthly_usd) || '% ngân sách', '#/settings/data-sources', 'ai.budgets', b.id::text, 1::smallint);
+      update ai.budgets set last_alerted = current_date where id = b.id;
+      n := n + 1;
+    end if;
+  end loop;
+  return n;
 end $$;
 
 -- 通知センター: 4 con số trên nút chuông
@@ -1273,6 +1423,16 @@ create policy own on ai.conversations for all to authenticated using (employee_i
 create policy own on ai.messages for select to authenticated using (
   exists (select 1 from ai.conversations c where c.id = conversation_id and c.employee_id = private.me()));
 create policy own on ai.tool_calls for select to authenticated using (employee_id = private.me() or private.has_role('admin'));
+create policy read_all on ai.agents for select to authenticated using (active or private.has_role('admin'));
+create policy admin_write on ai.agents for all to authenticated using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy own on ai.routing_decisions for select to authenticated using (employee_id = private.me() or private.has_role('admin'));
+-- Log: người dùng không tự ghi token/chi phí (Edge Function ghi bằng service_role); xem dòng của mình, tổng hợp qua ai.usage_summary()
+create policy own on ai.usage_events for select to authenticated using (
+  employee_id = private.me() or private.can_see('ai.usage', department_id));
+create policy read_all on ai.model_prices for select to authenticated using (true);
+create policy admin_all on ai.budgets for all to authenticated using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy own_insert on app.usage_events for insert to authenticated with check (employee_id = private.me());
+create policy admin_read on app.usage_events for select to authenticated using (private.has_role('admin') or employee_id = private.me());
 create policy readable on ai.documents       for select to authenticated using (audience = 'all' or private.has_role('admin'));
 create policy readable on ai.document_chunks for select to authenticated using (
   exists (select 1 from ai.documents d where d.id = document_id and (d.audience = 'all' or private.has_role('admin'))));
@@ -1285,6 +1445,7 @@ create policy admin_read on audit.log for select to authenticated using (private
 grant usage on schema core, crm, app, ext, ai to authenticated, service_role;
 grant usage on schema audit to authenticated, service_role;
 grant select, insert, update, delete on all tables in schema core, crm, app, ai to authenticated;
+revoke insert, update, delete on ai.usage_events, ai.routing_decisions, ai.tool_calls, ai.model_prices from authenticated;
 grant select on all tables in schema ext, audit to authenticated;
 revoke all on crm.deal_financials from authenticated;
 revoke insert, update, delete on core.employee_assignments from authenticated;   -- chỉ qua core.transfer_employee()
@@ -1302,7 +1463,9 @@ revoke execute on all functions in schema core from public;
 grant execute on function app.submit_request(uuid), app.decide_approval(bigint, text, text),
   crm.list_deals(date), crm.save_deal_amounts(uuid, numeric, numeric, numeric),
   core.transfer_employee(uuid, uuid, text, text, date, text),
-  app.inbox_counts(), app.health_ranking(date, date, text, text) to authenticated;
+  app.inbox_counts(), app.health_ranking(date, date, text, text), ai.usage_summary(date, date) to authenticated;
+revoke execute on all functions in schema ai from public;
+grant execute on function ai.usage_summary(date, date) to authenticated;
 
 -- ============================================================================
 -- §Realtime — bảng nào thay đổi thì đẩy xuống trình duyệt (vẫn tuân RLS)

@@ -216,7 +216,33 @@ await db.exec(`update app.notification_preferences set quiet_start = (now() at t
 const [qt2] = await q(`select private.next_send_time('20000000-0000-0000-0000-000000000004') > now() + interval '30 minutes' as deferred`);
 check('giờ yên lặng ⇒ gửi sau quiet_end', qt2.deferred === true, qt2);
 
-// 6. Không có bảng nào quên bật RLS
+// 6. Log token/chi phí: giá tự tính, người dùng không tự ghi được, tổng hợp theo quyền
+await db.exec(`
+  insert into ai.model_prices (provider, model, input_per_m, cached_per_m, output_per_m, valid_from) values ('openai', 'test-small', 1, 0.5, 4, '2026-01-01');
+  insert into ai.usage_events (employee_id, feature, provider, model, agent_code, input_tokens, cached_tokens, output_tokens) values
+    ('20000000-0000-0000-0000-000000000003', 'pilot',   'openai',   'test-small', 'schedule', 1000000, 200000, 250000),
+    ('20000000-0000-0000-0000-000000000003', 'routing', 'typesafe', 'jev',        null,       500,     0,      0),
+    ('20000000-0000-0000-0000-000000000004', 'pilot',   'openai',   'test-small', 'crm',      1000000, 0,      0);`);
+const [cost] = await q(`select cost_usd::float as c, department_id from ai.usage_events where agent_code = 'schedule'`);
+check('chi phí tự tính: 0.8M×$1 + 0.2M×$0.5 + 0.25M×$4 = $1.9', Math.abs(cost.c - 1.9) < 1e-6 && cost.department_id === '10000000-0000-0000-0000-000000000001', cost);
+await as(3, async () => {
+  let err = null;
+  try { await q(`insert into ai.usage_events (employee_id, feature, provider, model) values (private.me(), 'pilot', 'openai', 'x')`); } catch (x) { err = x.message; }
+  check('người dùng không tự ghi được log token', !!err, err);
+  const r = await q('select * from ai.usage_summary(current_date - 1, current_date)');
+  check('general: tổng hợp chỉ thấy số của mình', r.length === 2 && r.every((x) => x.department_id === '10000000-0000-0000-0000-000000000001'), r);
+  await q(`insert into app.usage_events (page_key, action) values ('todo/申請/経費', 'view')`);
+});
+await as(2, async () => {
+  const r = await q('select sum(calls)::int as n from ai.usage_summary(current_date - 1, current_date)');
+  check('manager: thấy tổng hợp phòng ban mình (△), không thấy phòng khác', r[0].n === 2, r);
+});
+await db.exec(`insert into ai.budgets (scope, monthly_usd, alert_ratio, notify_id) values ('company', 2, 0.8, '20000000-0000-0000-0000-000000000001')`);
+const [bud] = await q(`select private.check_ai_budgets() as n`);
+const [bud2] = await q(`select private.check_ai_budgets() as n`);
+check('ngân sách: vượt 80% ⇒ báo 1 lần trong ngày', bud.n === 1 && bud2.n === 0, { bud, bud2 });
+
+// 7. Không có bảng nào quên bật RLS
 const noRls = await q(`select n.nspname || '.' || c.relname as t from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where c.relkind = 'r' and n.nspname in ('core','crm','app','ext','ai','audit') and not c.relrowsecurity`);
 check('mọi bảng đều bật RLS', noRls.length === 0, noRls);

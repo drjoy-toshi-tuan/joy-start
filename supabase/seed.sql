@@ -54,7 +54,8 @@ insert into core.permissions (code, description_ja, description_vi) values
   ('report.read',       'メンバーの報告を閲覧', 'Xem báo cáo của thành viên'),
   ('crm.edit',          '顧客・案件の編集',   'Sửa khách hàng · cơ hội'),
   ('staff.edit',        '名簿・組織の編集',   'Sửa danh bạ · tổ chức'),
-  ('role.grant',        '機能権限の付与',     'Cấp quyền chức năng');
+  ('role.grant',        '機能権限の付与',     'Cấp quyền chức năng'),
+  ('ai.usage',          'AI 利用状況・コストの閲覧', 'Xem tình hình dùng · chi phí AI');
 
 -- Ma trận ○△× của 設定 › 権限 (○=all · △=own_dept · ×=none)
 insert into core.role_permissions (role_code, permission_code, scope) values
@@ -65,7 +66,8 @@ insert into core.role_permissions (role_code, permission_code, scope) values
   -- quyền chức năng (ngoài ma trận ○△× của màn 権限)
   ('leader',    'crm.edit', 'own_dept'), ('manager', 'crm.edit', 'own_dept'), ('executive', 'crm.edit', 'all'),
   ('hr_admin',  'staff.edit', 'all'), ('hr_admin', 'role.grant', 'all'), ('hr_admin', 'directory.private', 'all'),
-  ('admin',     'role.grant', 'all');
+  ('admin',     'role.grant', 'all'),
+  ('manager',   'ai.usage', 'own_dept'), ('executive', 'ai.usage', 'all'), ('admin', 'ai.usage', 'all');
 
 -- 8 loại 申請. system_of_record 'drjoy' / 'freee' ⇒ JOY START chỉ là cửa nhập, đơn thật nằm ở Dr.JOY (qua MCP) / freee.
 insert into app.request_types (code, name_ja, name_vi, route_template, system_of_record, is_sensitive) values
@@ -97,3 +99,18 @@ insert into ext.data_sources (id, menu_ja, menu_vi, system, mode, owner_departme
   ('ds-row-search-drive', '全体検索＞Googleドライブ',     'Tìm kiếm toàn bộ › Google Drive',                'Google Drive', 'live', '業務推進部', '都度', false),
   ('ds-row-search-gmail', '全体検索＞Gmail',              'Tìm kiếm toàn bộ › Gmail',                       'Gmail', 'live', '業務推進部', '都度', false),
   ('ds-row-search-drjoy', '全体検索＞Dr.JOY',             'Tìm kiếm toàn bộ › Dr.JOY',                      'Dr.JOY MCP', 'live', 'AI事業開発部', '都度', false);
+
+-- Agent của JOY Pilot (bản đầu; Jev chọn 1 trong các agent này theo description). model = tên model OpenAI, chốt khi PoC.
+insert into ai.agents (code, name_ja, name_vi, description, model, allowed_tools, can_write) values
+  ('request',   '申請エージェント',       'Agent đơn đề nghị',     'Create or check leave, attendance, expense, business trip, equipment or software requests', 'openai:large', '{joy-start.create_request,joy-start.submit_request,drjoy.create-attendance-leave-request,drjoy.search-attendance-requests}', true),
+  ('schedule',  '予定・承認エージェント', 'Agent lịch · duyệt',     'What do I have today, pending approvals, overdue actions, meetings', 'openai:small', '{joy-start.inbox_counts,joy-start.list_approvals,google.calendar.list_events}', false),
+  ('crm',       '顧客エージェント',       'Agent khách hàng',      'Status of a hospital or facility, deals, contracts, contacts, next actions', 'openai:large', '{joy-start.crm_search,joy-start.list_deals}', false),
+  ('policy_qa', '社内規程エージェント',   'Agent quy định',        'Questions about work rules, company policies, manuals, forms, FAQ', 'openai:small', '{joy-start.search_documents}', false),
+  ('search',    '横断検索エージェント',   'Agent tìm kiếm',        'Find a file, email, Dr.JOY post or chat across Drive, Gmail and Dr.JOY', 'openai:small', '{google.drive.search_files,gmail.search_threads,drjoy.search-content}', false),
+  ('announce',  'お知らせエージェント',   'Agent thông báo',       'Draft, translate (ja/vi) or summarize an internal announcement', 'openai:large', '{joy-start.draft_announcement}', true),
+  ('incident',  'インシデントエージェント', 'Agent sự cố',         'Report an incident, system outage, customer site trouble or near miss', 'openai:large', '{joy-start.report_incident}', true),
+  ('general',   '一般',                   'Chung',                 'Anything else, small talk, or unclear requests', 'openai:small', '{}', false);
+
+-- Bảng giá model: ĐIỀN GIÁ THẬT theo hợp đồng trước khi chạy (giá Jev theo công bố 9/2026: input $0.042 / 1M, output không tính).
+insert into ai.model_prices (provider, model, input_per_m, output_per_m, valid_from) values
+  ('typesafe', 'jev', 0.042, 0, '2026-09-15');
