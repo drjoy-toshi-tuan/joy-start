@@ -1,7 +1,8 @@
 -- ============================================================================
 -- JOY START — dữ liệu MASTER ban đầu (lấy từ mockup/data.js). Chạy sau migration.
--- Phòng ban · nhân viên KHÔNG seed ở đây: nguồn gốc là Sheet「名簿_組織図_座席_会議」,
--- job đồng bộ (Edge Function) sẽ nạp vào core.departments / core.employees.
+-- Phòng ban · nhân viên KHÔNG seed ở đây: nhập MỘT LẦN từ Sheet「名簿_組織図_座席_会議」
+-- (script nhập, ghi legacy_sheet_key), sau đó Supabase là bản gốc, 人事 sửa trên JOY START.
+-- Khách hàng / cơ hội cũng nhập một lần từ Mazrica (legacy_mazrica_id) rồi ngừng dùng Mazrica.
 -- ============================================================================
 
 insert into core.sites (code, country, name_ja, name_vi, timezone) values
@@ -33,26 +34,43 @@ insert into core.roles (code, name_ja, name_vi, rank) values
   ('leader',    'リーダー',     'Trưởng nhóm',   2),
   ('manager',   'マネージャー', 'Quản lý',       3),
   ('executive', '役員',         'Ban điều hành', 4),
+  ('hr_admin',  '人事管理者',   'Quản trị nhân sự',  8),
   ('admin',     'システム管理者', 'Quản trị hệ thống', 9);
+
+-- 役職 ⇒ vai trò mặc định (tên chức vụ cuối cùng do 人材戦略部 chốt)
+insert into core.positions (code, name_ja, name_vi, rank, default_role) values
+  ('ceo',             '代表取締役',   'Tổng giám đốc',     100, 'executive'),
+  ('executive',       '役員',         'Thành viên HĐQT',    90, 'executive'),
+  ('general_manager', '部長',         'Trưởng phòng',       70, 'manager'),
+  ('manager',         'マネージャー', 'Quản lý',            60, 'manager'),
+  ('leader',          'リーダー',     'Trưởng nhóm',        40, 'leader'),
+  ('member',          'メンバー',     'Nhân viên',          10, 'general');
 
 insert into core.permissions (code, description_ja, description_vi) values
   ('deal.amount',       '受注の総額',       'Tổng giá trị đơn hàng'),
   ('deal.mrr',          'MRR',              'MRR'),
   ('pl',                'PL（損益）',        'PL (lãi lỗ)'),
   ('directory.private', '名簿の個人情報',   'Thông tin cá nhân trong danh bạ'),
-  ('report.read',       'メンバーの報告を閲覧', 'Xem báo cáo của thành viên');
+  ('report.read',       'メンバーの報告を閲覧', 'Xem báo cáo của thành viên'),
+  ('crm.edit',          '顧客・案件の編集',   'Sửa khách hàng · cơ hội'),
+  ('staff.edit',        '名簿・組織の編集',   'Sửa danh bạ · tổ chức'),
+  ('role.grant',        '機能権限の付与',     'Cấp quyền chức năng');
 
 -- Ma trận ○△× của 設定 › 権限 (○=all · △=own_dept · ×=none)
 insert into core.role_permissions (role_code, permission_code, scope) values
   ('general',   'deal.amount', 'own_dept'), ('general',   'deal.mrr', 'none'),     ('general',   'pl', 'none'),     ('general',   'directory.private', 'none'),     ('general',   'report.read', 'none'),
   ('leader',    'deal.amount', 'all'),      ('leader',    'deal.mrr', 'own_dept'), ('leader',    'pl', 'none'),     ('leader',    'directory.private', 'own_dept'), ('leader',    'report.read', 'own_dept'),
   ('manager',   'deal.amount', 'all'),      ('manager',   'deal.mrr', 'all'),      ('manager',   'pl', 'own_dept'), ('manager',   'directory.private', 'own_dept'), ('manager',   'report.read', 'own_dept'),
-  ('executive', 'deal.amount', 'all'),      ('executive', 'deal.mrr', 'all'),      ('executive', 'pl', 'all'),      ('executive', 'directory.private', 'all'),      ('executive', 'report.read', 'all');
+  ('executive', 'deal.amount', 'all'),      ('executive', 'deal.mrr', 'all'),      ('executive', 'pl', 'all'),      ('executive', 'directory.private', 'all'),      ('executive', 'report.read', 'all'),
+  -- quyền chức năng (ngoài ma trận ○△× của màn 権限)
+  ('leader',    'crm.edit', 'own_dept'), ('manager', 'crm.edit', 'own_dept'), ('executive', 'crm.edit', 'all'),
+  ('hr_admin',  'staff.edit', 'all'), ('hr_admin', 'role.grant', 'all'), ('hr_admin', 'directory.private', 'all'),
+  ('admin',     'role.grant', 'all');
 
--- 8 loại 申請. system_of_record = 'freee' ⇒ JOY START chỉ là cửa nhập, đơn thật nằm ở freee (cần chốt).
+-- 8 loại 申請. system_of_record 'drjoy' / 'freee' ⇒ JOY START chỉ là cửa nhập, đơn thật nằm ở Dr.JOY (qua MCP) / freee.
 insert into app.request_types (code, name_ja, name_vi, route_template, system_of_record, is_sensitive) values
-  ('attendance',    '勤怠',           'Chấm công',                  '[{"approver":"manager"}]',                                   'freee',     false),
-  ('leave',         '休暇',           'Nghỉ phép',                  '[{"approver":"manager"}]',                                   'freee',     false),
+  ('attendance',    '勤怠',           'Chấm công',                  '[{"approver":"manager"}]',                                   'drjoy',     false),
+  ('leave',         '休暇',           'Nghỉ phép',                  '[{"approver":"manager"}]',                                   'drjoy',     false),
   ('expense',       '経費',           'Chi phí',                    '[{"approver":"manager"},{"approver":"role","role":"admin"}]', 'freee',     false),
   ('business_trip', '出張',           'Công tác',                   '[{"approver":"manager"}]',                                   'joy_start', false),
   ('equipment',     '備品｜端末',     'Thiết bị｜Máy',              '[{"approver":"manager"},{"approver":"role","role":"admin"}]', 'joy_start', false),
@@ -62,14 +80,14 @@ insert into app.request_types (code, name_ja, name_vi, route_template, system_of
 
 -- 設定 › データソース (DS_ROWS của mockup). mode: sync = kéo về Supabase · live = hỏi trực tiếp khi xem · internal = JOY START là nguồn gốc
 insert into ext.data_sources (id, menu_ja, menu_vi, system, mode, owner_department, frequency, configured) values
-  ('ds-row-staff',        'メンバー＞名簿・組織図・座席', 'Thành viên › Danh bạ · Sơ đồ tổ chức · Chỗ ngồi', 'Google Sheets', 'sync', '人材戦略部', '月次＋手動', true),
-  ('ds-row-jobtype',      '職種マスタ',                   'Danh mục vị trí',                                'Google Sheets', 'sync', '人材戦略部', '随時', true),
+  ('ds-row-staff',        'メンバー＞名簿・組織図・座席', 'Thành viên › Danh bạ · Sơ đồ tổ chức · Chỗ ngồi', 'JOY START（staff_master・シートから移行）', 'internal', '人材戦略部', '随時', true),
+  ('ds-row-jobtype',      '職種マスタ',                   'Danh mục vị trí',                                'JOY START（staff_master）', 'internal', '人材戦略部', '随時', true),
   ('ds-row-health',       '健康JOY',                      'Sức khỏe JOY',                                   'JOY START', 'internal', '人材戦略部', '随時', false),
-  ('ds-row-cs',           '顧客対応',                     'Khách hàng',                                     'Mazrica', 'sync', 'AI事業開発部', '要確認', false),
+  ('ds-row-cs',           '顧客対応',                     'Khách hàng',                                     'JOY START（CRM・Mazrica から移行）', 'internal', 'AI事業開発部', '随時', false),
   ('ds-row-recruit',      '採用',                         'Tuyển dụng',                                     'ATS', 'sync', '人材戦略部', '要確認', false),
-  ('ds-row-apply',        '申請＞勤怠・経費',             'Đơn đề nghị › Chấm công · Chi phí',              'freee', 'sync', '経営戦略部・業務推進部', '要確認', false),
+  ('ds-row-apply',        '申請＞勤怠・休暇・経費',       'Đơn đề nghị › Chấm công · Nghỉ phép · Chi phí',  'Dr.JOY MCP（勤怠・休暇）／freee（経費・要確認）', 'live', '経営戦略部・業務推進部', '都度', false),
   ('ds-row-pl',           '目標｜結果＞全社＞PL',         'Mục tiêu｜Kết quả › Toàn công ty › PL',          'freee', 'sync', '経営戦略部・業務推進部', '要確認', false),
-  ('ds-row-map',          '目標｜結果＞全社＞導入マップ', 'Mục tiêu｜Kết quả › Bản đồ triển khai',          'Mazrica', 'sync', '経営戦略部', '要確認', false),
+  ('ds-row-map',          '目標｜結果＞全社＞導入マップ', 'Mục tiêu｜Kết quả › Bản đồ triển khai',          'JOY START（CRM）', 'internal', '経営戦略部', '随時', false),
   ('ds-row-dev-ticket',   '開発＞チケット',               'Phát triển › Ticket',                            'Redmine', 'sync', '研究開発部', '要確認', false),
   ('ds-row-dev',          '開発（ロードマップ・要望・リリースノート）', 'Phát triển (Lộ trình · Yêu cầu · Ghi chú phát hành)', 'JOY START', 'internal', '研究開発部', '要確認', false),
   ('ds-row-inventory',    '在庫',                         'Kho',                                            'JOY START', 'internal', '業務推進部', '要確認', false),

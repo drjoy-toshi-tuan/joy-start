@@ -2,10 +2,12 @@
 -- JOY START — schema Supabase (BẢN NHÁP v0.1 · 2026-09-29)
 --
 -- Phạm vi: phần LÕI cho Phase 1–2 (xem docs/architecture.md):
---   core  : tổ chức · nhân viên · phân quyền (RBAC) · cài đặt cá nhân · お気に入り
+--   core  : STAFF MASTER (nhân viên · phòng ban · chức vụ · lịch sử điều chuyển · quyền chức năng)
+--           · cài đặt cá nhân · お気に入り. Supabase là BẢN GỐC (thay Sheet「名簿_組織図_座席_会議」)
+--   crm   : khách hàng · cơ hội · アクション — Supabase là BẢN GỐC (thay Mazrica, nhập 1 lần)
 --   app   : dữ liệu JOY START là NGUỒN GỐC — お知らせ · 申請/承認 · 報告 · インシデント ·
 --           健康JOY · スケジュール · 通知 (thông báo realtime)
---   ext   : bản SAO CHỈ-ĐỌC từ hệ thống ngoài (Mazrica, Sheet 名簿…) + sổ theo dõi đồng bộ
+--   ext   : bản SAO CHỈ-ĐỌC từ hệ thống ngoài (Redmine, BigQuery…) + sổ theo dõi đồng bộ
 --   ai    : JOY Pilot (hội thoại, nhật ký gọi tool, chỉ mục tài liệu pgvector)
 --   audit : nhật ký thay đổi (ISMS)
 --   private: hàm trợ giúp cho RLS — KHÔNG đưa vào Data API
@@ -16,12 +18,14 @@
 --   · Chữ hiển thị song ngữ: cột *_ja / *_vi (bản vi có thể do AI dịch → translated_by).
 --   · Thao tác nhiều bước (nộp đơn, duyệt) đi qua RPC security definer, không UPDATE trực tiếp.
 --
--- Supabase: thêm core, app, ext, ai vào Settings → API → Exposed schemas.
+-- 勤怠・休暇: bản gốc ở Dr.JOY (đọc/ghi qua Dr.JOY MCP) · 経費: freee (cần xác nhận).
+-- Supabase: thêm core, crm, app, ext, ai vào Settings → API → Exposed schemas.
 -- ============================================================================
 
 create extension if not exists vector;
 
 create schema if not exists core;
+create schema if not exists crm;
 create schema if not exists app;
 create schema if not exists ext;
 create schema if not exists ai;
@@ -29,7 +33,8 @@ create schema if not exists audit;
 create schema if not exists private;
 
 -- ── Kiểu dùng chung ─────────────────────────────────────────────────────────
-create type core.role_code  as enum ('general', 'leader', 'manager', 'executive', 'admin');
+-- 4 vai trò đầu SUY RA TỪ CHỨC VỤ (positions.default_role); 2 vai trò sau là quyền chức năng cấp tay
+create type core.role_code  as enum ('general', 'leader', 'manager', 'executive', 'hr_admin', 'admin');
 -- Thứ tự khai báo = thứ tự so sánh ⇒ max() ra phạm vi rộng nhất
 create type core.perm_scope as enum ('none', 'own_dept', 'all');
 create type core.lang       as enum ('ja', 'vi');
@@ -59,8 +64,8 @@ create table core.departments (
   name_vi     text not null,
   parent_id   uuid references core.departments (id),
   sort_order  int not null default 0,
-  source      text not null default 'sheet',  -- nguồn gốc: Sheet「名簿_組織図_座席_会議」
-  synced_at   timestamptz
+  active      boolean not null default true,
+  created_at  timestamptz not null default now()
 );
 
 create table core.job_types (                  -- 職種マスタ: AE GT LG CS OB TA PR TS Dev QA
@@ -79,7 +84,16 @@ create table core.products (                   -- 5 sản phẩm: 医薬連携 �
   sort_order  int not null default 0
 );
 
-create table core.employees (
+create table core.positions (                  -- 役職: 代表取締役 · 役員 · 部長 · マネージャー · リーダー · メンバー
+  code          text primary key,
+  name_ja       text not null,
+  name_vi       text not null,
+  rank          int not null,
+  default_role  core.role_code not null        -- chức vụ ⇒ vai trò mặc định ⇒ cột ○△×
+);
+
+create table core.employees (                  -- = staff_master
+
   id             uuid primary key default gen_random_uuid(),
   user_id        uuid unique references auth.users (id) on delete set null,  -- nối khi đăng nhập SSO lần đầu
   employee_no    text unique,
@@ -89,15 +103,17 @@ create table core.employees (
   name_latin     text,
   department_id  uuid references core.departments (id),
   job_type_code  text references core.job_types (code),
-  title_ja       text,                                   -- 役職
+  position_code  text references core.positions (code),  -- 役職 hiện tại
+  employment_type text not null default 'full_time'
+                   check (employment_type in ('full_time', 'contract', 'part_time', 'dispatch', 'intern', 'outsourcing')),
+  grade          text,                                   -- 等級
   site_code      text references core.sites (code),
   manager_id     uuid references core.employees (id),    -- 上長 ⇒ tuyến duyệt mặc định
   joined_on      date,
   left_on        date,
   status         text not null default 'active' check (status in ('active', 'leave', 'retired')),
   avatar_path    text,                                   -- Storage: avatars/<employee_id>.webp
-  source         text not null default 'sheet',
-  synced_at      timestamptz,
+  legacy_sheet_key text,                                 -- khoá dòng ở Sheet cũ (chỉ dùng lúc nhập 1 lần)
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
@@ -107,6 +123,25 @@ create trigger employees_touch before update on core.employees
   for each row execute function private.touch_updated_at();
 
 alter table core.departments add column head_id uuid references core.employees (id);
+
+-- Lịch sử điều chuyển + 兼務 (kiêm nhiệm). Dòng is_primary đang mở = vị trí chính hiện tại.
+-- Ghi CHỈ qua RPC core.transfer_employee(); employees.* được đồng bộ từ đây (kể cả điều chuyển hẹn ngày).
+create table core.employee_assignments (
+  id             bigint generated always as identity primary key,
+  employee_id    uuid not null references core.employees (id) on delete cascade,
+  department_id  uuid not null references core.departments (id),
+  position_code  text references core.positions (code),
+  job_type_code  text references core.job_types (code),
+  is_primary     boolean not null default true,
+  valid_from     date not null,
+  valid_to       date,
+  note           text,
+  created_by     uuid references core.employees (id),
+  created_at     timestamptz not null default now(),
+  check (valid_to is null or valid_to >= valid_from)
+);
+create unique index one_open_primary on core.employee_assignments (employee_id) where is_primary and valid_to is null;
+create index on core.employee_assignments (department_id) where valid_to is null;
 
 -- Thông tin cá nhân nhạy cảm tách bảng riêng (chỉ bản thân + người có quyền directory.private).
 -- ⚠ KHÔNG lưu tài khoản ngân hàng / My Number ở JOY START: chuyển thẳng sang hệ thống nhân sự.
@@ -161,17 +196,35 @@ language sql stable security definer set search_path = '' as $$
   select e.department_id from core.employees e where e.user_id = (select auth.uid())
 $$;
 
+-- Vai trò của 1 người = vai trò mặc định của chức vụ ∪ vai trò được cấp thêm
+create or replace function private.roles_of(p_employee uuid) returns setof core.role_code
+language sql stable security definer set search_path = '' as $$
+  select ur.role_code from core.user_roles ur where ur.employee_id = p_employee
+  union
+  select p.default_role from core.employees e join core.positions p on p.code = e.position_code
+  where e.id = p_employee and e.status <> 'retired'
+$$;
+
 create or replace function private.has_role(r core.role_code) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select exists (select 1 from core.user_roles ur where ur.employee_id = private.me() and ur.role_code = r)
+  select r in (select private.roles_of(private.me()))
 $$;
 
 create or replace function private.perm_scope(p text) returns core.perm_scope
 language sql stable security definer set search_path = '' as $$
   select coalesce(max(rp.scope), 'none'::core.perm_scope)
-  from core.user_roles ur
-  join core.role_permissions rp on rp.role_code = ur.role_code and rp.permission_code = p
-  where ur.employee_id = private.me()
+  from core.role_permissions rp
+  where rp.permission_code = p and rp.role_code in (select private.roles_of(private.me()))
+$$;
+
+-- Phòng ban chính + phòng ban kiêm nhiệm đang hiệu lực
+create or replace function private.my_departments() returns setof uuid
+language sql stable security definer set search_path = '' as $$
+  select e.department_id from core.employees e where e.id = private.me() and e.department_id is not null
+  union
+  select a.department_id from core.employee_assignments a
+  where a.employee_id = private.me() and a.valid_from <= current_date
+    and (a.valid_to is null or a.valid_to >= current_date)
 $$;
 
 -- Phòng ban + mọi phòng ban con (△ "bộ phận mình" bao gồm cấp dưới)
@@ -189,10 +242,49 @@ create or replace function private.can_see(p text, target_dept uuid) returns boo
 language sql stable security definer set search_path = '' as $$
   select case private.perm_scope(p)
     when 'all' then true
-    when 'own_dept' then target_dept in (select private.dept_subtree(private.my_department()))
+    when 'own_dept' then target_dept in (select private.dept_subtree(d) from private.my_departments() as d)
     else false
   end
 $$;
+
+-- Áp các điều chuyển đã tới ngày vào employees (pg_cron chạy hằng ngày:
+--   select cron.schedule('apply-assignments', '5 0 * * *', 'select private.apply_due_assignments()');)
+create or replace function private.apply_due_assignments() returns int
+language plpgsql security definer set search_path = '' as $$
+declare n int;
+begin
+  update core.employees e
+     set department_id = a.department_id,
+         position_code = a.position_code,
+         job_type_code = coalesce(a.job_type_code, e.job_type_code)
+    from core.employee_assignments a
+   where a.employee_id = e.id and a.is_primary
+     and a.valid_from <= current_date and (a.valid_to is null or a.valid_to >= current_date)
+     and (e.department_id is distinct from a.department_id or e.position_code is distinct from a.position_code
+          or (a.job_type_code is not null and e.job_type_code is distinct from a.job_type_code));
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+-- RPC 人事: điều chuyển / đổi chức vụ (có thể hẹn ngày, vd tổ chức lại từ 10/1)
+create or replace function core.transfer_employee(
+  p_employee uuid, p_department uuid, p_position text, p_job_type text default null,
+  p_from date default current_date, p_note text default null
+) returns core.employee_assignments
+language plpgsql security definer set search_path = '' as $$
+declare a core.employee_assignments;
+begin
+  if private.perm_scope('staff.edit') <> 'all' then raise exception 'permission denied: staff.edit'; end if;
+  delete from core.employee_assignments                 -- huỷ điều chuyển hẹn trước chưa tới ngày
+   where employee_id = p_employee and is_primary and valid_from >= p_from;
+  update core.employee_assignments set valid_to = p_from - 1
+   where employee_id = p_employee and is_primary and (valid_to is null or valid_to >= p_from);
+  insert into core.employee_assignments (employee_id, department_id, position_code, job_type_code, is_primary, valid_from, note, created_by)
+  values (p_employee, p_department, p_position, p_job_type, true, p_from, p_note, private.me())
+  returning * into a;
+  perform private.apply_due_assignments();
+  return a;
+end $$;
 
 -- ============================================================================
 -- §core — cài đặt cá nhân (thay cho localStorage joystart_* của mockup)
@@ -384,9 +476,19 @@ language sql stable security definer set search_path = '' as $$
            or (a.audience_type = 'department'
                and e.department_id in (select private.dept_subtree(a.audience_value::uuid)))
            or (a.audience_type = 'role'
-               and exists (select 1 from core.user_roles ur
-                           where ur.employee_id = e.id and ur.role_code::text = a.audience_value)))
+               and a.audience_value in (select r::text from private.roles_of(e.id) as r)))
   )
+$$;
+
+create or replace function private.can_read_announcement(p_announcement uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from app.announcements a
+    where a.id = p_announcement
+      and (a.author_id = private.me() or private.has_role('admin')
+           or (a.status = 'published' and now() >= coalesce(a.publish_from, a.created_at)
+               and (a.publish_until is null or now() < a.publish_until)
+               and private.in_audience(a.id, private.me()))))
 $$;
 
 -- Khi chuyển sang published: tạo thông báo trong app cho từng người thuộc đối tượng
@@ -415,7 +517,8 @@ create table app.request_types (
   form_schema       jsonb not null default '{}',   -- JSON Schema của form ⇒ UI tự dựng
   route_template    jsonb not null default '[{"approver":"manager"}]',
                                                 -- [{"approver":"manager"} | {"approver":"role","role":"admin"} | {"approver":"employee","id":"…"}]
-  system_of_record  text not null default 'joy_start' check (system_of_record in ('joy_start', 'freee')),
+  system_of_record  text not null default 'joy_start' check (system_of_record in ('joy_start', 'drjoy', 'freee')),
+                                                -- drjoy: 勤怠・休暇 tạo/đọc qua Dr.JOY MCP · freee: 経費
   is_sensitive      boolean not null default false,
   active            boolean not null default true
 );
@@ -436,7 +539,7 @@ create table app.requests (
   current_step     smallint,
   submitted_at     timestamptz,
   decided_at       timestamptz,
-  external_system  text,                        -- 'freee' khi freee là nguồn gốc
+  external_system  text,                        -- 'drjoy' / 'freee' khi đơn thật nằm ở hệ thống đó
   external_id      text,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
@@ -461,15 +564,6 @@ create table app.approval_steps (
 );
 create index approval_pending on app.approval_steps (approver_id) where decision is null;
 
-create table app.request_files (
-  id            uuid primary key default gen_random_uuid(),
-  request_id    uuid not null references app.requests (id) on delete cascade,
-  storage_path  text not null,                  -- bucket 'requests': <request_id>/<file>
-  file_name     text not null,
-  mime          text,
-  size_bytes    bigint,
-  uploaded_at   timestamptz not null default now()
-);
 
 create or replace function private.is_approver(p_request uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
@@ -495,8 +589,9 @@ begin
       select r.id, n, e.manager_id from core.employees e where e.id = me and e.manager_id is not null;
     elsif step->>'approver' = 'role' then
       insert into app.approval_steps (request_id, step_no, approver_id, required_all)
-      select r.id, n, ur.employee_id, false from core.user_roles ur
-      where ur.role_code::text = step->>'role' and ur.employee_id <> me;
+      select r.id, n, e.id, false from core.employees e
+      where e.status = 'active' and e.id <> me
+        and (step->>'role') in (select x::text from private.roles_of(e.id) as x);
     elsif step->>'approver' = 'employee' then
       insert into app.approval_steps (request_id, step_no, approver_id) values (r.id, n, (step->>'id')::uuid);
     end if;
@@ -576,7 +671,7 @@ create table app.reports (
   id            uuid primary key default gen_random_uuid(),
   type          app.report_type not null,
   author_id     uuid not null references core.employees (id),
-  facility_id   uuid,                           -- FK tới ext.facilities (thêm ở dưới)
+  facility_id   uuid,                           -- FK tới crm.facilities (thêm ở dưới)
   deal_id       uuid,
   title         text not null,
   occurred_on   date,
@@ -690,54 +785,150 @@ create table ext.sync_runs (
   error          text
 );
 
-create table ext.facilities (
+-- ============================================================================
+-- §crm — khách hàng · cơ hội · アクション (bản gốc = Supabase; Mazrica chỉ là NGUỒN NHẬP 1 lần)
+-- ============================================================================
+create table crm.facilities (
   id                      uuid primary key default gen_random_uuid(),
   code                    text unique,          -- 'FAC-1023'
   name                    text not null,
+  name_kana               text,
+  corporation_name        text,                 -- 法人名
+  facility_type           text not null default 'hospital'
+                            check (facility_type in ('university_hospital', 'hospital', 'clinic', 'care', 'pharmacy', 'other')),
+  bed_count               int,
   prefecture              text,
   city                    text,
+  address                 text,
+  phone                   text,
   lat                     double precision,     -- 導入マップ
   lng                     double precision,
-  is_university_hospital  boolean not null default false,
-  mazrica_id              text unique,
-  drjoy_org_id            text,
-  synced_at               timestamptz
+  owner_employee_id       uuid references core.employees (id),       -- 担当
+  owner_department_id     uuid references core.departments (id),
+  drjoy_org_id            text,                 -- id tổ chức bên Dr.JOY (nối với MCP)
+  legacy_mazrica_id       text unique,          -- chỉ để đối chiếu khi nhập từ Mazrica
+  created_at              timestamptz not null default now(),
+  updated_at              timestamptz not null default now()
 );
+create trigger facilities_touch before update on crm.facilities for each row execute function private.touch_updated_at();
 
-create table ext.facility_products (
-  facility_id    uuid not null references ext.facilities (id) on delete cascade,
+create table crm.facility_products (             -- hợp đồng theo sản phẩm
+  facility_id    uuid not null references crm.facilities (id) on delete cascade,
   product_code   text not null references core.products (code),
   status         text not null check (status in ('lead', 'negotiating', 'contracted', 'live', 'churned')),
   contracted_on  date,
   live_on        date,
-  synced_at      timestamptz,
+  churned_on     date,
   primary key (facility_id, product_code)
 );
 
--- 受注速報: phần AI CŨNG xem được (không có tiền) …
-create table ext.deals (
+create table crm.contacts (                      -- người liên hệ ở bệnh viện
   id                 uuid primary key default gen_random_uuid(),
-  mazrica_id         text unique,
-  facility_id        uuid references ext.facilities (id),
-  product_code       text not null references core.products (code),
-  owner_employee_id  uuid references core.employees (id),
-  owner_department_id uuid references core.departments (id),
-  stage              text,
-  won_on             date,
-  synced_at          timestamptz
+  facility_id        uuid not null references crm.facilities (id) on delete cascade,
+  name               text not null,
+  name_kana          text,
+  division           text,                     -- 院内部署
+  title              text,
+  email              text,
+  phone              text,
+  is_key_person      boolean not null default false,
+  note               text,
+  legacy_mazrica_id  text unique,
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
 );
-create index on ext.deals (won_on desc);
+create trigger contacts_touch before update on crm.contacts for each row execute function private.touch_updated_at();
 
--- … còn số tiền ở bảng riêng: KHÔNG cấp quyền đọc trực tiếp, chỉ đọc qua app.list_deals()
-create table ext.deal_financials (
-  deal_id       uuid primary key references ext.deals (id) on delete cascade,
+create table crm.deals (
+  id                   uuid primary key default gen_random_uuid(),
+  facility_id          uuid references crm.facilities (id),
+  product_code         text not null references core.products (code),
+  title                text not null default '',
+  owner_employee_id    uuid references core.employees (id),
+  owner_department_id  uuid references core.departments (id),
+  stage                text not null default 'prospect'
+                         check (stage in ('prospect', 'proposal', 'negotiation', 'won', 'lost')),
+  expected_close_on    date,
+  won_on               date,
+  lost_reason          text,
+  legacy_mazrica_id    text unique,
+  created_at           timestamptz not null default now(),
+  updated_at           timestamptz not null default now()
+);
+create index on crm.deals (won_on desc);
+create trigger deals_touch before update on crm.deals for each row execute function private.touch_updated_at();
+
+create or replace function private.on_deal_stage() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if new.stage = 'won' and new.won_on is null then new.won_on := current_date; end if;
+  return new;
+end $$;
+create trigger deals_stage before insert or update of stage on crm.deals
+  for each row execute function private.on_deal_stage();
+
+-- Số tiền tách riêng: KHÔNG cấp quyền đọc trực tiếp — đọc qua crm.list_deals(), ghi qua crm.save_deal_amounts()
+create table crm.deal_financials (
+  deal_id       uuid primary key references crm.deals (id) on delete cascade,
   total_amount  numeric(14, 0),
-  mrr           numeric(12, 0)
+  mrr           numeric(12, 0),
+  initial_fee   numeric(12, 0)
 );
 
-alter table app.reports   add constraint reports_facility_fk   foreign key (facility_id) references ext.facilities (id);
-alter table app.reports   add constraint reports_deal_fk       foreign key (deal_id)     references ext.deals (id);
-alter table app.incidents add constraint incidents_facility_fk foreign key (facility_id) references ext.facilities (id);
+create table crm.leads (
+  id                 uuid primary key default gen_random_uuid(),
+  facility_id        uuid references crm.facilities (id),
+  facility_name      text,                     -- khi cơ sở chưa có trong master
+  product_code       text references core.products (code),
+  source             text not null default 'other' check (source in ('conference', 'web', 'referral', 'tossup', 'other')),
+  status             text not null default 'new' check (status in ('new', 'working', 'qualified', 'disqualified')),
+  owner_employee_id  uuid references core.employees (id),
+  converted_deal_id  uuid references crm.deals (id),
+  created_at         timestamptz not null default now()
+);
+
+create table crm.activities (                    -- アクション: việc hẹn làm với khách (quá hạn ⇒ 通知センター)
+  id                 uuid primary key default gen_random_uuid(),
+  facility_id        uuid references crm.facilities (id),
+  deal_id            uuid references crm.deals (id),
+  owner_employee_id  uuid not null references core.employees (id),
+  kind               text not null check (kind in ('visit', 'call', 'online', 'email', 'task')),
+  subject            text not null,
+  due_on             date,
+  done_at            timestamptz,
+  note               text,
+  created_at         timestamptz not null default now()
+);
+create index activities_open on crm.activities (owner_employee_id, due_on) where done_at is null;
+
+alter table app.reports   add constraint reports_facility_fk   foreign key (facility_id) references crm.facilities (id);
+alter table app.reports   add constraint reports_deal_fk       foreign key (deal_id)     references crm.deals (id);
+alter table app.incidents add constraint incidents_facility_fk foreign key (facility_id) references crm.facilities (id);
+
+-- ============================================================================
+-- §app — file dùng chung: bản gốc ở Google Drive HOẶC Supabase Storage
+--   drive   : tài liệu (規程 · マニュアル · 書式 · 研修 · PDF đính kèm お知らせ) — Drive quyết định quyền xem
+--   supabase: ảnh hiển thị thường xuyên + đính kèm cần theo quyền JOY START (申請 · インシデント)
+-- ============================================================================
+create table app.files (
+  id              uuid primary key default gen_random_uuid(),
+  owner_table     text not null check (owner_table in ('app.requests', 'app.announcements', 'app.incidents', 'core.employees')),
+  owner_id        uuid not null,
+  storage         text not null check (storage in ('supabase', 'drive')),
+  bucket          text,
+  object_path     text,                         -- '<owner_id>/<file>' trong bucket
+  thumb_path      text,                         -- ảnh thu nhỏ ở Storage (kể cả khi bản gốc ở Drive)
+  drive_file_id   text,
+  drive_url       text,
+  file_name       text not null,
+  mime            text,
+  size_bytes      bigint,
+  uploaded_by     uuid references core.employees (id),
+  created_at      timestamptz not null default now(),
+  check ((storage = 'supabase' and bucket is not null and object_path is not null)
+      or (storage = 'drive' and drive_file_id is not null))
+);
+create index on app.files (owner_table, owner_id);
 
 -- ============================================================================
 -- §ai — JOY Pilot
@@ -762,7 +953,7 @@ create table ai.tool_calls (
   id           bigint generated always as identity primary key,
   message_id   bigint references ai.messages (id) on delete cascade,
   employee_id  uuid not null references core.employees (id),
-  server       text not null,                   -- 'drjoy-mcp' 'google-drive' 'retention-mcp' 'joy-start' …
+  server       text not null,                   -- 'drjoy-mcp' 'google-drive' 'joy-start' … (model: OpenAI API)
   tool         text not null,
   arguments    jsonb,
   ok           boolean,
@@ -787,7 +978,7 @@ create table ai.document_chunks (
   document_id  uuid not null references ai.documents (id) on delete cascade,
   chunk_no     int not null,
   content      text not null,
-  embedding    vector(1024)
+  embedding    vector(1536)                   -- OpenAI text-embedding-3-small
 );
 
 -- ============================================================================
@@ -816,6 +1007,9 @@ begin
 end $$;
 
 create trigger audit_user_roles       after insert or update or delete on core.user_roles       for each row execute function audit.capture();
+create trigger audit_employees        after insert or update or delete on core.employees        for each row execute function audit.capture();
+create trigger audit_assignments      after insert or update or delete on core.employee_assignments for each row execute function audit.capture();
+create trigger audit_deal_financials  after insert or update or delete on crm.deal_financials   for each row execute function audit.capture();
 create trigger audit_role_permissions after insert or update or delete on core.role_permissions for each row execute function audit.capture();
 create trigger audit_employee_private after insert or update or delete on core.employee_private for each row execute function audit.capture();
 create trigger audit_requests         after insert or update or delete on app.requests          for each row execute function audit.capture();
@@ -828,20 +1022,34 @@ create trigger audit_announcements    after insert or update or delete on app.an
 -- ============================================================================
 
 -- 受注速報: tiền chỉ hiện khi có quyền (○ toàn công ty / △ bộ phận của deal)
-create or replace function app.list_deals(p_since date default current_date - 90)
+create or replace function crm.list_deals(p_since date default current_date - 90)
 returns table (id uuid, won_on date, facility_name text, product_code text, owner_name text,
                total_amount numeric, mrr numeric)
 language sql stable security definer set search_path = '' as $$
   select d.id, d.won_on, f.name, d.product_code, e.name_ja,
          case when private.can_see('deal.amount', d.owner_department_id) then fin.total_amount end,
          case when private.can_see('deal.mrr',    d.owner_department_id) then fin.mrr end
-  from ext.deals d
-  left join ext.facilities f        on f.id = d.facility_id
+  from crm.deals d
+  left join crm.facilities f        on f.id = d.facility_id
   left join core.employees e        on e.id = d.owner_employee_id
-  left join ext.deal_financials fin on fin.deal_id = d.id
-  where private.me() is not null and d.won_on >= p_since
+  left join crm.deal_financials fin on fin.deal_id = d.id
+  where private.me() is not null and d.stage = 'won' and d.won_on >= p_since
   order by d.won_on desc
 $$;
+
+-- Ghi số tiền: người phụ trách deal, hoặc người có crm.edit với bộ phận của deal
+create or replace function crm.save_deal_amounts(p_deal uuid, p_total numeric, p_mrr numeric, p_initial numeric default null)
+returns void
+language plpgsql security definer set search_path = '' as $$
+declare d crm.deals;
+begin
+  select * into d from crm.deals where id = p_deal;
+  if not found or not (d.owner_employee_id = private.me() or private.can_see('crm.edit', d.owner_department_id)) then
+    raise exception 'permission denied';
+  end if;
+  insert into crm.deal_financials (deal_id, total_amount, mrr, initial_fee) values (p_deal, p_total, p_mrr, p_initial)
+  on conflict (deal_id) do update set total_amount = excluded.total_amount, mrr = excluded.mrr, initial_fee = excluded.initial_fee;
+end $$;
 
 -- 通知センター: 4 con số trên nút chuông
 create or replace function app.inbox_counts()
@@ -853,7 +1061,9 @@ language sql stable security definer set search_path = '' as $$
     (select count(*)::int from app.approval_steps s join app.requests r on r.id = s.request_id, me
       where s.approver_id = me.id and s.decision is null and r.status = 'in_review' and r.current_step = s.step_no),
     (select count(*)::int from app.reports x, me, tz
-      where x.author_id = me.id and x.status = 'draft' and x.due_on < (now() at time zone tz.z)::date),
+      where x.author_id = me.id and x.status = 'draft' and x.due_on < (now() at time zone tz.z)::date)
+    + (select count(*)::int from crm.activities ac, me, tz
+      where ac.owner_employee_id = me.id and ac.done_at is null and ac.due_on < (now() at time zone tz.z)::date),
     (select count(*)::int from app.events ev, tz
       where (ev.starts_at at time zone tz.z)::date = (now() at time zone tz.z)::date),
     (select count(*)::int from app.announcements a, me
@@ -900,7 +1110,7 @@ $$;
 do $$
 declare t record;
 begin
-  for t in select schemaname, tablename from pg_tables where schemaname in ('core', 'app', 'ext', 'ai', 'audit') loop
+  for t in select schemaname, tablename from pg_tables where schemaname in ('core', 'crm', 'app', 'ext', 'ai', 'audit') loop
     execute format('alter table %I.%I enable row level security', t.schemaname, t.tablename);
   end loop;
 end $$;
@@ -908,15 +1118,31 @@ end $$;
 -- core: master + danh bạ đọc được với mọi người đã đăng nhập
 create policy read_all on core.sites            for select to authenticated using (true);
 create policy read_all on core.departments      for select to authenticated using (true);
+create policy read_all on core.positions        for select to authenticated using (true);
 create policy read_all on core.job_types        for select to authenticated using (true);
 create policy read_all on core.products         for select to authenticated using (true);
 create policy read_all on core.roles            for select to authenticated using (true);
 create policy read_all on core.permissions      for select to authenticated using (true);
 create policy read_all on core.role_permissions for select to authenticated using (true);
 create policy read_all on core.employees        for select to authenticated using (status <> 'retired' or private.has_role('admin'));
-create policy read_own on core.user_roles       for select to authenticated using (employee_id = private.me() or private.has_role('admin'));
-create policy admin_all on core.user_roles      for all    to authenticated using (private.has_role('admin')) with check (private.has_role('admin'));
-create policy admin_all on core.role_permissions for all   to authenticated using (private.has_role('admin')) with check (private.has_role('admin'));
+-- staff_master: 人事 (staff.edit = ○) sửa được; không ai xoá (nghỉ việc = status 'retired')
+create policy hr_insert on core.employees   for insert to authenticated with check (private.perm_scope('staff.edit') = 'all');
+create policy hr_update on core.employees   for update to authenticated
+  using (private.perm_scope('staff.edit') = 'all') with check (private.perm_scope('staff.edit') = 'all');
+create policy hr_write  on core.departments for all to authenticated
+  using (private.perm_scope('staff.edit') = 'all') with check (private.perm_scope('staff.edit') = 'all');
+create policy hr_write  on core.positions   for all to authenticated
+  using (private.perm_scope('staff.edit') = 'all') with check (private.perm_scope('staff.edit') = 'all');
+create policy readable on core.employee_assignments for select to authenticated using (
+  employee_id = private.me() or private.perm_scope('staff.edit') = 'all'
+  or private.can_see('directory.private', department_id));
+-- Quyền chức năng: chỉ người có role.grant mới cấp / thu hồi
+create policy read_own on core.user_roles       for select to authenticated using (
+  employee_id = private.me() or private.perm_scope('role.grant') = 'all');
+create policy grant_all on core.user_roles      for all    to authenticated
+  using (private.perm_scope('role.grant') = 'all') with check (private.perm_scope('role.grant') = 'all');
+create policy grant_all on core.role_permissions for all   to authenticated
+  using (private.has_role('admin')) with check (private.has_role('admin'));
 
 create policy self_or_perm on core.employee_private for select to authenticated using (
   employee_id = private.me()
@@ -935,12 +1161,7 @@ create policy own_update on app.notifications for update to authenticated
   using (recipient_id = private.me()) with check (recipient_id = private.me());
 
 -- お知らせ
-create policy readable on app.announcements for select to authenticated using (
-  author_id = private.me()
-  or private.has_role('admin')
-  or (status = 'published' and now() >= coalesce(publish_from, created_at)
-      and (publish_until is null or now() < publish_until)
-      and private.in_audience(id, private.me())));
+create policy readable on app.announcements for select to authenticated using (private.can_read_announcement(id));
 create policy author_write on app.announcements for insert to authenticated with check (author_id = private.me() and status in ('draft', 'pending'));
 create policy author_edit  on app.announcements for update to authenticated
   using (author_id = private.me() and status in ('draft', 'pending'))
@@ -968,11 +1189,32 @@ create policy party on app.approval_steps for select to authenticated using (
   approver_id = private.me()
   or exists (select 1 from app.requests r where r.id = request_id and r.applicant_id = private.me())
   or private.has_role('admin'));
-create policy party on app.request_files for select to authenticated using (
-  exists (select 1 from app.requests r where r.id = request_id
-          and (r.applicant_id = private.me() or private.is_approver(r.id) or private.has_role('admin'))));
-create policy applicant_write on app.request_files for insert to authenticated with check (
-  exists (select 1 from app.requests r where r.id = request_id and r.applicant_id = private.me() and r.status in ('draft', 'returned')));
+create or replace function private.can_read_owner(p_table text, p_id uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select case p_table
+    when 'app.requests' then exists (select 1 from app.requests r where r.id = p_id
+                                     and (r.applicant_id = private.me() or private.is_approver(r.id) or private.has_role('admin')))
+    when 'app.announcements' then private.can_read_announcement(p_id)
+    when 'app.incidents' then true
+    when 'core.employees' then true
+    else false end
+$$;
+create or replace function private.can_write_owner(p_table text, p_id uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select case p_table
+    when 'app.requests' then exists (select 1 from app.requests r where r.id = p_id
+                                     and r.applicant_id = private.me() and r.status in ('draft', 'returned'))
+    when 'app.announcements' then exists (select 1 from app.announcements a where a.id = p_id
+                                     and ((a.author_id = private.me() and a.status in ('draft', 'pending')) or private.has_role('admin')))
+    when 'app.incidents' then exists (select 1 from app.incidents i where i.id = p_id
+                                     and (i.reporter_id = private.me() or i.owner_id = private.me() or private.has_role('admin')))
+    when 'core.employees' then p_id = private.me() or private.perm_scope('staff.edit') = 'all'
+    else false end
+$$;
+create policy readable on app.files for select to authenticated using (private.can_read_owner(owner_table, owner_id));
+create policy writable on app.files for insert to authenticated
+  with check (uploaded_by = private.me() and private.can_write_owner(owner_table, owner_id));
+create policy removable on app.files for delete to authenticated using (private.can_write_owner(owner_table, owner_id));
 
 -- 報告: tác giả + cấp trên trực tiếp + quản lý phòng ban (△)
 create policy readable on app.reports for select to authenticated using (
@@ -996,9 +1238,33 @@ create policy read_all on app.events for select to authenticated using (true);
 create policy admin_write on app.events for all to authenticated using (private.has_role('admin')) with check (private.has_role('admin'));
 
 -- ext: chỉ đọc (job đồng bộ dùng service_role, bỏ qua RLS). deal_financials: KHÔNG có policy ⇒ chỉ qua RPC.
-create policy read_all on ext.facilities        for select to authenticated using (true);
-create policy read_all on ext.facility_products for select to authenticated using (true);
-create policy read_all on ext.deals             for select to authenticated using (true);
+-- crm: mọi người đọc; sửa = người phụ trách hoặc crm.edit theo bộ phận (○△×)
+create policy read_all on crm.facilities        for select to authenticated using (true);
+create policy add      on crm.facilities        for insert to authenticated with check (
+  owner_employee_id = private.me() or private.perm_scope('crm.edit') <> 'none');
+create policy edit     on crm.facilities        for update to authenticated
+  using (owner_employee_id = private.me() or private.can_see('crm.edit', owner_department_id)) with check (true);
+create policy read_all on crm.facility_products for select to authenticated using (true);
+create policy edit     on crm.facility_products for all to authenticated
+  using (private.perm_scope('crm.edit') = 'all') with check (private.perm_scope('crm.edit') = 'all');
+create policy read_all on crm.contacts          for select to authenticated using (true);
+create policy edit     on crm.contacts          for all to authenticated
+  using (exists (select 1 from crm.facilities f where f.id = facility_id
+                 and (f.owner_employee_id = private.me() or private.can_see('crm.edit', f.owner_department_id))))
+  with check (exists (select 1 from crm.facilities f where f.id = facility_id
+                 and (f.owner_employee_id = private.me() or private.can_see('crm.edit', f.owner_department_id))));
+create policy read_all on crm.deals             for select to authenticated using (true);
+create policy add      on crm.deals             for insert to authenticated with check (
+  owner_employee_id = private.me() or private.perm_scope('crm.edit') <> 'none');
+create policy edit     on crm.deals             for update to authenticated
+  using (owner_employee_id = private.me() or private.can_see('crm.edit', owner_department_id)) with check (true);
+create policy read_all on crm.leads             for select to authenticated using (true);
+create policy edit     on crm.leads             for all to authenticated
+  using (owner_employee_id = private.me() or private.perm_scope('crm.edit') <> 'none')
+  with check (owner_employee_id = private.me() or private.perm_scope('crm.edit') <> 'none');
+create policy read_all on crm.activities        for select to authenticated using (true);
+create policy own      on crm.activities        for all to authenticated
+  using (owner_employee_id = private.me()) with check (owner_employee_id = private.me());
 create policy admin_read on ext.data_sources    for select to authenticated using (private.has_role('admin'));
 create policy admin_read on ext.sync_runs       for select to authenticated using (private.has_role('admin'));
 
@@ -1016,28 +1282,33 @@ create policy admin_read on audit.log for select to authenticated using (private
 -- ============================================================================
 -- §Quyền schema (Supabase không tự cấp cho schema tự tạo)
 -- ============================================================================
-grant usage on schema core, app, ext, ai to authenticated, service_role;
+grant usage on schema core, crm, app, ext, ai to authenticated, service_role;
 grant usage on schema audit to authenticated, service_role;
-grant select, insert, update, delete on all tables in schema core, app, ai to authenticated;
+grant select, insert, update, delete on all tables in schema core, crm, app, ai to authenticated;
 grant select on all tables in schema ext, audit to authenticated;
-revoke all on ext.deal_financials from authenticated;
-grant usage, select on all sequences in schema core, app, ai to authenticated;
-grant all on all tables in schema core, app, ext, ai, audit to service_role;
-grant all on all sequences in schema core, app, ext, ai, audit to service_role;
+revoke all on crm.deal_financials from authenticated;
+revoke insert, update, delete on core.employee_assignments from authenticated;   -- chỉ qua core.transfer_employee()
+grant usage, select on all sequences in schema core, crm, app, ai to authenticated;
+grant all on all tables in schema core, crm, app, ext, ai, audit to service_role;
+grant all on all sequences in schema core, crm, app, ext, ai, audit to service_role;
 -- Hàm private.* được RLS gọi ⇒ cần EXECUTE, nhưng schema private không đưa vào Data API
 grant usage on schema private to authenticated, service_role;
 revoke execute on all functions in schema private from public;
 grant execute on all functions in schema private to authenticated, service_role;
 revoke execute on function private.notify(uuid, app.notification_kind, text, text, text, text, text, smallint) from authenticated;
 revoke execute on all functions in schema app from public;
+revoke execute on all functions in schema crm from public;
+revoke execute on all functions in schema core from public;
 grant execute on function app.submit_request(uuid), app.decide_approval(bigint, text, text),
-  app.list_deals(date), app.inbox_counts(), app.health_ranking(date, date, text, text) to authenticated;
+  crm.list_deals(date), crm.save_deal_amounts(uuid, numeric, numeric, numeric),
+  core.transfer_employee(uuid, uuid, text, text, date, text),
+  app.inbox_counts(), app.health_ranking(date, date, text, text) to authenticated;
 
 -- ============================================================================
 -- §Realtime — bảng nào thay đổi thì đẩy xuống trình duyệt (vẫn tuân RLS)
 -- ============================================================================
 alter publication supabase_realtime add table
-  app.notifications, app.announcements, app.approval_steps, app.incidents, ext.deals;
+  app.notifications, app.announcements, app.approval_steps, app.incidents, crm.deals;
 
 -- ============================================================================
 -- §Storage — bucket riêng tư; đường dẫn bắt đầu bằng id của đối tượng sở hữu

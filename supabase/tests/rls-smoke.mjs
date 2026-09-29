@@ -45,31 +45,32 @@ for (const f of readdirSync(join(ROOT, 'migrations')).filter((x) => x.endsWith('
 try { await db.exec(readFileSync(join(ROOT, 'seed.sql'), 'utf8')); } catch (e) { console.error('✖ seed.sql —', e.message); process.exit(1); }
 console.log('✔ seed.sql');
 
-// ── Dữ liệu thử: 2 phòng ban, 4 người ──
+// ── Dữ liệu thử: 2 phòng ban, 5 người (vai trò suy ra từ 役職, chỉ admin/人事 cấp tay) ──
 const U = (n) => `00000000-0000-0000-0000-00000000000${n}`;
 await db.exec(`
-  insert into auth.users values ('${U(1)}','ceo@example.com'),('${U(2)}','mgr@example.com'),('${U(3)}','staff@example.com'),('${U(4)}','other@example.com');
+  insert into auth.users values ('${U(1)}','ceo@example.com'),('${U(2)}','mgr@example.com'),('${U(3)}','staff@example.com'),('${U(4)}','other@example.com'),('${U(5)}','hr@example.com');
   insert into core.departments (id, code, name_ja, name_vi) values
     ('10000000-0000-0000-0000-000000000001','AIPHONE','AI電話事業部','Khối Điện thoại AI'),
     ('10000000-0000-0000-0000-000000000002','PHARMA','医薬連携事業部','Khối Liên kết Y Dược');
-  insert into core.employees (id, user_id, email, name_ja, department_id, site_code) values
-    ('20000000-0000-0000-0000-000000000001','${U(1)}','ceo@example.com','社長','10000000-0000-0000-0000-000000000001','JP-TKY'),
-    ('20000000-0000-0000-0000-000000000002','${U(2)}','mgr@example.com','上長','10000000-0000-0000-0000-000000000001','JP-TKY'),
-    ('20000000-0000-0000-0000-000000000003','${U(3)}','staff@example.com','メンバー','10000000-0000-0000-0000-000000000001','VN-HAN'),
-    ('20000000-0000-0000-0000-000000000004','${U(4)}','other@example.com','他部署','10000000-0000-0000-0000-000000000002','JP-TKY');
+  insert into core.employees (id, user_id, email, name_ja, department_id, position_code, site_code) values
+    ('20000000-0000-0000-0000-000000000001','${U(1)}','ceo@example.com','社長','10000000-0000-0000-0000-000000000001','ceo','JP-TKY'),
+    ('20000000-0000-0000-0000-000000000002','${U(2)}','mgr@example.com','上長','10000000-0000-0000-0000-000000000001','manager','JP-TKY'),
+    ('20000000-0000-0000-0000-000000000003','${U(3)}','staff@example.com','メンバー','10000000-0000-0000-0000-000000000001','member','VN-HAN'),
+    ('20000000-0000-0000-0000-000000000004','${U(4)}','other@example.com','他部署','10000000-0000-0000-0000-000000000002','member','JP-TKY'),
+    ('20000000-0000-0000-0000-000000000005','${U(5)}','hr@example.com','人事','10000000-0000-0000-0000-000000000002','member','JP-TKY');
   update core.employees set manager_id = '20000000-0000-0000-0000-000000000002' where id = '20000000-0000-0000-0000-000000000003';
   insert into core.user_roles (employee_id, role_code) values
-    ('20000000-0000-0000-0000-000000000001','executive'),('20000000-0000-0000-0000-000000000001','admin'),
-    ('20000000-0000-0000-0000-000000000002','manager'),
-    ('20000000-0000-0000-0000-000000000003','general'),('20000000-0000-0000-0000-000000000004','general');
+    ('20000000-0000-0000-0000-000000000001','admin'), ('20000000-0000-0000-0000-000000000005','hr_admin');
   insert into app.notification_preferences (employee_id, via_drjoy, via_email, quiet_start, quiet_end)
     select id, true, false, '00:00', '00:00' from core.employees;
-  insert into ext.deals (id, product_code, owner_department_id, won_on) values
-    ('30000000-0000-0000-0000-000000000001','ai-phone','10000000-0000-0000-0000-000000000001', current_date),
-    ('30000000-0000-0000-0000-000000000002','pharma','10000000-0000-0000-0000-000000000002', current_date);
-  insert into ext.deal_financials values
+  insert into crm.deals (id, product_code, owner_employee_id, owner_department_id, stage) values
+    ('30000000-0000-0000-0000-000000000001','ai-phone','20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001','won'),
+    ('30000000-0000-0000-0000-000000000002','pharma','20000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000002','won');
+  insert into crm.deal_financials (deal_id, total_amount, mrr) values
     ('30000000-0000-0000-0000-000000000001', 3600000, 100000),
     ('30000000-0000-0000-0000-000000000002', 8400000, 350000);
+  insert into crm.activities (owner_employee_id, kind, subject, due_on) values
+    ('20000000-0000-0000-0000-000000000003','visit','商談報告：サンプル大学病院', current_date - 2);
 `);
 
 let failed = 0;
@@ -86,23 +87,70 @@ const q = async (sql, p) => (await db.query(sql, p)).rows;
 // 1. Nhân viên thường không đọc được tiền trực tiếp
 await as(3, async () => {
   let err = null;
-  try { await q('select * from ext.deal_financials'); } catch (e) { err = e.message; }
-  check('general: SELECT ext.deal_financials bị chặn', !!err, err);
-  const d = await q('select product_code, total_amount, mrr from app.list_deals() order by product_code');
+  try { await q('select * from crm.deal_financials'); } catch (e) { err = e.message; }
+  check('general: SELECT crm.deal_financials bị chặn', !!err, err);
+  const d = await q('select product_code, total_amount, mrr from crm.list_deals() order by product_code');
   const ai = d.find((x) => x.product_code === 'ai-phone'), ph = d.find((x) => x.product_code === 'pharma');
   check('general: thấy tổng tiền deal của bộ phận mình (△)', ai && ai.total_amount !== null, d);
   check('general: KHÔNG thấy tổng tiền bộ phận khác', ph && ph.total_amount === null, d);
   check('general: KHÔNG thấy MRR (×)', d.every((x) => x.mrr === null), d);
 });
 await as(2, async () => {
-  const d = await q('select product_code, total_amount, mrr from app.list_deals()');
-  check('manager: thấy tổng tiền + MRR toàn công ty (○)', d.every((x) => x.total_amount !== null && x.mrr !== null), d);
+  const d = await q('select product_code, total_amount, mrr from crm.list_deals()');
+  check('manager (suy ra từ 役職, không cấp tay): thấy tổng tiền + MRR (○)', d.length === 2 && d.every((x) => x.total_amount !== null && x.mrr !== null), d);
+});
+
+// 1b. staff_master: chỉ 人事 sửa được; điều chuyển có lịch sử, hẹn ngày thì chưa áp
+await as(3, async () => {
+  await q(`update core.employees set name_ja = 'X' where id = private.me()`);
+  const [e] = await q(`select name_ja from core.employees where id = private.me()`);
+  check('general: không tự sửa được staff_master', e.name_ja === 'メンバー', e);
+  let err = null;
+  try { await q(`insert into core.user_roles (employee_id, role_code) values (private.me(), 'admin')`); } catch (x) { err = x.message; }
+  check('general: không tự cấp quyền admin được', !!err, err);
+  err = null;
+  try { await q(`select core.transfer_employee(private.me(), '10000000-0000-0000-0000-000000000002', 'leader')`); } catch (x) { err = x.message; }
+  check('general: không gọi được transfer_employee', !!err, err);
+});
+await as(5, async () => {
+  await q(`select core.transfer_employee('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 'leader')`);
+  await q(`select core.transfer_employee('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002', 'leader', null, current_date + 3)`);
+  const [e] = await q(`select department_id, position_code from core.employees where id = '20000000-0000-0000-0000-000000000003'`);
+  check('人事: thăng chức áp ngay, điều chuyển hẹn ngày chưa áp', e.position_code === 'leader' && e.department_id === '10000000-0000-0000-0000-000000000001', e);
+  const h = await q(`select valid_from, valid_to from core.employee_assignments where employee_id = '20000000-0000-0000-0000-000000000003' order by valid_from`);
+  check('人事: lịch sử điều chuyển có 2 dòng (1 đang mở, 1 hẹn ngày)', h.length === 2 && h[0].valid_to !== null && h[1].valid_to === null, h);
+});
+// giả lập 3 ngày trôi qua
+await db.exec(`update core.employee_assignments set valid_from = valid_from - 3, valid_to = valid_to - 3
+  where employee_id = '20000000-0000-0000-0000-000000000003';`);
+const [applied] = await q(`select private.apply_due_assignments() as n`);
+const [moved] = await q(`select department_id from core.employees where id = '20000000-0000-0000-0000-000000000003'`);
+check('cron: tới ngày thì điều chuyển được áp', applied.n === 1 && moved.department_id === '10000000-0000-0000-0000-000000000002', { applied, moved });
+await db.exec(`  -- đưa メンバー về lại phòng ban cũ cho các kịch bản sau
+  delete from core.employee_assignments where employee_id = '20000000-0000-0000-0000-000000000003';
+  insert into core.employee_assignments (employee_id, department_id, position_code, valid_from) values
+    ('20000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001','member', current_date);
+  select private.apply_due_assignments();`);
+
+// 1c. CRM: người phụ trách sửa deal của mình; general không sửa được deal bộ phận khác
+await as(3, async () => {
+  await q(`update crm.deals set title = 'hack' where id = '30000000-0000-0000-0000-000000000002'`);
+  const [d] = await q(`select title from crm.deals where id = '30000000-0000-0000-0000-000000000002'`);
+  check('CRM: general không sửa được deal của người khác', d.title !== 'hack', d);
+  const [n] = await q(`insert into crm.deals (product_code, owner_employee_id, title) values ('ai-phone', private.me(), 'Mới') returning id`);
+  check('CRM: tạo được deal do mình phụ trách', !!n.id, n);
+  const [c] = await q('select overdue from app.inbox_counts()');
+  check('通知センター: アクション quá hạn được đếm', c.overdue === 1, c);
 });
 
 // 2. Luồng 申請 → 承認 + thông báo
 const reqId = await as(3, async () => {
   const [r] = await q(`insert into app.requests (type_code, applicant_id, title, amount)
                        values ('business_trip', private.me(), '出張：大阪', 42000) returning id`);
+  await q(`insert into app.files (owner_table, owner_id, storage, bucket, object_path, file_name, uploaded_by)
+           values ('app.requests', $1::uuid, 'supabase', 'requests', $1::text || '/receipt.pdf', 'receipt.pdf', private.me())`, [r.id]);
+  await q(`insert into app.files (owner_table, owner_id, storage, drive_file_id, file_name, uploaded_by)
+           values ('app.requests', $1, 'drive', '1AbCdEf', '行程表.pdf', private.me())`, [r.id]);
   const [s] = await q('select status, current_step from app.submit_request($1)', [r.id]);
   check('submit_request → in_review, bước 1', s.status === 'in_review' && s.current_step === 1, s);
   return r.id;
@@ -110,10 +158,14 @@ const reqId = await as(3, async () => {
 await as(4, async () => {
   const r = await q('select * from app.requests where id = $1', [reqId]);
   check('người ngoài không thấy đơn của người khác', r.length === 0, r);
+  const f = await q('select * from app.files where owner_id = $1', [reqId]);
+  check('người ngoài không thấy file đính kèm (Storage lẫn Drive)', f.length === 0, f);
 });
 await as(2, async () => {
   const [c] = await q('select * from app.inbox_counts()');
   check('上長: 通知センター 承認待ち = 1', c.approvals === 1, c);
+  const f = await q('select storage from app.files where owner_id = $1', [reqId]);
+  check('người duyệt thấy 2 file đính kèm', f.length === 2, f);
   const n = await q(`select kind from app.notifications where recipient_id = private.me()`);
   check('上長: có thông báo approval_request', n.some((x) => x.kind === 'approval_request'), n);
   const [st] = await q('select id from app.approval_steps where request_id = $1', [reqId]);
@@ -166,7 +218,7 @@ check('giờ yên lặng ⇒ gửi sau quiet_end', qt2.deferred === true, qt2);
 
 // 6. Không có bảng nào quên bật RLS
 const noRls = await q(`select n.nspname || '.' || c.relname as t from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where c.relkind = 'r' and n.nspname in ('core','app','ext','ai','audit') and not c.relrowsecurity`);
+  where c.relkind = 'r' and n.nspname in ('core','crm','app','ext','ai','audit') and not c.relrowsecurity`);
 check('mọi bảng đều bật RLS', noRls.length === 0, noRls);
 const [au] = await q(`select count(*)::int as n from audit.log`);
 check('audit.log có ghi thay đổi', au.n > 0, au);
