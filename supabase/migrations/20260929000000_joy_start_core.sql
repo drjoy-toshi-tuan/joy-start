@@ -1527,3 +1527,59 @@ create policy "requests: applicant upload" on storage.objects for insert to auth
   bucket_id = 'requests'
   and exists (select 1 from app.requests r where r.id::text = (storage.foldername(name))[1]
               and r.applicant_id = private.me() and r.status in ('draft', 'returned')));
+
+-- ============================================================================
+-- §Tên hiển thị (JA / VI) — hiện trong dashboard Supabase và công cụ đọc schema
+-- ============================================================================
+comment on table core.sites is '拠点 / Văn phòng';
+comment on table core.departments is '部署 / Phòng ban';
+comment on table core.job_types is '職種 / Vị trí công việc';
+comment on table core.products is '製品 / Sản phẩm';
+comment on table core.positions is '役職 / Chức vụ';
+comment on table core.employees is '社員 / Nhân viên';
+comment on table core.employee_assignments is '異動・兼務の履歴 / Lịch sử điều chuyển · kiêm nhiệm';
+comment on table core.employee_private is '個人情報 / Thông tin cá nhân';
+comment on table core.roles is '役割 / Vai trò';
+comment on table core.user_roles is '付与した役割 / Vai trò được cấp';
+comment on table core.permissions is '権限 / Quyền';
+comment on table core.role_permissions is '役割ごとの権限 / Quyền theo vai trò';
+comment on table core.bootstrap_admins is '最初の管理者 / Quản trị viên đầu tiên';
+comment on table core.user_settings is '個人設定 / Cài đặt cá nhân';
+comment on table core.favorites is 'お気に入り / Mục yêu thích';
+comment on table app.notification_preferences is '通知設定 / Cài đặt thông báo';
+comment on table app.notifications is '通知 / Thông báo';
+comment on table app.notification_deliveries is '通知の送信キュー / Hàng đợi gửi thông báo';
+comment on table app.announcements is 'お知らせ / Thông báo công ty';
+comment on table app.announcement_audiences is 'お知らせの対象者 / Đối tượng nhận thông báo';
+comment on table app.announcement_reads is 'お知らせの既読 / Đã đọc thông báo';
+comment on table app.request_types is '申請の種類 / Loại đơn';
+comment on table app.requests is '申請 / Đơn đề nghị';
+comment on table app.approval_steps is '承認ステップ / Bước phê duyệt';
+comment on table app.reports is '報告 / Báo cáo';
+comment on table app.incidents is 'インシデント / Sự cố';
+comment on table app.incident_events is 'インシデントの経過 / Diễn biến sự cố';
+comment on table app.health_records is '健康記録 / Ghi chép sức khỏe';
+comment on table app.events is '社内イベント / Sự kiện nội bộ';
+comment on table ext.data_sources is 'データソース / Nguồn dữ liệu';
+comment on table ext.sync_runs is '同期の実行記録 / Nhật ký đồng bộ';
+comment on table crm.facilities is '施設 / Cơ sở y tế';
+comment on table crm.facility_products is '契約製品 / Sản phẩm theo hợp đồng';
+comment on table crm.contacts is '顧客側の担当者 / Người liên hệ phía khách';
+comment on table crm.deals is '案件 / Cơ hội';
+comment on table crm.deal_financials is '案件の金額 / Số tiền cơ hội';
+comment on table crm.leads is 'リード / Khách tiềm năng';
+comment on table crm.activities is 'アクション / Hành động';
+comment on table app.files is 'ファイル / File';
+comment on table ai.conversations is '会話 / Hội thoại';
+comment on table ai.messages is 'メッセージ / Tin nhắn';
+comment on table ai.agents is 'エージェント / Agent';
+comment on table ai.routing_decisions is '振り分けの記録 / Nhật ký định tuyến';
+comment on table ai.tool_calls is '道具の呼び出し記録 / Nhật ký gọi công cụ';
+comment on table ai.model_prices is 'モデル料金 / Bảng giá model';
+comment on table ai.usage_events is 'AI利用ログ / Log dùng AI';
+comment on table ai.budgets is 'AI予算 / Ngân sách AI';
+comment on table app.usage_events is '画面利用ログ / Log dùng màn hình';
+comment on table ai.documents is '文書の索引 / Chỉ mục tài liệu';
+comment on table ai.document_chunks is '文書の断片 / Đoạn tài liệu';
+comment on table audit.log is '変更履歴 / Lịch sử thay đổi';
+comment on view app.v_system_outages is 'システム障害（ビュー） / Lỗi hệ thống (view)';
