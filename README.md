@@ -52,9 +52,14 @@ liquid glass, cây điều hướng, panel, control.
   chỉ có icon (sao, ×, mở/đóng tất cả…) không có thân, hover chỉ nhích icon lên. Nút お気に入り của
   mỗi trang chỉ còn icon sao, dạt phải thẳng mép thẻ.
 - **Toggle**: một component segmented dùng chung cho panel cài đặt và các trang. Núm trượt 0.5s
-  (nhanh lúc đầu, đậu êm). Đổi ngôn ngữ / theme thì núm trượt xong mới vẽ lại. Tab (お知らせ,
+  (nhanh lúc đầu, đậu êm). Đổi ngôn ngữ thì núm trượt xong mới vẽ lại. Tab (お知らせ,
   受注速報, 設定…) có vệt nền trượt sang tab mới.
-- **Đổi theme**: cả trang hoà mờ chậm ~1s (View Transitions API; trình duyệt không hỗ trợ thì đổi ngay).
+- **Đổi theme**: đổi NGAY lúc bấm (không chờ núm trượt, không dựng lại trang), cả trang hoà mờ
+  chậm ~1,2s (View Transitions API; trình duyệt không hỗ trợ thì đổi ngay). Toggle theme là lớp
+  sống phía trên ảnh chụp nên núm vẫn trượt trong lúc trang hoà mờ.
+- **Tiêu đề cha / mục con**: vạch dọc cam chỉ dành cho tiêu đề THẺ. Nhóm con bên trong thẻ
+  (今月の新入社員 › JP · VN) là chip mã nhỏ + số người chữ xám + đường kẻ mảnh.
+- **Side menu**: nhóm có mục con không hiện số lượng mục con (chỉ còn chip cam của việc đang chờ).
 - **Theme sáng**: thẻ trắng đục, ô con bên trong thẻ màu ngà + viền, lớp nổi (panel cài đặt, 通知,
   dropdown) đục hẳn nên chữ phía sau không lọt qua. Theme tối vẫn là kính.
 - **Cuộn tới đâu hiện tới đó** (mọi trang): từng khối trượt lên khi vào vùng nhìn, hàng/thẻ con nối

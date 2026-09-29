@@ -353,8 +353,7 @@
       if (!n.children) return '<div class="jw-tree-node">' + rowItem(b.key + '/' + n.ja, n) + '</div>';
       var groupOn = ROUTE.name === 'page' && PAGES[ROUTE.key].group === n;
       return '<div class="jw-tree-node"><a class="jw-tree-row' + (groupOn ? ' jw-tree-row--here' : '') + '" href="' + href(n.firstKey) + '">' +
-        '<span class="jw-tree-icon">' + nodeIcon(n, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span>' +
-        '<span class="jw-tree-count">' + n.children.length + '</span></a>' +
+        '<span class="jw-tree-icon">' + nodeIcon(n, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span></a>' +
         '<ul class="jw-tree-kids">' + n.children.map(function (k) { return leafItem(b.key + '/' + n.ja + '/' + k.ja, k); }).join('') + '</ul></div>';
     }).join('') + '</div>';
   }
@@ -986,7 +985,7 @@
     var groups = ['JP', 'VN'].map(function (site) {
       var list = NEW_HIRES.filter(function (h) { return h.site === site; });
       if (!list.length) return '';
-      return '<div class="jw-nh-group"><h3 class="jw-nh-gtitle">' + site + ' · ' + esc(t('{n}名', { n: list.length })) + '</h3><div class="jw-nh-grid">' +
+      return '<div class="jw-nh-group"><h3 class="jw-nh-gtitle"><span class="jw-nh-site">' + site + '</span><span class="jw-nh-gcount">' + esc(t('{n}名', { n: list.length })) + '</span></h3><div class="jw-nh-grid">' +
         list.map(function (h) {
           return '<article class="jw-nh-card jw-tile jw-pane">' +
             '<div class="jw-nh-photo">' + avatarSvg(h.av) + '<span class="jw-sample">' + t('サンプル') + '</span></div>' +
@@ -1598,15 +1597,20 @@
     toast(LANG === 'vi' ? 'Đã chuyển sang Tiếng Việt' : '日本語に切り替えました', ic('global', 16));
   }
   function setTheme(v) {
-    function apply() {
-      save(KEY.theme, v === 'dark' ? 'dark' : 'light');
-      applyTheme();
-      refreshChrome();
-    }
-    // Hoà mờ CHẬM cả trang (~1s) thay cho đổi màu tức thì — mượt như slow motion
-    if (document.startViewTransition && !REDUCED) document.startViewTransition(apply);
-    else apply();
+    v = v === 'dark' ? 'dark' : 'light';
+    save(KEY.theme, v);
+    // Đổi NGAY khi bấm: không dựng lại trang (theme chỉ đổi token CSS), chỉ trượt núm của
+    // MỌI toggle theme đang mở (popover + trang 設定) rồi hoà mờ cả trang ~1,2s.
+    $$('.jw-seg[data-seg="menuTheme"] .jw-seg-opt, .jw-seg[data-seg="setTheme"] .jw-seg-opt').forEach(function (o) {
+      if (o.getAttribute('data-v') === v) segMoveTo(o);
+    });
+    if (document.documentElement.getAttribute('data-theme') === v) return;
+    // Toggle theme mang view-transition-name ⇒ nó là lớp SỐNG phía trên ảnh chụp đang hoà mờ,
+    // nên núm vẫn trượt thật trong lúc chuyển thay vì bị đóng băng trong ảnh chụp.
+    if (document.startViewTransition && !REDUCED) document.startViewTransition(applyTheme);
+    else applyTheme();
   }
+
 
   // ── §Sự kiện: click ──
   document.addEventListener('click', function (e) {
@@ -1625,7 +1629,7 @@
     }
     runAct(e, el);
   });
-  var SEG_LEAD_ACTS = { lang: 1, theme: 1, 'set-lang': 1, 'set-theme': 1 };
+  var SEG_LEAD_ACTS = { lang: 1, 'set-lang': 1 };
   var SEG_LEAD_MS = 360;
   function segMoveTo(opt) {
     var sg = opt.parentNode;

@@ -862,7 +862,6 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-family: var(--font-display); font-weight: 600;
 }
-.jw-tree-count { font-size: 0.72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .jw-tree-kids {
   list-style: none;
   margin: var(--tree-kids-mt) 0 var(--tree-kids-mb);
@@ -921,7 +920,7 @@ button.jw-sn-fav { width: 100%; border: 0; background: none; font: inherit; text
   flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-family: var(--font-display);
 }
-/* Số việc chờ (承認 3 · 台帳 2) — chip cam đặc, khác `.jw-tree-count` (số con, chữ xám). */
+/* Số việc chờ (承認 3 · 台帳 2) — chip cam đặc. */
 .jw-count {
   flex: none;
   min-width: 1.25rem;
@@ -1741,8 +1740,22 @@ select.jw-input { cursor: pointer; }
 
 /* 新入社員 */
 .jw-nh-group + .jw-nh-group { margin-top: 0.2rem; }
-.jw-nh-gtitle { display: flex; align-items: center; gap: 0.45rem; margin: 0 0 0.55rem; font-family: var(--font-display); font-size: 0.84rem; font-weight: 600; color: var(--ink-2); }
-.jw-nh-gtitle::before { content: ''; width: 4px; height: 14px; border-radius: 2px; background: var(--accent); }
+/* Nhóm CON trong thẻ (JP · VN): KHÔNG dùng vạch dọc cam — vạch đó là dấu của tiêu đề THẺ (cha).
+   Con = chip mã nhỏ + số người chữ xám + đường kẻ mảnh chạy hết hàng ⇒ đọc ra là một mục
+   con nằm dưới tiêu đề, không phải một tiêu đề ngang hàng. */
+.jw-nh-gtitle { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; font-family: var(--font-body); font-size: 0.76rem; font-weight: 500; color: var(--ink-3); }
+.jw-nh-gtitle::after { content: ''; flex: 1 1 auto; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+.jw-nh-site {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-text);
+  font-family: var(--font-num);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.jw-nh-gcount { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .jw-nh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.6rem, 1fr)); gap: 0.6rem; }
 .jw-nh-card { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; padding: 0.9rem 0.5rem 0.8rem; }
 .jw-nh-photo { position: relative; width: 68px; height: 68px; }
@@ -2667,11 +2680,26 @@ html[data-pilot='full'] :is(.jw-pilot-scroll > *, .jw-pilot-foot > *, .jw-pilot-
 @keyframes jw-pilot-ping { from { opacity: 0.75; transform: scale(1); } 70%, to { opacity: 0; transform: scale(2.6); } }
 @keyframes jw-pilot-blink { 50% { opacity: 0; } }
 
-/* Đổi sáng/tối: hoà mờ cả trang ~1s (app.js gọi document.startViewTransition) */
+/* Đổi sáng/tối: hoà mờ cả trang ~1,2s (app.js gọi document.startViewTransition NGAY lúc bấm).
+   Hai toggle theme được đặt tên riêng ⇒ chúng không nằm trong ảnh chụp: bản CŨ ẩn, bản MỚI là
+   lớp sống không hoà mờ ⇒ núm trượt thật (transition của --seg-i) song song với cú hoà mờ. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 1s;
+  animation-duration: 1.2s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+.jw-seg[data-seg='menuTheme'] { view-transition-name: jw-theme-menu; }
+.jw-seg[data-seg='setTheme'] { view-transition-name: jw-theme-set; }
+::view-transition-old(jw-theme-menu),
+::view-transition-old(jw-theme-set) { display: none; }
+::view-transition-new(jw-theme-menu),
+::view-transition-new(jw-theme-set) { animation: none; }
+::view-transition-group(jw-theme-menu),
+::view-transition-group(jw-theme-set) { animation-duration: 0s; }
+/* Lớp sống không được hoà mờ ⇒ tự chuyển MÀU của chính nó cùng nhịp với trang */
+.jw-seg:is([data-seg='menuTheme'], [data-seg='setTheme']) { transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.jw-seg:is([data-seg='menuTheme'], [data-seg='setTheme']) .jw-seg-thumb {
+  transition: transform var(--seg-dur) var(--seg-ease), background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==========================================================================
@@ -4734,8 +4762,7 @@ function photoSvg(scene){
       if (!n.children) return '<div class="jw-tree-node">' + rowItem(b.key + '/' + n.ja, n) + '</div>';
       var groupOn = ROUTE.name === 'page' && PAGES[ROUTE.key].group === n;
       return '<div class="jw-tree-node"><a class="jw-tree-row' + (groupOn ? ' jw-tree-row--here' : '') + '" href="' + href(n.firstKey) + '">' +
-        '<span class="jw-tree-icon">' + nodeIcon(n, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span>' +
-        '<span class="jw-tree-count">' + n.children.length + '</span></a>' +
+        '<span class="jw-tree-icon">' + nodeIcon(n, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span></a>' +
         '<ul class="jw-tree-kids">' + n.children.map(function (k) { return leafItem(b.key + '/' + n.ja + '/' + k.ja, k); }).join('') + '</ul></div>';
     }).join('') + '</div>';
   }
@@ -5367,7 +5394,7 @@ function photoSvg(scene){
     var groups = ['JP', 'VN'].map(function (site) {
       var list = NEW_HIRES.filter(function (h) { return h.site === site; });
       if (!list.length) return '';
-      return '<div class="jw-nh-group"><h3 class="jw-nh-gtitle">' + site + ' · ' + esc(t('{n}名', { n: list.length })) + '</h3><div class="jw-nh-grid">' +
+      return '<div class="jw-nh-group"><h3 class="jw-nh-gtitle"><span class="jw-nh-site">' + site + '</span><span class="jw-nh-gcount">' + esc(t('{n}名', { n: list.length })) + '</span></h3><div class="jw-nh-grid">' +
         list.map(function (h) {
           return '<article class="jw-nh-card jw-tile jw-pane">' +
             '<div class="jw-nh-photo">' + avatarSvg(h.av) + '<span class="jw-sample">' + t('サンプル') + '</span></div>' +
@@ -5979,15 +6006,20 @@ function photoSvg(scene){
     toast(LANG === 'vi' ? 'Đã chuyển sang Tiếng Việt' : '日本語に切り替えました', ic('global', 16));
   }
   function setTheme(v) {
-    function apply() {
-      save(KEY.theme, v === 'dark' ? 'dark' : 'light');
-      applyTheme();
-      refreshChrome();
-    }
-    // Hoà mờ CHẬM cả trang (~1s) thay cho đổi màu tức thì — mượt như slow motion
-    if (document.startViewTransition && !REDUCED) document.startViewTransition(apply);
-    else apply();
+    v = v === 'dark' ? 'dark' : 'light';
+    save(KEY.theme, v);
+    // Đổi NGAY khi bấm: không dựng lại trang (theme chỉ đổi token CSS), chỉ trượt núm của
+    // MỌI toggle theme đang mở (popover + trang 設定) rồi hoà mờ cả trang ~1,2s.
+    $$('.jw-seg[data-seg="menuTheme"] .jw-seg-opt, .jw-seg[data-seg="setTheme"] .jw-seg-opt').forEach(function (o) {
+      if (o.getAttribute('data-v') === v) segMoveTo(o);
+    });
+    if (document.documentElement.getAttribute('data-theme') === v) return;
+    // Toggle theme mang view-transition-name ⇒ nó là lớp SỐNG phía trên ảnh chụp đang hoà mờ,
+    // nên núm vẫn trượt thật trong lúc chuyển thay vì bị đóng băng trong ảnh chụp.
+    if (document.startViewTransition && !REDUCED) document.startViewTransition(applyTheme);
+    else applyTheme();
   }
+
 
   // ── §Sự kiện: click ──
   document.addEventListener('click', function (e) {
@@ -6006,7 +6038,7 @@ function photoSvg(scene){
     }
     runAct(e, el);
   });
-  var SEG_LEAD_ACTS = { lang: 1, theme: 1, 'set-lang': 1, 'set-theme': 1 };
+  var SEG_LEAD_ACTS = { lang: 1, 'set-lang': 1 };
   var SEG_LEAD_MS = 360;
   function segMoveTo(opt) {
     var sg = opt.parentNode;
