@@ -1509,17 +1509,6 @@ select.jw-input { cursor: pointer; }
 .jw-gsearch-input::placeholder { color: var(--ink-3); }
 .jw-gsearch-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 .jw-gsearch-box .jw-sn-find-x { width: 26px; height: 26px; border-radius: 999px; }
-.jw-kbd {
-  flex: none;
-  padding: 0.05rem 0.4rem;
-  border: 1px solid var(--glass-edge);
-  border-radius: 6px;
-  background: var(--glass-fill);
-  font-family: var(--font-ui);
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--ink-3);
-}
 .jw-gs-drop {
   position: absolute;
   top: calc(100% + 8px);
@@ -1564,7 +1553,9 @@ select.jw-input { cursor: pointer; }
 .jw-gs-none { padding: 1.1rem; text-align: center; font-size: 0.84rem; color: var(--ink-3); }
 
 /* HERO — lời chào + ô tìm */
-.jw-hero { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.4rem 3.4rem 0.2rem 0.1rem; }
+/* Ô tìm trải HẾT bề ngang như các thẻ bên dưới; chỉ dòng ngày + lời chào chừa chỗ cho cụm nút góc phải */
+.jw-hero { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.4rem 0 0.2rem; }
+.jw-hero-date, .jw-hero-title { padding-right: 7rem; }
 .jw-hero-date { margin: 0; font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; color: var(--ink-3); }
 .jw-hero-title {
   margin: 0 0 1rem;
@@ -2169,7 +2160,7 @@ select.jw-input { cursor: pointer; }
   .jw-page-title { font-size: 1.35rem; }
   .jw-page-icon svg { width: 1.45rem; height: 1.45rem; }
   .jw-panel { padding: 0.95rem 0.9rem 1rem; border-radius: 18px; }
-  .jw-hero { padding-right: 6.4rem; }
+  .jw-hero-date, .jw-hero-title { padding-right: 6.4rem; }
   .jw-float { top: 10px; right: 10px; gap: 6px; }
   .jw-inbox { top: 60px; right: 10px; width: calc(100vw - var(--side-w) - 20px); }
   .jw-mvv2 { border-radius: 22px; }
@@ -2574,10 +2565,51 @@ html[data-pilot='full'] :is(.jw-pilot-scroll > *, .jw-pilot-foot > *, .jw-pilot-
 .jw-pilot-ctx > span { display: inline-flex; align-items: center; gap: 0.3rem; max-width: 100%; min-width: 0; padding: 0.16rem 0.5rem; border-radius: 999px; background: var(--pane-bg); border: 1px solid var(--pane-edge); font-size: 0.66rem; color: var(--ink-2); }
 .jw-pilot-ctx > span > svg { flex: none; color: var(--ink-3); }
 .jw-pilot-ctx > span > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jw-pilot-compose { display: flex; align-items: flex-end; gap: 0.35rem; padding: 0.3rem 0.3rem 0.3rem 0.85rem; border: 1px solid var(--field-line); border-radius: 16px; background: var(--field-bg); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-.jw-pilot-compose:focus-within { border-color: var(--field-edge); box-shadow: var(--field-glow); }
-.jw-pilot-input { flex: 1 1 auto; min-width: 0; max-height: 150px; padding: 0.45rem 0; border: 0; outline: 0; resize: none; background: none; color: var(--ink); font: inherit; font-size: 0.88rem; line-height: 1.5; }
+/* Ô nhập — cùng khối với JOY Analytics: textarea ở trên, hàng dưới = nút phím gửi · gợi ý · gửi/dừng */
+.jw-pilot-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.55rem 0.45rem 0.85rem;
+  border: 1px solid var(--field-line);
+  border-radius: 18px;
+  background: var(--field-bg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.jw-pilot-box:focus-within { border-color: var(--field-edge); box-shadow: var(--field-glow); }
+.jw-pilot-input { display: block; width: 100%; min-height: 22px; max-height: 150px; margin: 0; padding: 0; border: 0; outline: 0; resize: none; background: none; color: var(--ink); font: inherit; font-size: 0.9rem; line-height: 22px; }
 .jw-pilot-input::placeholder { color: var(--ink-3); }
+.jw-pilot-bar { display: flex; align-items: center; gap: 0.5rem; }
+.jw-pilot-keybtn {
+  display: inline-flex; align-items: center; gap: 0.3rem; flex: none; height: 28px; padding: 0 0.55rem 0 0.5rem;
+  border: 1px solid var(--pane-edge); border-radius: 999px; background: var(--pane-bg); color: var(--ink-2);
+  font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: background 0.16s ease, color 0.16s ease;
+}
+.jw-pilot-keybtn:hover, .jw-pilot-keybtn[aria-expanded='true'] { color: var(--ink); background: color-mix(in srgb, var(--accent) 10%, var(--pane-bg)); }
+.jw-pilot-hint { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; color: var(--ink-3); }
+/* Menu phím gửi — nổi NGAY TRÊN ô nhập (portal ra body), cùng vỏ lớp nổi của app */
+.jw-pilot-keys {
+  position: fixed;
+  z-index: 62;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.4rem;
+  border: 1px solid var(--panel-edge);
+  border-radius: 14px;
+  background: var(--glass-fill-pop);
+  box-shadow: var(--pilot-shadow);
+  font-family: var(--font-ui);
+  animation: jw-fade-in 0.14s ease-out;
+}
+.jw-pilot-keys-head { padding: 0.3rem 0.6rem 0.35rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+.jw-pilot-key { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.55rem 0.6rem; border: 0; border-radius: 10px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.jw-pilot-key:hover { background: var(--hover-fill); }
+.jw-pilot-key--on, .jw-pilot-key--on:hover { background: color-mix(in srgb, var(--accent) 11%, transparent); }
+.jw-pilot-key:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.jw-pilot-kbd { flex: none; min-width: 7.4rem; padding: 0.05rem 0.45rem; border: 1px solid var(--pane-edge); border-radius: 6px; background: var(--pane-bg); font-family: var(--font-ui); font-size: 0.72rem; font-weight: 700; text-align: center; }
+.jw-pilot-keydesc { flex: 1 1 auto; min-width: 0; font-size: 0.72rem; line-height: 1.5; color: var(--ink-2); }
+.jw-pilot-keycheck { display: inline-flex; width: 16px; flex: none; color: var(--accent-text); }
 .jw-pilot-send { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 0; border-radius: 11px; background: none; color: var(--accent-text); cursor: pointer; transition: background-color 0.16s ease, color 0.16s ease; }
 /* ↵ = icon undo-left LẬT DỌC (cùng chốt với JOY Pilot của JOY Analytics) */
 .jw-pilot-send > svg { transform: scaleY(-1); }
@@ -2586,7 +2618,6 @@ html[data-pilot='full'] :is(.jw-pilot-scroll > *, .jw-pilot-foot > *, .jw-pilot-
 .jw-pilot-send--stop { color: var(--crit); }
 .jw-pilot-send--stop > svg { transform: none; }
 .jw-pilot-send--stop:hover { background: color-mix(in srgb, var(--crit) 12%, transparent); }
-.jw-pilot-note { margin: 0.4rem 0.2rem 0; font-size: 0.64rem; line-height: 1.5; color: var(--ink-3); }
 
 /* Ô tìm toàn bộ: dòng "JOY Pilot に頼む" */
 .jw-gs-pilot { margin-bottom: 0.25rem; }

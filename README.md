@@ -29,6 +29,9 @@ liquid glass, cây điều hướng, panel, control.
     trạng thái có đèn đổi màu theo mặt, sóng "đang nói" khi đang viết. Câu đã qua thu về chấm tâm
     trạng + 「JOY PILOT · 回答」. Mở ra là một lời chào gõ dần, kèm gợi ý theo trang đang xem.
     Đang trả lời thì nút gửi thành nút dừng.
+  - **Phím gửi chọn được** (như JOY Analytics): nút bàn phím dưới ô nhập mở menu Enter · Shift+Enter ·
+    Ctrl/⌘+Enter; phím còn lại là xuống dòng, lựa chọn được nhớ. Đang gõ IME (chốt chữ Nhật/Việt)
+    thì Enter không bao giờ gửi.
   - **Thao tác trang**: mở trang (「組織図を開いて」), thêm お気に入り, đổi theme / ngôn ngữ, mở 通知.
   - **Tra dữ liệu**: tổng hợp tại chỗ từ dữ liệu mẫu (受注 theo 事業部 / theo người, 入社, 既読率);
     CSV chỉ khi người dùng tự yêu cầu.

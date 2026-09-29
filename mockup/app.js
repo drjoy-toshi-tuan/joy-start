@@ -850,7 +850,7 @@
     return '<div class="jw-gsearch" id="gsearch"><label class="jw-gsearch-box jw-glass">' + ic('magnifier', 18) +
       '<input class="jw-gsearch-input" id="gsInput" type="text" autocomplete="off" placeholder="' + esc(t('JOY START 全体を検索')) + '" aria-label="' + esc(t('JOY START 全体を検索')) + '" aria-controls="gsDrop">' +
       '<button type="button" class="jw-sn-find-x" id="gsClear" data-act="gs-clear" aria-label="' + esc(t('検索をクリア')) + '" hidden>' + ic('close', 14) + '</button>' +
-      '<kbd class="jw-kbd" aria-hidden="true">/</kbd></label><div class="jw-gs-drop jw-glass" id="gsDrop" hidden></div></div>';
+      '</label><div class="jw-gs-drop jw-glass" id="gsDrop" hidden></div></div>';
   }
   // MVV — sân khấu chính của Home: MISSION chữ lớn, VISION + số giờ đã giảm (đếm lên khi hiện),
   // 5 VALUE đánh số. Nền phẳng (không gradient) + mark Dr.JOY chìm, đứng thẳng.
@@ -1611,8 +1611,9 @@
   // ── §Sự kiện: click ──
   document.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('[data-act]') : null;
-    // Bấm ra ngoài: đóng dropdown tìm
+    // Bấm ra ngoài: đóng dropdown tìm · menu phím gửi của JOY Pilot
     if (!e.target.closest('#gsearch')) closeGs();
+    if (PILOT.keyMenu && !e.target.closest('#pilotKeys, #pilotKeyBtn')) pilotKeyMenuClose(false);
     if (!el) return;
     if (el.classList.contains('jw-seg-opt')) {
       if (el.getAttribute('aria-checked') === 'true') return;
@@ -1642,6 +1643,8 @@
       case 'pilot-full': PILOT.full = !PILOT.full; pilotSync(); renderPilot(); break;
       case 'pilot-new': pilotClear(); break;
       case 'pilot-stop': pilotStop(); break;
+      case 'pilot-keys': if (PILOT.keyMenu) pilotKeyMenuClose(true); else pilotKeyMenuOpen(); break;
+      case 'pilot-key': pilotPickKey(v); break;
       case 'pilot-poke': pilotPoke(el); break;
       case 'pilot-tab': PILOT.tab = v; renderPilot(); break;
       case 'pilot-ask': openPilot(el.getAttribute('data-q')); break;
@@ -1881,11 +1884,13 @@
       if (PILOT.open) closePilot(); else openPilot();
       return;
     }
-    if (e.target.id === 'pilotInput' && e.key === 'Enter' && !e.shiftKey && !e.isComposing && !composing) {
-      e.preventDefault();
-      pilotSend(e.target.value);
+    if (e.target.id === 'pilotInput' && e.key === 'Enter') {
+      if (!composing && shouldSend(PILOT.sendKey, e)) { e.preventDefault(); pilotSend(e.target.value); }
+      // chế độ enter: Ctrl/⌘+Enter bị bỏ qua (không gửi, không xuống dòng) — đỡ gửi nhầm
+      else if (PILOT.sendKey === 'enter' && (e.ctrlKey || e.metaKey)) e.preventDefault();
       return;
     }
+    if (e.key === 'Escape' && PILOT.keyMenu) { pilotKeyMenuClose(true); return; }
     if (e.key === 'Escape') {
       if (closeModal()) return;
       if (S.menuOpen) { closeMenu(); var mb = $('#setBtn'); if (mb) mb.focus(); return; }
@@ -2671,6 +2676,68 @@
       if (body && !$('.jw-pilot-chips', body)) { body.insertAdjacentHTML('beforeend', pilotChipsHtml(pilotMsgChips(last), true)); pilotToEnd(true); }
     }
   }
+  // Phím GỬI chọn được — cùng luật `shouldSend` của JOY Analytics: IME đang ghép chữ thì KHÔNG gửi
+  // (Enter đầu tiên là chốt 変換/dấu); `ctrl` nhận cả ⌘; chế độ enter có modifier thì không gửi.
+  var SEND_KEYS = ['enter', 'shift', 'ctrl'];
+  var SEND_KEY_STORE = 'joystart_pilot_sendkey';
+  var KEY_CAP = { enter: 'Enter', shift: 'Shift + Enter', ctrl: 'Ctrl / ⌘ + Enter' };
+  var KEY_LABEL = { enter: 'Enter で送信', shift: 'Shift + Enter で送信', ctrl: 'Ctrl + Enter で送信' };
+  var KEY_DESC = { enter: '改行：Shift + Enter', shift: '改行：Enter', ctrl: '改行：Enter' };
+  PILOT.sendKey = (function (v) { return v === 'shift' || v === 'ctrl' ? v : 'enter'; })(load(SEND_KEY_STORE, 'enter'));
+  PILOT.keyMenu = false;
+  function shouldSend(mode, e) {
+    if (e.key !== 'Enter') return false;
+    if (e.isComposing || e.keyCode === 229) return false;
+    var mod = e.ctrlKey || e.metaKey;
+    if (mode === 'enter') return !e.shiftKey && !mod;
+    if (mode === 'shift') return e.shiftKey && !mod;
+    return mod;
+  }
+  function pilotKeyBtnHtml() {
+    return '<button type="button" class="jw-pilot-keybtn" id="pilotKeyBtn" data-act="pilot-keys" aria-haspopup="menu" aria-expanded="' + PILOT.keyMenu + '">' +
+      ic('keyboard', 16) + '<span>' + esc(t(KEY_LABEL[PILOT.sendKey])) + '</span>' + ic('alt-arrow-up', 12) + '</button>';
+  }
+  function pilotHintText() { return t(PILOT.sendKey === 'enter' ? 'Shift + Enter で改行' : 'Enter で改行'); }
+  function pilotKeyMenuOpen() {
+    var box = $('#pilot .jw-pilot-box'), btn = $('#pilotKeyBtn');
+    if (!box || !btn) return;
+    PILOT.keyMenu = true;
+    btn.setAttribute('aria-expanded', 'true');
+    var m = document.createElement('div');
+    m.className = 'jw-pilot-keys';
+    m.id = 'pilotKeys';
+    m.setAttribute('role', 'menu');
+    m.setAttribute('aria-label', t('送信キー'));
+    m.innerHTML = '<div class="jw-pilot-keys-head" aria-hidden="true">' + esc(t('送信キー')) + '</div>' + SEND_KEYS.map(function (k) {
+      var on = k === PILOT.sendKey;
+      return '<button type="button" role="menuitemradio" aria-checked="' + on + '" class="jw-pilot-key' + (on ? ' jw-pilot-key--on' : '') + '" data-act="pilot-key" data-v="' + k + '">' +
+        '<kbd class="jw-pilot-kbd">' + esc(KEY_CAP[k]) + '</kbd><span class="jw-pilot-keydesc">' + esc(t(KEY_DESC[k])) + '</span>' +
+        '<span class="jw-pilot-keycheck" aria-hidden="true">' + (on ? ic('check-circle', 16) : '') + '</span></button>';
+    }).join('');
+    document.body.appendChild(m);
+    // Mọc NGAY TRÊN ô nhập, canh mép trái; hẹp hơn 320px thì theo bề ngang ô nhập
+    var r = box.getBoundingClientRect(), w = Math.min(320, r.width);
+    m.style.width = w + 'px';
+    m.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    m.style.top = Math.max(8, r.top - m.offsetHeight - 8) + 'px';
+    var cur = $('.jw-pilot-key--on', m);
+    if (cur) cur.focus({ preventScroll: true });
+  }
+  function pilotKeyMenuClose(refocus) {
+    var m = $('#pilotKeys');
+    if (m) m.remove();
+    PILOT.keyMenu = false;
+    var btn = $('#pilotKeyBtn');
+    if (btn) { btn.setAttribute('aria-expanded', 'false'); if (refocus) btn.focus({ preventScroll: true }); }
+  }
+  function pilotPickKey(k) {
+    PILOT.sendKey = SEND_KEYS.indexOf(k) >= 0 ? k : 'enter';
+    save(SEND_KEY_STORE, PILOT.sendKey);
+    pilotKeyMenuClose(false);
+    var btn = $('#pilotKeyBtn'); if (btn) btn.outerHTML = pilotKeyBtnHtml();
+    var h = $('#pilot .jw-pilot-hint'); if (h) h.textContent = pilotHintText();
+    var inp = $('#pilotInput'); if (inp) inp.focus({ preventScroll: true });
+  }
   function pilotSendHtml() {
     return PILOT.busy
       ? '<button type="button" class="jw-pilot-send jw-pilot-send--stop" id="pilotSend" data-act="pilot-stop" aria-label="' + esc(t('停止')) + '" data-tip="' + esc(t('停止')) + '">' + ic('stop-circle', 20) + '</button>'
@@ -2930,11 +2997,10 @@
       '<div class="jw-pilot-foot">' +
         '<div class="jw-pilot-ctx"><span class="jw-pilot-ctx-page" data-tip="' + esc(t('JOY Pilot はこのページの内容をふまえて答えます')) + '">' + ic('document', 13) + '<span>' + esc(page) + '</span></span>' +
           '<span class="jw-pilot-ctx-perm" data-tip="' + esc(tr(PILOT_ME.role)) + '">' + ic('key-square', 13) + '<span>' + esc(t('組織図・名簿を編集できます')) + '</span></span></div>' +
-        '<div class="jw-pilot-compose">' +
+        '<div class="jw-pilot-box">' +
           '<textarea id="pilotInput" class="jw-pilot-input" rows="1" placeholder="' + esc(t('JOY Pilot に頼む…')) + '" aria-label="' + esc(t('JOY Pilot に頼む…')) + '"></textarea>' +
-          pilotSendHtml() +
+          '<div class="jw-pilot-bar">' + pilotKeyBtnHtml() + '<span class="jw-pilot-hint">' + esc(pilotHintText()) + '</span>' + pilotSendHtml() + '</div>' +
         '</div>' +
-        '<p class="jw-pilot-note">' + esc(t('Shift+Enter で改行 · データの書き込みは必ず確認してから実行します')) + '</p>' +
       '</div>';
   }
   function renderPilotBtn() {
@@ -2954,6 +3020,7 @@
   function renderPilot() {
     var box = $('#pilot');
     if (!box) return;
+    if (PILOT.keyMenu) pilotKeyMenuClose(false);
     var sg = $('.jw-seg[data-seg="pilotTab"]', box);
     var old = sg ? sg.style.getPropertyValue('--seg-i') : null;
     var draft = $('#pilotInput', box);
@@ -3011,6 +3078,7 @@
   }
   function closePilot() {
     if (!PILOT.open) return;
+    pilotKeyMenuClose(false);
     PILOT.open = false;
     var box = $('#pilot');
     box.classList.remove('jw-pilot--open');
