@@ -61,7 +61,10 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
 Workflow chạy `build.mjs --check` trước: file build lệch nguồn hoặc có email `@drjoy.jp` thì dừng,
 không publish. Muốn chạy tay: Actions → Deploy to GitHub Pages → Run workflow.
 
-- Settings → Pages → Source phải là **GitHub Actions**.
+- Nên đặt Settings → Pages → Source = **GitHub Actions**: khi đó chỉ workflow này deploy (có cổng).
+  Nếu để "Deploy from a branch" thì GitHub chạy thêm một lượt deploy riêng, lấy nguyên nhánh làm
+  site (không qua cổng). Lúc đó `index.html` ở gốc repo chuyển sang `joy-start-mockup.html` (giữ
+  nguyên `#/…`), còn `.nojekyll` tắt Jekyll.
 - Đổi default branch (ví dụ sang `main`) thì nhánh mới tự thành nhánh deploy. Nhưng phải thêm nó vào
   Settings → Environments → `github-pages` → Deployment branches, không thì bước deploy bị từ chối.
 
