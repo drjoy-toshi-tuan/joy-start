@@ -16,6 +16,8 @@ Mở thẳng **`joy-start-mockup.html`** bằng trình duyệt. File tự chứa
 nằm trong file), gửi đi được như mockup gốc. Font lấy từ Google Fonts; không có mạng thì trình duyệt
 dùng font hệ thống.
 
+Bản online (GitHub Pages): **https://drjoy-toshi-tuan.github.io/joy-start/**
+
 Đường dẫn (hash): `#/home` · `#/<khối>/<nhóm>/<trang>` (theo `data-page` của bản gốc, ví dụ
 `#/todo/報告/上長報告`) · `#/settings/<tab>` · `#/announce/<id>` · `#/deals` · `#/search?q=…`.
 
@@ -52,6 +54,16 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
   có: lỗi/cảnh báo console, cuộn ngang, chữ chưa dịch. Cần Playwright (`npm i -g playwright` hoặc
   đặt `NODE_PATH`). Máy đi qua proxy thì thêm `PW_PROXY=http://host:port`; muốn cache font thì thêm
   `PW_FONT_CACHE=<thư mục>`.
+
+## Deploy (GitHub Pages)
+
+`.github/workflows/pages.yml` tự deploy mỗi lần push lên **default branch**. Nhánh khác không deploy.
+Workflow chạy `build.mjs --check` trước: file build lệch nguồn hoặc có email `@drjoy.jp` thì dừng,
+không publish. Muốn chạy tay: Actions → Deploy to GitHub Pages → Run workflow.
+
+- Settings → Pages → Source phải là **GitHub Actions**.
+- Đổi default branch (ví dụ sang `main`) thì nhánh mới tự thành nhánh deploy. Nhưng phải thêm nó vào
+  Settings → Environments → `github-pages` → Deployment branches, không thì bước deploy bị từ chối.
 
 ## Khác JOY Analytics ở đâu
 

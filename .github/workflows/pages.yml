@@ -1,0 +1,61 @@
+# Deploy mockup lên GitHub Pages: https://drjoy-toshi-tuan.github.io/joy-start/
+#
+# ⚠ CHỈ default branch mới deploy (job có `if:` bên dưới). Pages là trang CÔNG KHAI, nên
+#   đẩy một nhánh nháp lên đó là publish một bản chưa ai duyệt. Nhánh khác vẫn chạy workflow
+#   này nhưng job bị SKIP (không tốn phút nào).
+#   Đổi default branch (ví dụ sang `main`) thì nhánh mới tự thành nhánh deploy — nhưng phải
+#   thêm nó vào Settings → Environments → github-pages → Deployment branches, không thì
+#   bước deploy bị từ chối.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+  workflow_dispatch:
+
+# Một lượt deploy tại một thời điểm. Không huỷ giữa chừng: Pages ở trạng thái nửa vời tệ hơn là đợi.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # ── CỔNG: file build phải khớp nguồn, và không chứa email @drjoy.jp (build.mjs chặn).
+      - name: Cổng build
+        run: node tools/build.mjs --check
+
+      # Trang chủ = chính file mockup; giữ thêm tên gốc để link cũ vẫn mở được.
+      - name: Dựng thư mục site
+        run: |
+          mkdir -p _site
+          cp joy-start-mockup.html _site/index.html
+          cp joy-start-mockup.html _site/joy-start-mockup.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
