@@ -106,9 +106,10 @@ for (const lang of ['ja', 'vi']) {
 }
 
 // ── Thao tác chính (desktop, ja → vi) ──
+let steps = 0;
 {
   const { ctx, page, logs } = await context({ vp: { width: 1440, height: 900 }, lang: 'ja', theme: 'light' });
-  const step = async (name, fn) => { try { await fn(); } catch (e) { fail('thao tác', `${name}: ${e.message.split('\n')[0]}`); } };
+  const step = async (name, fn) => { steps++; try { await fn(); } catch (e) { fail('thao tác', `${name}: ${e.message.split('\n')[0]}`); } };
   await step('mở khối やること', async () => {
     await page.click('.jw-sn-top[data-k="todo"]');
     await page.waitForSelector('.jw-sn-block--open .jw-tree-kids');
@@ -192,4 +193,4 @@ if (failures.length) {
   console.error(`✖ ${failures.length} lỗi (${n} route × 4 lượt quét):\n` + failures.slice(0, 80).map((f) => '  · ' + f).join('\n'));
   process.exit(1);
 }
-console.log(`✔ ${n} route × (ja, vi) × (1440, 390) — 0 lỗi console · 0 tràn ngang · 0 chữ chưa dịch · 7 thao tác OK`);
+console.log(`✔ ${n} route × (ja, vi) × (1440, 390) — 0 lỗi console · 0 tràn ngang · 0 chữ chưa dịch · ${steps} thao tác OK`);

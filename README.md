@@ -47,8 +47,8 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
   Icon thiếu sẽ hiện cảnh báo `[icon] thiếu: …` trên console.
 - **Thêm chữ:** viết tiếng Nhật trong `t('…')` và thêm bản dịch vào `I18N_VI`. Thiếu bản dịch thì
   màn Tiếng Việt hiện chữ Nhật và `verify.mjs` báo đỏ.
-- **`verify.mjs`** quét 135 route × 日本語/Tiếng Việt × 1440px/390px, rồi chạy 7 thao tác chính (mở khối,
-  sang trang, ghim お気に入り, tìm menu, tìm toàn bộ, đổi ngôn ngữ + theme, đăng xuất). Nó báo đỏ khi
+- **`verify.mjs`** quét 135 route × 日本語/Tiếng Việt × 1440px/390px, rồi chạy 8 thao tác chính (mở khối,
+  sang trang, ghim お気に入り, tìm menu ở cả 2 ngôn ngữ, tìm toàn bộ, đổi ngôn ngữ + theme, đăng xuất). Nó báo đỏ khi
   có: lỗi/cảnh báo console, cuộn ngang, chữ chưa dịch. Cần Playwright (`npm i -g playwright` hoặc
   đặt `NODE_PATH`). Máy đi qua proxy thì thêm `PW_PROXY=http://host:port`; muốn cache font thì thêm
   `PW_FONT_CACHE=<thư mục>`.
