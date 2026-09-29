@@ -61,6 +61,7 @@ async function context({ vp, lang, theme }) {
   const logs = [];
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.text()); });
   page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
+  page.on('requestfailed', (r) => { if (process.env.PW_DEBUG_REQ) console.log('[requestfailed]', r.url().slice(0, 160), r.failure() && r.failure().errorText); });
   await page.goto(FILE + '#/home', { waitUntil: 'load' });
   await page.evaluate(() => document.fonts.ready);
   return { ctx, page, logs };
@@ -159,9 +160,41 @@ let steps = 0;
     const n = await page.$$eval('.jw-sn-block--open', (e) => e.length);
     const want = await page.$$eval('.jw-sn-top[data-act="block"]', (e) => e.length);
     if (n !== want) throw new Error(`mở ${n}/${want} khối`);
+    // đóng có hoạt ảnh thu lại (~0.4s) rồi mới vẽ lại ⇒ đợi, không đếm ngay
     await page.click('[data-act="collapse-all"]');
-    const m = await page.$$eval('.jw-sn-block--open', (e) => e.length);
-    if (m !== 0) throw new Error(`còn ${m} khối mở`);
+    await page.waitForFunction(() => !document.querySelector('.jw-sn-block--open'), null, { timeout: 4000 })
+      .catch(async () => { throw new Error(`còn ${await page.$$eval('.jw-sn-block--open', (e) => e.length)} khối mở`); });
+  });
+  await step('JOY Pilot: ⌘J → 変更案 → 予約 → tab 予約・下書き → tới ngày áp dụng thì tự phản ánh', async () => {
+    await page.keyboard.press('Control+j');
+    await page.waitForSelector('#pilot.jw-pilot--open .jw-pilot-hello');
+    await page.click('#pilot .jw-pilot-sug >> nth=2');
+    await page.waitForSelector('#pilot .jw-pilot-plan [data-v="schedule"]', { timeout: 10000 });
+    await page.click('#pilot .jw-pilot-plan [data-v="schedule"]');
+    await page.waitForSelector('#pilot .jw-pilot-plan[data-state="scheduled"]');
+    await page.click('[data-seg="pilotTab"] [data-v="plans"]');
+    await page.waitForSelector('#pilot .jw-pilot-item[data-state="scheduled"]');
+    await page.click('#pilot [data-act="pilot-advance"]');
+    await page.waitForSelector('#pilot .jw-pilot-item[data-state="applied"]');
+    await page.click('[data-seg="pilotTab"] [data-v="chat"]');
+  });
+  await step('JOY Pilot: thao tác trang (mở 組織図) · tổng hợp · không có quyền', async () => {
+    await page.fill('#pilotInput', '組織図を開いて');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => location.hash.endsWith('/org-chart'), null, { timeout: 10000 });
+    await page.waitForFunction(() => !document.querySelector('#pilotSend').disabled, null, { timeout: 10000 });
+    await page.fill('#pilotInput', '今月の受注を事業部別に集計して');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('#pilot .jw-pilot-table', { timeout: 10000 });
+    const rows = await page.$$eval('#pilot .jw-pilot-table .jw-pilot-trow', (e) => e.length);
+    if (rows !== 5) throw new Error(`bảng tổng hợp có ${rows}/5 事業部`);
+    await page.waitForFunction(() => !document.querySelector('#pilotSend').disabled, null, { timeout: 10000 });
+    await page.fill('#pilotInput', '給与を変更して');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('#pilot .jw-pilot-deny', { timeout: 10000 });
+    await page.waitForFunction(() => !document.querySelector('#pilotSend').disabled, null, { timeout: 10000 });
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('#pilot.jw-pilot--open'));
   });
   // Tìm menu: 日本語 chỉ khớp nhãn tiếng Nhật; nhãn tiếng Việt chỉ khớp khi đang ở Tiếng Việt.
   await step('tìm trong side panel (ja: 在庫 khớp, kho KHÔNG khớp)', async () => {
@@ -203,6 +236,16 @@ let steps = 0;
     await page.click('#setGo');
     await page.waitForFunction(() => !document.querySelector('#menuPanel.jw-menu--open'));
   });
+  await step('JOY Pilot bằng Tiếng Việt: đủ bản dịch', async () => {
+    await page.click('#pilotBtn');
+    await page.waitForSelector('#pilot.jw-pilot--open');
+    await page.click('[data-act="pilot-new"]');
+    await page.waitForSelector('#pilot .jw-pilot-hello');
+    const miss = await page.evaluate(() => Object.keys(window.__JOYSTART__.missing));
+    if (miss.length) throw new Error('chưa dịch: ' + miss.slice(0, 5).join(' · '));
+    await page.click('[data-act="pilot-close"]');
+    await page.waitForFunction(() => !document.querySelector('#pilot.jw-pilot--open'));
+  });
   await step('tìm trong side panel (vi: kho khớp)', async () => {
     await page.click('.jw-sn-find');
     await page.fill('#sideFind', 'kho');
@@ -231,6 +274,19 @@ let steps = 0;
     await page.click('.jw-tree-leaf[href="#/todo/reports/supervisor"]');
     await page.waitForFunction(() => location.hash === '#/todo/reports/supervisor' && !document.documentElement.hasAttribute('data-drawer'));
     await page.waitForSelector('.jw-sidenav--rail');
+  });
+  await step('JOY Pilot ở 390px: toàn màn hình, không tràn', async () => {
+    await page.click('#pilotBtn');
+    await page.waitForSelector('#pilot.jw-pilot--open');
+    await page.waitForTimeout(600);
+    const bad = await page.evaluate(() => {
+      const r = document.querySelector('#pilot').getBoundingClientRect();
+      const over = [...document.querySelectorAll('#pilot *')].some((e) => e.getBoundingClientRect().right > innerWidth + 1);
+      return (Math.round(r.width) !== innerWidth ? 'rộng ' + Math.round(r.width) + 'px' : '') + (over ? ' có phần tử tràn' : '');
+    });
+    if (bad) throw new Error(bad);
+    await page.click('[data-act="pilot-close"]');
+    await page.waitForFunction(() => !document.querySelector('#pilot.jw-pilot--open'));
   });
   await step('通知センター vừa màn 390px', async () => {
     await page.keyboard.press('Escape');

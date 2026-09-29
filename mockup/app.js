@@ -42,6 +42,19 @@
     return Number(n).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'ja-JP', { minimumFractionDigits: digits, maximumFractionDigits: digits });
   }
   function yen(n) { return '¥' + nf(n); }
+  // 事業部: chấm màu thay icon. --ac khai inline + class .jw-prod pha các token con NGAY trên phần tử đó
+  function prodStyle(p) { return ' style="--ac:' + p.color + '"'; }
+  function prodDot(p, big) { return '<span class="jw-prod jw-prod-dot' + (big ? ' jw-prod-dot--lg' : '') + '"' + prodStyle(p) + ' aria-hidden="true"></span>'; }
+  function prodTag(p, cls) { return '<span class="jw-tag jw-prod jw-prod-tag' + (cls ? ' ' + cls : '') + '"' + prodStyle(p) + '>' + esc(tr(p)) + '</span>'; }
+  // Icon của một mục menu: 事業部 ⇒ chấm màu
+  function nodeIcon(node, size) { return node.prod && PRODUCT_BY_JA[node.prod] ? prodDot(PRODUCT_BY_JA[node.prod], size >= 20) : ic(node.icon, size); }
+  // Số THỐNG KÊ: đếm từ 0 lên đúng lúc CHÍNH con số vào vùng nhìn (xem §Hiện dần khi cuộn)
+  function cntFmt(v, fmt, digits) { return fmt === 'yen' ? yen(v) : nf(v, digits || 0); }
+  function cnt(n, fmt, digits) {
+    return '<span class="jw-cnt" data-count-to="' + n + '"' + (fmt ? ' data-count-fmt="' + fmt + '"' : '') + (digits ? ' data-count-digits="' + digits + '"' : '') + '>' + cntFmt(n, fmt, digits) + '</span>';
+  }
+  // t() + chèn HTML (số đếm được) vào chỗ {x} — phần chữ vẫn được escape
+  function tH(ja, vars) { return esc(t(ja)).replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; }); }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   // Ngày: JA 9/24(木) · VI 24/9 (T5). Người dùng đổi được thứ tự ở 設定 › 表示.
@@ -326,7 +339,7 @@
   function rowItem(k, n) {
     var on = isCurrent(k);
     return '<div class="jw-tree-item"><a class="jw-tree-row' + (on ? ' jw-tree-on' : '') + '" href="' + href(k) + '"' + (on ? ' aria-current="page"' : '') + tipAttr(n) + '>' +
-      '<span class="jw-tree-icon">' + ic(n.icon, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span>' +
+      '<span class="jw-tree-icon">' + nodeIcon(n, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span>' +
       (n.badge ? '<span class="jw-count">' + n.badge + '</span>' : '') + '</a>' + favBtn(k) + '</div>';
   }
   function leafItem(k, n) {
@@ -340,7 +353,7 @@
       if (!n.children) return '<div class="jw-tree-node">' + rowItem(b.key + '/' + n.ja, n) + '</div>';
       var groupOn = ROUTE.name === 'page' && PAGES[ROUTE.key].group === n;
       return '<div class="jw-tree-node"><a class="jw-tree-row' + (groupOn ? ' jw-tree-row--here' : '') + '" href="' + href(n.firstKey) + '">' +
-        '<span class="jw-tree-icon">' + ic(n.icon, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span>' +
+        '<span class="jw-tree-icon">' + nodeIcon(n, 15) + '</span><span class="jw-tree-name">' + esc(nm(n)) + '</span>' +
         '<span class="jw-tree-count">' + n.children.length + '</span></a>' +
         '<ul class="jw-tree-kids">' + n.children.map(function (k) { return leafItem(b.key + '/' + n.ja + '/' + k.ja, k); }).join('') + '</ul></div>';
     }).join('') + '</div>';
@@ -376,7 +389,7 @@
           '<span class="jw-sn-fav-name">' + esc(tr(l.item.label)) + '</span><span class="jw-sn-fav-path">' + esc(tr(l.group.label)) + '</span></button>' + favRemove(k) + '</div>';
       }
       if (!p) return '';
-      return '<div class="jw-sn-fav-item"><a class="jw-sn-fav" href="' + href(k) + '">' + ic(p.node.icon, 14) +
+      return '<div class="jw-sn-fav-item"><a class="jw-sn-fav" href="' + href(k) + '">' + nodeIcon(p.node, 14) +
         '<span class="jw-sn-fav-name">' + esc(nm(p.node)) + '</span><span class="jw-sn-fav-path">' + esc(pathLabel(p)) + '</span></a>' + favRemove(k) + '</div>';
     }).join('');
     return rows ? '<div class="jw-sn-favs"><div class="jw-sn-sec">' + ic('star', 12) + t('お気に入り') + '</div>' + rows + '</div>' : '';
@@ -394,7 +407,7 @@
     if (!hits.length) return '<p class="jw-sn-hits-none">' + t('該当するメニューがありません。') + '</p>';
     return '<div class="jw-sn-hits">' + hits.map(function (h, i) {
       return '<a class="jw-sn-hit" href="' + href(h.key) + '"' + (i === 0 ? ' data-hot' : '') + '>' +
-        '<span class="jw-sn-hit-ico">' + ic(h.node.icon, 16) + '</span><span class="jw-sn-hit-body">' +
+        '<span class="jw-sn-hit-ico">' + nodeIcon(h.node, 16) + '</span><span class="jw-sn-hit-body">' +
         '<span class="jw-sn-hit-name">' + esc(nm(h.node)) + '</span>' +
         (h.trail.length ? '<span class="jw-sn-hit-path">' + esc(pathLabel(h)) + '</span>' : '') + '</span></a>';
     }).join('') + '</div>';
@@ -495,7 +508,7 @@
     return pageHead({
       crumbs: crumbs,
       title: nm(p.node),
-      icon: ic(p.node.icon, 20),
+      icon: nodeIcon(p.node, 20),
       desc: PLACEHOLDER_DESC[p.key] ? tr(PLACEHOLDER_DESC[p.key]) : (p.node.tip ? tr(p.node.tip) : ''),
       actions: (extraActions || '') + (p.key === 'home' ? '' : favAction)
     });
@@ -578,6 +591,12 @@
     document.title = pageTitleText() + ' — JOY START';
     srScan(isNav);
     renderInboxBtn();
+    // Ngữ cảnh của JOY Pilot đi theo trang đang xem (chip + gợi ý)
+    if (PILOT.open) {
+      var cx = $('#pilot .jw-pilot-ctx-page span');
+      if (cx) cx.textContent = pageTitleText();
+      if (!PILOT.msgs.length && PILOT.tab === 'chat') renderPilotBody();
+    }
   }
 
   // ── §Vệt tab: nền của tab đang chọn là MỘT phần tử trượt giữa các tab ──
@@ -623,6 +642,58 @@
     });
   }
 
+  // ── §Accordion: mở = khung GIÃN ra + từng mục PHÓNG ra lần lượt; đóng = thu lại rồi mới vẽ lại ──
+  // (HTML được vẽ lại nguyên khối nên CSS transition không có "trạng thái trước" ⇒ dùng Web Animations)
+  var ACC_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  function accOpen(body, items, caret, delay) {
+    if (REDUCED || !body || !body.animate) return;
+    delay = delay || 0;
+    var h = body.offsetHeight, cs = getComputedStyle(body);
+    body.style.overflow = 'hidden';
+    // padding cũng co về 0 — không thì khung còn đúng phần đệm (border-box) và nhảy một nhịp
+    var a = body.animate([{ height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0.35 },
+      { height: h + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 }], { duration: 440, delay: delay, easing: ACC_EASE, fill: 'backwards' });
+    a.onfinish = a.oncancel = function () { body.style.overflow = ''; };
+    (items || []).forEach(function (it, i) {
+      it.animate([{ opacity: 0, transform: 'translateY(-8px) scale(0.97)' }, { opacity: 1, transform: 'none' }],
+        { duration: 420, delay: delay + 40 + Math.min(i, 14) * 32, easing: ACC_EASE, fill: 'backwards' });
+    });
+    if (caret) caret.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }], { duration: 420, delay: delay, easing: ACC_EASE, fill: 'backwards' });
+  }
+  function accClose(body, items, caret, done) {
+    if (REDUCED || !body || !body.animate) { done(); return; }
+    var h = body.offsetHeight, n = (items || []).length, cs = getComputedStyle(body);
+    body.style.overflow = 'hidden';
+    (items || []).forEach(function (it, i) {
+      it.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-6px) scale(0.98)' }],
+        { duration: 200, delay: Math.min(n - 1 - i, 10) * 14, easing: 'ease-in', fill: 'forwards' });
+    });
+    if (caret) caret.animate([{ transform: 'rotate(180deg)' }, { transform: 'rotate(0deg)' }], { duration: 300, easing: ACC_EASE, fill: 'forwards' });
+    var a = body.animate([{ height: h + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 },
+      { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 }], { duration: 300, delay: 60, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' });
+    var fired = false;
+    a.onfinish = a.oncancel = function () { if (!fired) { fired = true; done(); } };
+  }
+  // Cây menu: lấy từng HÀNG (hàng nhóm, hàng lá) — không lấy cả khối node, để hàng con không bị cộng dồn chuyển động
+  function treeItems(body) { return $$('.jw-tree-node > .jw-tree-item, .jw-tree-node > .jw-tree-row, .jw-tree-kid', body); }
+  function blockParts(k) {
+    var top = $('#side .jw-sn-top[data-k="' + k + '"]');
+    var blk = top && top.parentNode;
+    var body = blk && $('.jw-sn-body', blk);
+    return { blk: blk, body: body, caret: top && $('.jw-sn-caret', top) };
+  }
+  function animateBlockOpen(k, delay) {
+    var bp = blockParts(k);
+    if (bp.body) accOpen(bp.body, treeItems(bp.body), bp.caret, delay);
+  }
+  // Hàng MỚI xuất hiện trong một thẻ (vd. 過去 của スケジュール) phóng ra lần lượt
+  function revealNew(before, root) {
+    if (REDUCED || !root) return;
+    $$('.jw-rowi', root).filter(function (el) { return before.indexOf(el.textContent) < 0; }).forEach(function (it, i) {
+      it.animate([{ opacity: 0, transform: 'translateY(-8px) scale(0.98)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: Math.min(i, 12) * 36, easing: ACC_EASE, fill: 'backwards' });
+    });
+  }
+
   // ── §Hiện dần khi cuộn (mọi trang) ──
   // Khối (đầu trang · hero · MVV · thẻ) trượt lên + hiện khi vào vùng nhìn; phần tử con trong khối
   // (hàng, thẻ nhỏ, ô…) nối đuôi nhau theo --sr-i. Chỉ chạy khi ĐỔI TRANG — vẽ lại tại chỗ (đổi tab,
@@ -638,9 +709,35 @@
   }, { root: $('#main'), rootMargin: '0px 0px -6% 0px', threshold: 0.04 }) : null;
   function srShow(el) {
     el.classList.add('jw-sr-in');
-    $$('[data-count-to]', el).forEach(countUp);
     setTimeout(function () { el.classList.add('jw-sr-done'); }, 1400);
   }
+  var cntIO = srIO ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      cntIO.unobserve(en.target);
+      // Hàng đang nối đuôi hiện ra (--sr-i) ⇒ số bắt đầu đếm ĐÚNG lúc hàng đó hiện, không sớm hơn
+      var it = en.target.closest(SR_ITEM), blk = en.target.closest('[data-sr]');
+      var lag = it && blk && !blk.classList.contains('jw-sr-done') ? (parseFloat(it.style.getPropertyValue('--sr-i')) || 0) * 45 + 140 : 0;
+      countUp(en.target, 1400, lag);
+    });
+  }, { root: $('#main'), rootMargin: '0px 0px -6% 0px', threshold: 0 }) : null;
+  // Cuộn NHẢY qua (kéo thanh cuộn, Home/End) ⇒ số chưa kịp "giao" với vùng nhìn đã nằm phía TRÊN:
+  // IO không bao giờ báo ⇒ đặt thẳng số cuối, không để kẹt ở 0
+  var cntRaf = 0;
+  if (cntIO) $('#main').addEventListener('scroll', function () {
+    if (cntRaf) return;
+    cntRaf = requestAnimationFrame(function () {
+      cntRaf = 0;
+      var top = $('#main').getBoundingClientRect().top;
+      $$('#screen [data-count-to]:not([data-counted])').forEach(function (el) {
+        if (el.getBoundingClientRect().bottom >= top) return;
+        cntIO.unobserve(el);
+        el.setAttribute('data-counted', '');
+        el.textContent = cntFmt(+el.getAttribute('data-count-to'), el.getAttribute('data-count-fmt'), +el.getAttribute('data-count-digits') || 0);
+        el.style.minWidth = '';
+      });
+    });
+  }, { passive: true });
   function srScan(animate) {
     if (srIO && animate) srIO.disconnect();
     $$(SR_BLOCK, $('#screen')).forEach(function (el) {
@@ -650,17 +747,31 @@
       if (animate && srIO) srIO.observe(el);
       else el.classList.add('jw-sr-in', 'jw-sr-done');
     });
+    if (!cntIO || !animate) return;
+    cntIO.disconnect();
+    $$('[data-count-to]', $('#screen')).forEach(function (el) {
+      // giữ bề ngang của số cuối ⇒ hàng không xô lệch trong lúc đếm; về 0 NGAY (khối còn ẩn nên không ai thấy)
+      el.style.minWidth = el.getBoundingClientRect().width + 'px';
+      el.textContent = cntFmt(0, el.getAttribute('data-count-fmt'), +el.getAttribute('data-count-digits') || 0);
+      cntIO.observe(el);
+    });
   }
-  function countUp(el) {
+  function countUp(el, dur, lag) {
     var to = Number(el.getAttribute('data-count-to'));
     if (!isFinite(to) || el.hasAttribute('data-counted')) return;
     el.setAttribute('data-counted', '');
-    var t0 = performance.now(), dur = 1400;
+    var fmt = el.getAttribute('data-count-fmt'), digits = +el.getAttribute('data-count-digits') || 0;
+    dur = dur || 1400;
+    var t0 = performance.now() + (lag || 0);
+    function show(v) { el.textContent = cntFmt(digits ? Math.round(v * Math.pow(10, digits)) / Math.pow(10, digits) : Math.round(v), fmt, digits); }
+    show(0);
     (function frame(now) {
-      var k = Math.min(1, (now - t0) / dur);
-      el.textContent = nf(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (!el.isConnected) return;
+      var k = Math.max(0, Math.min(1, (now - t0) / dur));
+      show(to * (1 - Math.pow(1 - k, 3)));
       if (k < 1) requestAnimationFrame(frame);
-    })(t0);
+      else el.style.minWidth = '';
+    })(performance.now());
   }
   function pageTitleText() {
     if (ROUTE.name === 'page') return nm(PAGES[ROUTE.key].node);
@@ -749,7 +860,7 @@
       '<div class="jw-mvv2-top">' +
         '<div class="jw-mvv2-mission"><span class="jw-mvv2-label">MISSION</span><p class="jw-mvv2-statement">' + tr(MVV.mission) + '</p></div>' +
         '<div class="jw-mvv2-vision"><span class="jw-mvv2-label">VISION</span><p class="jw-mvv2-vtext">' + tr(MVV.vision) + '</p>' +
-          '<div class="jw-mvv2-impact"><span class="jw-mvv2-num"><span class="jw-num" data-count-to="' + MVV.impactHours + '">' + nf(MVV.impactHours) + '</span><small>' + t('時間') + '</small></span>' +
+          '<div class="jw-mvv2-impact"><span class="jw-mvv2-num"><span class="jw-num jw-cnt" data-count-to="' + MVV.impactHours + '">' + nf(MVV.impactHours) + '</span><small>' + t('時間') + '</small></span>' +
             '<span class="jw-mvv2-impact-label">' + t('今月減らせた時間') + '</span>' +
             '<button type="button" class="jw-link" data-act="toast" data-msg="Vision Report（準備中のモック）">' + t('詳細') + ic('alt-arrow-right', 14) + '</button></div>' +
         '</div>' +
@@ -786,9 +897,9 @@
     var total = gs.reduce(function (n, g) { return n + g.items.length; }, 0);
     return '<div class="jw-inbox-head"><span class="jw-inbox-title">' + t('通知') + '</span><span class="jw-inbox-total jw-num">' + total + '</span></div>' +
       '<div class="jw-inbox-sum" role="tablist" aria-label="' + esc(t('通知')) + '">' +
-        '<button type="button" class="jw-inbox-tile jw-tone-orange" role="tab" aria-selected="' + (S.inboxTab === 'all') + '" data-act="inbox-tab" data-v="all"><b class="jw-num">' + total + '</b><span>' + t('すべて') + '</span></button>' +
+        '<button type="button" class="jw-inbox-tile jw-tone-orange" role="tab" aria-selected="' + (S.inboxTab === 'all') + '" data-act="inbox-tab" data-v="all"><b class="jw-num" data-count-to="' + total + '">' + total + '</b><span>' + t('すべて') + '</span></button>' +
         gs.map(function (g) {
-          return '<button type="button" class="jw-inbox-tile jw-tone-' + g.tone + '" role="tab" aria-selected="' + (S.inboxTab === g.id) + '" data-act="inbox-tab" data-v="' + g.id + '"><b class="jw-num">' + g.items.length + '</b><span>' + esc(g.label) + '</span></button>';
+          return '<button type="button" class="jw-inbox-tile jw-tone-' + g.tone + '" role="tab" aria-selected="' + (S.inboxTab === g.id) + '" data-act="inbox-tab" data-v="' + g.id + '"><b class="jw-num" data-count-to="' + g.items.length + '">' + g.items.length + '</b><span>' + esc(g.label) + '</span></button>';
         }).join('') + '</div>' +
       '<div class="jw-inbox-body" id="inboxBody">' + gs.filter(function (g) { return S.inboxTab === 'all' || S.inboxTab === g.id; }).map(function (g) {
         return '<section class="jw-inbox-sec jw-tone-' + g.tone + '" id="inbox-' + g.id + '"><div class="jw-inbox-sec-head"><span class="jw-inbox-sec-name">' + esc(g.label) + '</span>' +
@@ -808,6 +919,7 @@
     var p = $('#inboxPanel');
     void p.offsetHeight;
     p.classList.add('jw-inbox--open');
+    if (!REDUCED) $$('.jw-inbox-tile [data-count-to]', p).forEach(function (el) { countUp(el, 700, 80); });
     renderInboxBtn();
   }
   function closeInbox() {
@@ -829,8 +941,8 @@
       '<span class="jw-deal-ae" title="' + esc(d.ae) + ' (AE)">' + esc(d.ae) + '</span>' +
       '<span class="jw-deal-br" aria-hidden="true"></span>' +
       '<span class="jw-deal-info"><span class="jw-deal-hosp" title="' + esc(d.hosp) + '">' + esc(d.hosp) + '</span>' +
-        '<span class="jw-tag jw-tone-' + p.tone + ' jw-deal-prod">' + esc(tr(p)) + '</span></span>' +
-      '<span class="jw-deal-amt"><span class="jw-deal-total">' + yen(d.total) + '</span><span class="jw-deal-mrr">MRR ' + yen(d.mrr) + '</span></span>' +
+        prodTag(p, 'jw-deal-prod') + '</span>' +
+      '<span class="jw-deal-amt"><span class="jw-deal-total">' + cnt(d.total, 'yen') + '</span><span class="jw-deal-mrr">MRR ' + cnt(d.mrr, 'yen') + '</span></span>' +
       '<span class="jw-deal-date">' + (dealIsNew(d) ? '<span class="jw-badge jw-badge--solid">NEW</span>' : '') + fmtMD(d.date) + '</span>' +
     '</div>';
   }
@@ -887,7 +999,7 @@
     }).join('');
     return panel({ id: 'newhire', icon: cardIcon('newhire'), title: t('今月の新入社員'),
       sub: '<span class="jw-panel-sub">' + fmtYM(NEW_HIRES_MONTH.y, NEW_HIRES_MONTH.m) + '</span>',
-      actions: '<span class="jw-hchip">' + esc(t('{n}名', { n: NEW_HIRES.length })) + '</span>', body: groups });
+      actions: '<span class="jw-hchip">' + tH('{n}名', { n: cnt(NEW_HIRES.length) }) + '</span>', body: groups });
   }
   function schRow(e, isPast) {
     var diff = dayDiff(pd(e.date), HOME_TODAY);
@@ -907,7 +1019,7 @@
   function rankFace(r) { return '<span class="jw-face">' + avatarSvg(HEALTH_AVATARS[r.name] || AVATAR_POOL[(Math.max(1, r.rank) - 1) % AVATAR_POOL.length]) + '</span>'; }
   function rankRow(r) {
     return '<div class="jw-rowi jw-rank"' + (r.rank <= 3 ? ' data-top' : '') + '><span class="jw-rank-no">' + esc(t('{n}位', { n: r.rank })) + '</span>' + rankFace(r) +
-      '<span class="jw-rank-name">' + esc(r.name) + '</span><span class="jw-rank-pt">' + nf(r.pt) + ' pt</span></div>';
+      '<span class="jw-rank-name">' + esc(r.name) + '</span><span class="jw-rank-pt">' + cnt(r.pt) + ' pt</span></div>';
   }
   function catOpts() { return HEALTH_CATS.map(function (c) { return { v: c, label: t(c) }; }); }
   function cardHealth() {
@@ -926,7 +1038,7 @@
           '<div class="jw-photo-thumb">' + photoMedia(p) + (p.src ? '' : '<span class="jw-sample">' + t('サンプル') + '</span>') + '</div>' +
           '<div class="jw-photo-cap">' + esc(cap) + '</div>' +
           '<div class="jw-photo-meta"><span>' + fmtMDs(p.date) + '</span><span class="jw-photo-user">' + esc(p.user) + '</span>' +
-          '<span class="jw-photo-like">' + ic('heart', 12) + p.likes + '</span></div></button>';
+          '<span class="jw-photo-like">' + ic('heart', 12) + cnt(p.likes) + '</span></div></button>';
       }).join('') + '</div>' });
   }
   function monthsLabel(r) {
@@ -938,13 +1050,13 @@
       body: '<div class="jw-table-wrap"><table class="jw-table"><thead><tr><th>' + t('四半期') + '</th><th class="jw-r">' + t('残り営業日') + '</th><th class="jw-r">' + t('残り週') + '</th></tr></thead><tbody>' +
         BIZDAYS.map(function (r) {
           return '<tr' + (r.current ? ' data-current' : '') + '><td>' + r.q + ' <span class="jw-muted">' + monthsLabel(r.months) + '</span></td>' +
-            '<td class="jw-r jw-num">' + r.days + '</td><td class="jw-r jw-num">' + r.weeks + '</td></tr>';
+            '<td class="jw-r jw-num">' + cnt(r.days) + '</td><td class="jw-r jw-num">' + cnt(r.weeks) + '</td></tr>';
         }).join('') + '</tbody></table></div><p class="jw-note">' + t('当期（4Q）を強調表示・値はサンプルです') + '</p>' });
   }
   function cardFx() {
     return panel({ id: 'fx', icon: cardIcon('fx'), title: t('為替'),
       body: '<div class="jw-fx">' + FX.map(function (f) {
-        return '<div class="jw-fx-row jw-pane"><span class="jw-fx-from">' + f.from + '</span><span class="jw-fx-to">' + nf(f.to, f.digits) + '<small>' + (LANG === 'vi' ? f.unit : f.unitJa) + '</small></span></div>';
+        return '<div class="jw-fx-row jw-pane"><span class="jw-fx-from">' + f.from + '</span><span class="jw-fx-to">' + cnt(f.to, null, f.digits) + '<small>' + (LANG === 'vi' ? f.unit : f.unitJa) + '</small></span></div>';
       }).join('') + '</div><p class="jw-note">' + esc(t('取得日時：{d}（サンプル値）', { d: '2026/09/27 09:00' })) + '</p>' });
   }
 
@@ -965,7 +1077,7 @@
     var n = norm(q.trim());
     var res = [];
     if (!n) return res;
-    searchPages(q).forEach(function (p) { res.push({ cat: 'menu', title: nm(p.node), sub: pathLabel(p) || t('メニュー'), page: p.key, icon: p.node.icon }); });
+    searchPages(q).forEach(function (p) { res.push({ cat: 'menu', title: nm(p.node), sub: pathLabel(p) || t('メニュー'), page: p.key, node: p.node }); });
     GS_CATS.forEach(function (c) {
       if (c.id === 'menu') return;
       var items = c.id === 'link' ? linkSamples() : (SAMPLE_RESULTS[c.id] || []);
@@ -988,12 +1100,14 @@
       if (!items.length) return;
       html += '<div class="jw-gs-group"><div class="jw-gs-title">' + ic(c.icon, 13) + esc(t(c.label)) + '</div>' + items.map(function (r) {
         return '<button type="button" class="jw-gs-item" data-act="gs-item" data-cat="' + r.cat + '" data-page="' + esc(r.page || '') + '" data-link="' + esc(r.link || '') + '" data-title="' + esc(r.title) + '">' +
-          (r.icon ? ic(r.icon, 16) : ic(c.icon, 16)) + '<span class="jw-gs-body"><span class="jw-gs-name">' + esc(r.title) + '</span><span class="jw-gs-sub">' + esc(r.sub) + '</span></span></button>';
+          (r.node ? nodeIcon(r.node, 16) : r.icon ? ic(r.icon, 16) : ic(c.icon, 16)) + '<span class="jw-gs-body"><span class="jw-gs-name">' + esc(r.title) + '</span><span class="jw-gs-sub">' + esc(r.sub) + '</span></span></button>';
       }).join('') + '</div>';
     });
-    drop.innerHTML = all.length
+    var ask = '<button type="button" class="jw-gs-item jw-gs-pilot jw-pmark-host" data-act="gs-pilot">' + pilotMark(20, true) +
+      '<span class="jw-gs-body"><span class="jw-gs-name">' + esc(t('JOY Pilot に頼む：「{q}」', { q: q.trim() })) + '</span><span class="jw-gs-sub">' + esc(t('ページ操作・集計・データ更新まで')) + '</span></span></button>';
+    drop.innerHTML = ask + (all.length
       ? html + '<button type="button" class="jw-gs-all" data-act="gs-all">' + ic('magnifier', 14) + esc(t('すべての結果を見る（{n}件）', { n: all.length })) + '</button>'
-      : '<div class="jw-gs-none">' + t('該当する結果がありません') + '</div>';
+      : '<div class="jw-gs-none">' + t('該当する結果がありません') + '</div>');
     drop.hidden = false;
   }
   function closeGs() { var d = $('#gsDrop'); if (d) { d.hidden = true; d.innerHTML = ''; } S.gsHot = -1; }
@@ -1024,7 +1138,7 @@
     }).join('') + '</div></div>';
     var results = list.length ? '<div class="jw-rows">' + list.map(function (r) {
       var c = catOf(r.cat);
-      var inner = (r.icon ? ic(r.icon, 18) : ic(c.icon, 18)) + '<span class="jw-gs-body"><span class="jw-result-cat">' + esc(t(c.label)) + '</span><span class="jw-result-title">' + esc(r.title) + '</span><span class="jw-result-sub">' + esc(r.sub) + '</span></span>';
+      var inner = (r.node ? nodeIcon(r.node, 18) : r.icon ? ic(r.icon, 18) : ic(c.icon, 18)) + '<span class="jw-gs-body"><span class="jw-result-cat">' + esc(t(c.label)) + '</span><span class="jw-result-title">' + esc(r.title) + '</span><span class="jw-result-sub">' + esc(r.sub) + '</span></span>';
       return r.cat === 'menu'
         ? '<a class="jw-rowi jw-result" href="' + href(r.page) + '">' + inner + '</a>'
         : '<button type="button" class="jw-rowi jw-result" data-act="gs-item" data-cat="' + r.cat + '" data-title="' + esc(r.title) + '" data-link="' + esc(r.link || '') + '">' + inner + '</button>';
@@ -1061,7 +1175,7 @@
         '<h2 class="jw-article-title">' + esc(tr(a.title)) + '</h2>' +
         '<div class="jw-article-author">' + ic('user-rounded', 14) + esc(t(d.dept)) + '｜' + esc(d.name) + ' ' + esc(t('（サンプル）')) + '</div>' +
         '<div class="jw-prose">' + body + '</div>' + files +
-        '<div class="jw-article-author">' + ic('eye', 14) + esc(t('既読 {r}／{m}名（サンプル）', { r: d.readers, m: ANNOUNCE_TOTAL_MEMBERS })) + '</div>' +
+        '<div class="jw-article-author">' + ic('eye', 14) + tH('既読 {r}／{m}名（サンプル）', { r: cnt(d.readers), m: nf(ANNOUNCE_TOTAL_MEMBERS) }) + '</div>' +
         '<nav class="jw-pager" aria-label="' + esc(t('前後のお知らせ')) + '">' + pager(prev, -1) + pager(next, 1) + '</nav>' });
   }
 
@@ -1075,13 +1189,13 @@
       var total = 0, mrr = 0;
       l.forEach(function (d) { total += d.total; mrr += d.mrr; });
       return '<div class="jw-tile jw-pane"><div class="jw-sum-label">' + esc(label) + '</div><div class="jw-sum-vals">' +
-        '<span class="jw-sum-item">' + t('件数') + '<b>' + l.length + '</b></span>' +
-        '<span class="jw-sum-item">' + t('総額') + '<b>' + yen(total) + '</b></span>' +
-        '<span class="jw-sum-item">MRR<b>' + yen(mrr) + '</b></span></div></div>';
+        '<span class="jw-sum-item">' + t('件数') + '<b>' + cnt(l.length) + '</b></span>' +
+        '<span class="jw-sum-item">' + t('総額') + '<b>' + cnt(total, 'yen') + '</b></span>' +
+        '<span class="jw-sum-item">MRR<b>' + cnt(mrr, 'yen') + '</b></span></div></div>';
     }
     var tabs = '<div class="jw-tabs" role="tablist" id="dealTabs" data-keep data-fade-x>' + ['すべて'].concat(PRODUCTS.map(function (p) { return p.ja; })).map(function (k) {
       var p = PRODUCT_BY_JA[k];
-      return '<button type="button" class="jw-tab" role="tab" aria-selected="' + (k === tab) + '" data-act="deal-tab" data-v="' + esc(k) + '" data-fk="deal-' + esc(k) + '">' + (p ? ic(p.icon, 15) + esc(tr(p)) : esc(t(k))) + '</button>';
+      return '<button type="button" class="jw-tab" role="tab" aria-selected="' + (k === tab) + '" data-act="deal-tab" data-v="' + esc(k) + '" data-fk="deal-' + esc(k) + '">' + (p ? prodDot(p) + esc(tr(p)) : esc(t(k))) + '</button>';
     }).join('') + '</div>';
     return pageHead({ crumbs: [{ label: t('ホーム'), href: '#/home', icon: ic('home-2', 13) }], title: t('受注速報'), icon: ic('bill-check', 20),
         desc: t('新しい順・病院名／担当者／金額はサンプル'),
@@ -1150,7 +1264,7 @@
       '<div class="jw-grid-auto">' + HEALTH_CLUBS.map(function (c) {
         return panel({ icon: ic(c.icon, 18), title: tr(c.name), body:
           '<div class="jw-kv">' + ic('calendar', 14) + esc(t('活動日：{d}', { d: tr(c.day) })) + '</div>' +
-          '<div class="jw-kv">' + ic('users-group-rounded', 14) + esc(t('参加人数：{n}名', { n: c.members })) + '</div>' +
+          '<div class="jw-kv">' + ic('users-group-rounded', 14) + tH('参加人数：{n}名', { n: cnt(c.members) }) + '</div>' +
           '<div><button type="button" class="jw-btn jw-btn--ghost jw-btn--sm" data-act="club-join" data-name="' + esc(tr(c.name)) + '">' + ic('user-plus', 15) + t('参加する') + '</button></div>' });
       }).join('') + '</div>' + '<div style="margin-top:1rem">' + dsLine(p.key) + '</div>';
   }
@@ -1464,6 +1578,8 @@
     document.documentElement.lang = LANG;
     renderSide();
     renderPage(false);
+    if (PILOT.open) renderPilot();
+    renderPilotBtn();
     if (S.inboxOpen) { var ip = $('#inboxPanel'); if (ip) ip.innerHTML = inboxHtml(); }
     if (S.menuOpen) {
       var panel = $('#menuPanel');
@@ -1521,6 +1637,18 @@
     var v = el.getAttribute('data-v');
     var k = el.getAttribute('data-k');
     switch (act) {
+      case 'pilot': if (PILOT.open) closePilot(); else openPilot(); break;
+      case 'pilot-close': closePilot(); break;
+      case 'pilot-full': PILOT.full = !PILOT.full; pilotSync(); renderPilot(); break;
+      case 'pilot-new': PILOT.timers.forEach(clearTimeout); PILOT.timers = []; PILOT.msgs = []; PILOT.busy = false; PILOT.plans = PILOT.plans.filter(function (p) { return p.state !== 'proposed'; }); renderPilot(); break;
+      case 'pilot-tab': PILOT.tab = v; renderPilot(); break;
+      case 'pilot-ask': openPilot(el.getAttribute('data-q')); break;
+      case 'pilot-send': { var pi = $('#pilotInput'); if (pi) pilotSend(pi.value); break; }
+      case 'pilot-plan': pilotPlanAct(el.getAttribute('data-id'), v); break;
+      case 'pilot-advance': pilotAdvance(el.getAttribute('data-id')); break;
+      case 'pilot-csv': pilotCsv(v); break;
+      case 'pilot-perm': toast(t('権限リクエストを送りました（モック）'), ic('key-square', 16)); break;
+      case 'gs-pilot': { var gq = $('#gsInput'); var qv = gq ? gq.value : ''; closeGs(); if (gq) gq.value = ''; openPilot(qv); break; }
       case 'setpop': if (S.menuOpen) closeMenu(); else openMenu(); break;
       case 'setgo': e.preventDefault(); closeMenu(); S.drawer = false; go(el.getAttribute('href')); break;
       case 'menu-close': closeMenu(); break;
@@ -1535,19 +1663,26 @@
 
       case 'block': {
         // Dải icon: bấm một khối ⇒ bung panel ra (≤640px: mở ngăn kéo) với khối đó mở sẵn
+        hideTip();
+        closeMenu();
         if (railNow()) {
           if (narrow()) S.drawer = true; else { S.rail = false; save(KEY.rail, '0'); }
           S.open[k] = true;
-        } else if (S.open[k]) delete S.open[k];
-        else S.open[k] = true;
+        } else if (S.open[k]) {
+          // Đóng: thu lại TRƯỚC (trên DOM đang có) rồi mới vẽ lại
+          if (el.hasAttribute('data-closing')) break;
+          el.setAttribute('data-closing', '');
+          var cp = blockParts(k);
+          accClose(cp.body, cp.body ? treeItems(cp.body) : [], cp.caret, function () { delete S.open[k]; saveOpen(); renderSide(); });
+          break;
+        } else S.open[k] = true;
         saveOpen();
-        hideTip();
-        closeMenu();
         renderSide();
-        if (S.open[k]) {
-          var blk = $('#side .jw-sn-top[data-k="' + k + '"]');
-          if (blk) blk.parentNode.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
+        animateBlockOpen(k);
+        setTimeout(function () {
+          var bk = blockParts(k).blk;
+          if (bk && S.open[k]) bk.scrollIntoView({ block: 'nearest', behavior: REDUCED ? 'auto' : 'smooth' });
+        }, REDUCED ? 0 : 460);
         break;
       }
       case 'rail': {
@@ -1559,19 +1694,25 @@
         break;
       }
       case 'drawer-close': S.drawer = false; renderSide(); break;
-      case 'expand-all':
-        MENU.forEach(function (b) { if (b.children) S.open[b.key] = true; });
+      case 'expand-all': {
+        var fresh = [];
+        MENU.forEach(function (b) { if (b.children && !S.open[b.key]) { S.open[b.key] = true; fresh.push(b.key); } });
         S.sideQuery = '';
         saveOpen();
         renderSide();
+        fresh.forEach(function (bk, i) { animateBlockOpen(bk, Math.min(i, 8) * 45); });
         break;
-      case 'collapse-all':
-        S.open = {};
-        S.sideQuery = '';
-        saveOpen();
-        renderSide();
-        { var sc0 = $('#sideScroll'); if (sc0) sc0.scrollTop = 0; }
+      }
+      case 'collapse-all': {
+        var shut = Object.keys(S.open), left = shut.length;
+        function allShut() { S.open = {}; S.sideQuery = ''; saveOpen(); renderSide(); var sc0 = $('#sideScroll'); if (sc0) sc0.scrollTop = 0; }
+        if (!left) { allShut(); break; }
+        shut.forEach(function (bk) {
+          var cp = blockParts(bk);
+          accClose(cp.body, cp.body ? treeItems(cp.body) : [], cp.caret, function () { if (--left === 0) allShut(); });
+        });
         break;
+      }
       case 'side-find-x': S.sideQuery = ''; renderSide(); { var f = $('#sideFind'); if (f) f.focus(); } break;
       case 'fav': {
         e.preventDefault();
@@ -1606,14 +1747,36 @@
         toast(t('すべて既読にしました（モック）'), ic('check-read', 16));
         break;
       case 'back-announce': S.pendingScroll = 'card-announce'; go('#/home'); break;
-      case 'sched-past': S.schedPast = !S.schedPast; renderPage(false); break;
+      case 'sched-past': {
+        var card = $('#card-schedule');
+        var before = card ? $$('.jw-rowi', card).map(function (r) { return r.textContent; }) : [];
+        S.schedPast = !S.schedPast;
+        renderPage(false);
+        if (S.schedPast) revealNew(before, $('#card-schedule'));
+        break;
+      }
       case 'health-cat': S.healthCat = v; renderPage(false); break;
       case 'to-ranking': S.rankCat = S.healthCat; break;
       case 'photo': openLightbox(S.photos[+el.getAttribute('data-i')]); break;
       case 'photo-post': { var fi = $('#photoInput'); if (fi) fi.click(); break; }
 
       case 'todo-tab': S.todoTab = +el.getAttribute('data-i'); renderPage(false); break;
-      case 'acc': { var i = +el.getAttribute('data-i'); S.acc[i] = !S.acc[i]; renderPage(false); break; }
+      case 'acc': {
+        var i = +el.getAttribute('data-i');
+        if (S.acc[i]) {
+          if (el.hasAttribute('data-closing')) break;
+          el.setAttribute('data-closing', '');
+          var ob = el.parentNode.querySelector('.jw-acc-body');
+          accClose(ob, ob ? $$('.jw-acc-body > *', el.parentNode) : [], el.querySelector('.jw-acc-caret'), function () { S.acc[i] = false; renderPage(false); });
+          break;
+        }
+        S.acc[i] = true;
+        renderPage(false);
+        var nh = $('#main .jw-acc-head[data-i="' + i + '"]');
+        var nb = nh && nh.parentNode.querySelector('.jw-acc-body');
+        if (nb) accOpen(nb, $$('.jw-acc-body > *', nh.parentNode), nh.querySelector('.jw-acc-caret'));
+        break;
+      }
       case 'rank-cat': S.rankCat = v; renderPage(false); break;
       case 'rank-loc': S.rankLoc = v; renderPage(false); break;
       case 'club-join': toast(t('{c}に参加しました（モック）', { c: el.getAttribute('data-name') }), ic('check-circle', 16)); break;
@@ -1681,6 +1844,7 @@
     if (!el || !el.id) return;
     if (el.id === 'sideFind') { S.sideQuery = el.value; refreshSideBody(); }
     else if (el.id === 'gsInput') { renderGsDrop(el.value); var cl = $('#gsClear'); if (cl) cl.hidden = !el.value; }
+    else if (el.id === 'pilotInput') pilotGrow(el);
     else if (el.id === 'linkFilter') { S.linkFilter = el.value; var lr = $('#linkResults'); if (lr) lr.innerHTML = linkBody(); }
   }
   document.addEventListener('change', function (e) {
@@ -1709,10 +1873,22 @@
   document.addEventListener('keydown', function (e) {
     var tag = (e.target.tagName || '').toLowerCase();
     var typing = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+    // ⌘J / Ctrl+J: mở–đóng JOY Pilot từ bất cứ đâu (kể cả đang gõ trong ô khác)
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && (e.key === 'j' || e.key === 'J')) {
+      e.preventDefault();
+      if (PILOT.open) closePilot(); else openPilot();
+      return;
+    }
+    if (e.target.id === 'pilotInput' && e.key === 'Enter' && !e.shiftKey && !e.isComposing && !composing) {
+      e.preventDefault();
+      pilotSend(e.target.value);
+      return;
+    }
     if (e.key === 'Escape') {
       if (closeModal()) return;
       if (S.menuOpen) { closeMenu(); var mb = $('#setBtn'); if (mb) mb.focus(); return; }
       if (S.inboxOpen) { closeInbox(); var ib = $('#inboxBtn'); if (ib) ib.focus(); return; }
+      if (PILOT.open && (e.target.closest && e.target.closest('#pilot') || !typing)) { closePilot(); return; }
       if (e.target.id === 'gsInput') { closeGs(); e.target.blur(); return; }
       if (e.target.id === 'sideFind') { S.sideQuery = ''; renderSide(); return; }
       if (S.drawer) { S.drawer = false; renderSide(); return; }
@@ -1811,6 +1987,532 @@
     else hideTip();
   });
 
+  // ── §JOY Pilot — trợ lý chung cho MỌI trang ──
+  // Panel NEO bên phải (không phải màn riêng): mở ở trang nào thì làm việc NGAY TRÊN trang đó,
+  // chuyển trang vẫn giữ hội thoại. 3 việc: THAO TÁC trang (mở trang · お気に入り · đổi theme/ngôn ngữ)
+  // · TRA dữ liệu (tổng hợp tại chỗ) · SỬA dữ liệu khi có quyền (組織図 · 名簿), luôn qua THẺ
+  // XÁC NHẬN; có ngày áp dụng trong tương lai thì giữ bản nháp rồi TỰ áp vào đúng ngày.
+  // ⚠ MOCKUP: chưa nối BigQuery MCP — `pilotPlan()` là chỗ DUY NHẤT phải đổi khi nối thật
+  // (câu hỏi → kế hoạch trả lời); khung chat chỉ đọc hình dạng kế hoạch đó.
+  var PILOT = { open: false, full: false, tab: 'chat', msgs: [], busy: false, plans: [], seq: 0, timers: [] };
+  // Màu nhân vật = HẰNG SỐ (cùng bộ với JOY Pilot của JOY Analytics), không theo theme
+  var PC = { head: '#f5f5f6', shade: '#e3e4e7', line: '#d9d3cc', orange: '#ff8c1a', orangeDark: '#d9670b', visor: '#2a2b2e', eye: '#45c8ff', star: '#ffc94d' };
+  var P_HEAD = 'M100 54 C150 54 176 84 176 118 C176 152 146 172 100 172 C54 172 24 152 24 118 C24 84 50 54 100 54 Z';
+  var P_CHIN = 'M29 136 C42 161 70 171 100 171 C130 171 158 161 171 136 C150 152 126 157 100 157 C74 157 50 152 29 136 Z';
+  var P_VISOR = 'M46 88 C46 78 56 74 70 74 H130 C144 74 154 78 154 88 V116 C154 132 144 140 132 140 C120 140 112 128 100 128 C88 128 80 140 68 140 C56 140 46 132 46 116 Z';
+  // Mặt robot. live = 待機 (mắt chớp, bồng bềnh) và hover vào CHỦ (.jw-pmark-host) thì ra 回答.
+  function pilotMark(size, live) {
+    var still = REDUCED || !live;
+    function bob(dy, b) {
+      return still ? '' : '<animateTransform attributeName="transform" type="translate" values="0 0;0 ' + dy + ';0 0" dur="3s" begin="' + b + '" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>';
+    }
+    var blink = still ? '' : function (a, v) { return '<animate attributeName="' + a + '" values="' + v + '" keyTimes="0;0.9;0.94;0.98;1" dur="4.5s" begin="0s" repeatCount="indefinite"/>'; };
+    var eyes = [69, 114].map(function (x) {
+      return '<rect x="' + x + '" y="89" width="17" height="23" rx="4.5" fill="' + PC.eye + '">' + (blink ? blink('height', '23;23;3;23;23') + blink('y', '89;89;99;89;89') : '') + '</rect>';
+    }).join('');
+    var happy = live ? '<g class="jw-pmark-happy"><path d="M68 106 Q77.5 91 87 106" fill="none" stroke="' + PC.eye + '" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M113 106 Q122.5 91 132 106" fill="none" stroke="' + PC.eye + '" stroke-width="6" stroke-linecap="round"/>' +
+      '<path transform="translate(170 62) scale(1.6)" d="M0 -7 L1.8 -1.8 L7 0 L1.8 1.8 L0 7 L-1.8 1.8 L-7 0 L-1.8 -1.8 Z" fill="' + PC.star + '"/></g>' : '';
+    return '<svg class="jw-pmark" viewBox="0 0 200 200" width="' + size + '" height="' + size + '" aria-hidden="true" focusable="false">' +
+      '<g>' + bob(-4, '0.3s') + '<ellipse cx="100" cy="32" rx="29" ry="13" fill="none" stroke="' + PC.orange + '" stroke-width="11" transform="rotate(-8 100 32)"/></g>' +
+      '<g>' + bob(-3, '0s') +
+        '<rect x="4" y="88" width="32" height="60" rx="10" fill="' + PC.orangeDark + '"/><rect x="164" y="88" width="32" height="60" rx="10" fill="' + PC.orangeDark + '"/>' +
+        '<rect x="4" y="88" width="32" height="46" rx="10" fill="' + PC.orange + '"/><rect x="164" y="88" width="32" height="46" rx="10" fill="' + PC.orange + '"/>' +
+        '<path d="' + P_HEAD + '" fill="' + PC.head + '" stroke="' + PC.line + '" stroke-width="2"/><path d="' + P_CHIN + '" fill="' + PC.shade + '"/><path d="' + P_VISOR + '" fill="' + PC.visor + '"/>' +
+        '<g class="jw-pmark-idle">' + eyes + '</g>' + happy +
+      '</g></svg>';
+  }
+  function pilotWordmark() { return '<span class="jw-wordmark jw-pilot-wm"><b>JOY</b><em>Pilot</em></span><span class="jw-pilot-beta">BETA</span>'; }
+  function deptName(d) { return LANG === 'vi' && PILOT_DEPT_VI[d] ? PILOT_DEPT_VI[d] : d; }
+  function pilotToday() { return new Date(HOME_TODAY.getTime()); }
+  function fmtYMDw(d) { return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + (LANG === 'vi' ? ' (' + WD.vi[d.getDay()] + ')' : '（' + WD.ja[d.getDay()] + '）'); }
+  function daysLeft(d) { return dayDiff(d, pilotToday()); }
+  // Ngày trong câu: JA m/d · m月d日 · 来月 — VI d/m · "ngày d tháng m". Ngày đã qua ⇒ năm sau.
+  function pilotDate(text) {
+    var now = pilotToday(), y = now.getFullYear(), m, d, r;
+    if ((r = text.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/))) { m = +r[1]; d = +r[2]; }
+    else if ((r = text.match(/ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})/i))) { d = +r[1]; m = +r[2]; }
+    else if ((r = text.match(/(\d{1,2})\s*\/\s*(\d{1,2})/))) { if (/[぀-ヿ一-鿿]/.test(text)) { m = +r[1]; d = +r[2]; } else { d = +r[1]; m = +r[2]; } }
+    else if (/来月|tháng sau/i.test(text)) { m = now.getMonth() + 2; d = 1; }
+    else if (/今すぐ|即時|ngay bây giờ|ngay lập tức/i.test(text)) return null;
+    if (!m || !d || m > 12 || d > 31) return null;
+    var out = new Date(y, m - 1, d);
+    if (out < now) out = new Date(y + 1, m - 1, d);
+    return out;
+  }
+  function pilotPerson(text) {
+    var n = norm(text);
+    for (var i = 0; i < PILOT_STAFF.length; i++) {
+      var p = PILOT_STAFF[i];
+      var family = p.name.split(' ')[0];
+      if (text.indexOf(p.name) >= 0 || n.indexOf(norm(p.name)) >= 0 || (family.length > 1 && text.indexOf(family) >= 0 && !/サンプル/.test(family))) return p;
+    }
+    if (/sato|佐藤/i.test(n)) return PILOT_STAFF[0];
+    return null;
+  }
+  function pilotDept(text) {
+    var ds = Object.keys(PILOT_DEPT_VI);
+    for (var i = 0; i < ds.length; i++) {
+      if (text.indexOf(ds[i]) >= 0 || norm(text).indexOf(norm(PILOT_DEPT_VI[ds[i]])) >= 0) return ds[i];
+      var short = ds[i].replace(/事業部|部$/, '');
+      if (short.length > 1 && text.indexOf(short) >= 0) return ds[i];
+    }
+    return null;
+  }
+  function pilotPage(text) {
+    var best = null, bestLen = 0, n = norm(text);
+    PAGE_LIST.forEach(function (p) {
+      [p.node.ja, p.node.vi].forEach(function (name) {
+        if (!name) return;
+        var k = norm(name);
+        if (k.length > bestLen && n.indexOf(k) >= 0) { best = p; bestLen = k.length; }
+      });
+    });
+    return best;
+  }
+  // Dữ liệu tổng hợp TẠI CHỖ từ dữ liệu mẫu — cùng mẫu số với các trang (受注速報 · 新入社員 · お知らせ)
+  function pilotTable(kind) {
+    var rows = [];
+    if (kind === 'deals') {
+      var by = {};
+      DEALS.forEach(function (d) { if (d.date.indexOf('2026/09') !== 0) return; var k = d.prod; by[k] = by[k] || { n: 0, v: 0 }; by[k].n++; by[k].v += d.total; });
+      Object.keys(by).forEach(function (k) { rows.push({ label: tr(PRODUCT_BY_JA[k]), n: by[k].n, v: by[k].v, prod: PRODUCT_BY_JA[k] }); });
+      rows.sort(function (a, b) { return b.v - a.v; });
+      return { title: L('今月の受注（事業部別）', 'Đơn hàng tháng này (theo mảng)'), cols: [t('事業部'), t('件数'), t('受注総額')], rows: rows, money: true, link: '#/deals', linkLabel: L('受注速報を開く', 'Mở báo cáo đơn hàng') };
+    }
+    if (kind === 'ae') {
+      var ae = {};
+      DEALS.forEach(function (d) { ae[d.ae] = ae[d.ae] || { n: 0, v: 0 }; ae[d.ae].n++; ae[d.ae].v += d.total; });
+      Object.keys(ae).forEach(function (k) { rows.push({ label: k, n: ae[k].n, v: ae[k].v }); });
+      rows.sort(function (a, b) { return b.v - a.v; });
+      return { title: L('担当者別の受注額（8〜9月）', 'Doanh số theo người phụ trách (T8–T9)'), cols: [t('担当'), t('件数'), t('受注総額')], rows: rows, money: true, link: '#/deals', linkLabel: L('受注速報を開く', 'Mở báo cáo đơn hàng') };
+    }
+    if (kind === 'hires') {
+      var hd = {};
+      NEW_HIRES.forEach(function (h) { hd[h.dept] = (hd[h.dept] || 0) + 1; });
+      Object.keys(hd).forEach(function (k) { rows.push({ label: deptName(k), n: hd[k], v: hd[k] }); });
+      rows.sort(function (a, b) { return b.v - a.v; });
+      return { title: L('9月の入社人数（部署別）', 'Số người vào công ty tháng 9 (theo phòng)'), cols: [t('部署'), t('人数')], rows: rows, money: false };
+    }
+    ANNOUNCEMENTS.forEach(function (a) {
+      var d = ANNOUNCE_DETAILS[a.id];
+      if (!d || !d.readers) return;
+      rows.push({ label: tr(a.title), n: d.readers, v: Math.round(d.readers / ANNOUNCE_TOTAL_MEMBERS * 100) });
+    });
+    rows.sort(function (a, b) { return a.v - b.v; });
+    return { title: L('お知らせの既読率（低い順）', 'Tỉ lệ đã đọc thông báo (thấp → cao)'), cols: [t('お知らせ'), t('既読'), t('既読率')], rows: rows.slice(0, 5), pct: true, link: '#/announce/' + ANNOUNCEMENTS[0].id, linkLabel: L('お知らせを開く', 'Mở thông báo') };
+  }
+  function newPlan(o) { o.id = 'p' + (++PILOT.seq); o.state = 'proposed'; PILOT.plans.push(o); return o; }
+  function planById(id) { for (var i = 0; i < PILOT.plans.length; i++) if (PILOT.plans[i].id === id) return PILOT.plans[i]; return null; }
+  var STEP = {
+    read: L('依頼内容を読み取っています', 'Đang đọc yêu cầu'),
+    find: L('データを探しています', 'Đang tìm dữ liệu'),
+    sum: L('集計しています', 'Đang tổng hợp'),
+    perm: L('編集権限を確認しています', 'Đang kiểm tra quyền chỉnh sửa'),
+    diff: L('変更案を作っています', 'Đang soạn phương án thay đổi'),
+    page: L('ページを開いています', 'Đang mở trang')
+  };
+  var STEP_DONE = {
+    read: L('依頼内容を確認しました', 'Đã hiểu yêu cầu'),
+    find: L('データが見つかりました', 'Đã tìm thấy dữ liệu'),
+    sum: L('集計できました', 'Đã tổng hợp xong'),
+    perm: L('編集権限があります', 'Bạn có quyền chỉnh sửa'),
+    permNo: L('編集権限がありません', 'Bạn không có quyền chỉnh sửa'),
+    diff: L('変更案ができました', 'Đã soạn xong phương án'),
+    page: L('ページを開きました', 'Đã mở trang')
+  };
+  // ⚠ Chỗ DUY NHẤT đổi khi nối MCP thật: câu hỏi → { steps, text, card, chips, run }
+  function pilotPlan(text) {
+    var q = text.trim(), n = norm(q), me = SETTINGS_ME.name.split(' ')[0];
+    var when = pilotDate(q);
+    var isEdit = /変更|更新|修正|編集|追加|登録|削除|外す|異動|予約|反映|đổi|sửa|cập nhật|thêm|xoa|xóa|chuyen|chuyển|dat lich|đặt lịch/i.test(q) || /xoa|chuyen|dat lich/.test(n);
+    // 1) Không có quyền — giải thích rõ + lối xin quyền, KHÔNG làm gì cả
+    if (/給与|給料|賞与|評価|査定|PL|損益|luong|danh gia|lai lo/i.test(q) || /luong|danh gia|lai lo/.test(n)) {
+      var what = /PL|損益|lai lo/i.test(n + q) ? L('PL（損益）', 'PL (lãi lỗ)') : /評価|査定|danh gia/i.test(n + q) ? L('人事評価', 'đánh giá nhân sự') : L('給与', 'lương');
+      return { steps: ['read', 'permNo'], text: L('この操作は私からは実行できません。「' + what.ja + '」の' + (isEdit ? '編集' : '閲覧') + '権限が、あなたのアカウントには付与されていないためです。', 'Mình không thể thực hiện thao tác này, vì tài khoản của bạn chưa được cấp quyền ' + (isEdit ? 'chỉnh sửa' : 'xem') + ' “' + what.vi + '”.'),
+        card: { type: 'deny', what: what } };
+    }
+    // 2) 組織変更 (nhiều thay đổi cùng lúc, có ngày áp dụng)
+    if (/組織変更|組織改編|組織図.*(変更|更新|予約|反映)|co cau|so do to chuc.*(doi|cap nhat|dat)/.test(q + ' ' + n)) {
+      var d1 = when || new Date(2026, 9, 1);
+      var p1 = newPlan({ kind: 'org', title: L('組織変更（' + PILOT_ORG_CHANGES.length + '件）', 'Thay đổi cơ cấu (' + PILOT_ORG_CHANGES.length + ' mục)'), target: L('組織図 · 名簿 · 座席', 'Sơ đồ tổ chức · Danh bạ · Chỗ ngồi'), rows: PILOT_ORG_CHANGES, date: d1 });
+      return { steps: ['read', 'perm', 'diff'], text: L('お知らせ「10月1日付 組織変更」の内容で変更案を作りました。適用日を指定すると、それまでは下書きとして保持し、当日0:00に自動で反映します。', 'Mình đã soạn phương án theo thông báo “Thay đổi cơ cấu từ 1/10”. Nếu đặt ngày áp dụng, mình sẽ giữ dạng bản nháp và tự áp dụng lúc 0:00 ngày đó.'),
+        card: { type: 'plan', id: p1.id } };
+    }
+    // 3) 異動 (một người)
+    if (/異動|配属|所属.*(変更|移)|chuyen.*(phong|bo phan|sang)|dieu chuyen/.test(q + ' ' + n)) {
+      var who = pilotPerson(q) || PILOT_STAFF[0];
+      var to = pilotDept(q.replace(who.dept, '')) || '人材戦略部';
+      var p2 = newPlan({ kind: 'move', title: L(who.name + ' の異動', 'Điều chuyển ' + who.name), target: L('名簿 · 組織図', 'Danh bạ · Sơ đồ tổ chức'),
+        person: who, diff: [{ label: L('所属', 'Bộ phận'), from: who.dept, to: to, dept: true }], date: when });
+      return { steps: ['read', 'find', 'perm', 'diff'], text: L(who.name + 'さんの所属を変更する案です。' + (when ? '適用日まで下書きとして保持します。' : '適用日の指定がないので、今すぐ反映か日付を決めて予約を選べます。'), 'Đây là phương án đổi bộ phận của ' + who.name + '. ' + (when ? 'Mình sẽ giữ bản nháp tới ngày áp dụng.' : 'Chưa có ngày áp dụng, bạn có thể áp dụng ngay hoặc chọn ngày để đặt lịch.')),
+        card: { type: 'plan', id: p2.id } };
+    }
+    // 4) Bỏ khỏi 名簿 (退職など) — thẻ màu đỏ, hoàn tác được 30 ngày
+    if (/外す|削除|退職|xoa|nghi viec|loai khoi/.test(q + ' ' + n)) {
+      var gone = pilotPerson(q) || PILOT_STAFF[3];
+      var p3 = newPlan({ kind: 'remove', title: L(gone.name + ' を名簿から外す', 'Gỡ ' + gone.name + ' khỏi danh bạ'), target: L('名簿 · 組織図 · 座席', 'Danh bạ · Sơ đồ tổ chức · Chỗ ngồi'),
+        person: gone, diff: [{ label: L('在籍', 'Trạng thái'), from: L('在籍', 'Đang làm việc'), to: L('退職（名簿から外す）', 'Nghỉ việc (gỡ khỏi danh bạ)') }], date: when, danger: true });
+      return { steps: ['read', 'find', 'perm', 'diff'], text: L(gone.name + 'さんを名簿から外す案です。反映後30日間は元に戻せます。', 'Đây là phương án gỡ ' + gone.name + ' khỏi danh bạ. Sau khi áp dụng vẫn khôi phục được trong 30 ngày.'),
+        card: { type: 'plan', id: p3.id } };
+    }
+    // 5) Thêm người vào 名簿
+    if (/(追加|登録|入社予定).*(名簿|メンバー|社員|さん)|(名簿|メンバー).*(追加|登録)|them.*(danh ba|nhan vien|thanh vien)/.test(q + ' ' + n) && !/お気に入り|yeu thich/.test(q + n)) {
+      var nd = pilotDept(q) || '研究開発部';
+      var p4 = newPlan({ kind: 'add', title: L('新しいメンバーを名簿に追加', 'Thêm thành viên mới vào danh bạ'), target: L('名簿 · 組織図', 'Danh bạ · Sơ đồ tổ chức'),
+        person: { name: L('サンプル 新太', 'Sample Arata'), dept: nd, role: '開発' }, diff: [{ label: L('氏名', 'Họ tên'), from: '—', to: L('サンプル 新太', 'Sample Arata') }, { label: L('所属', 'Bộ phận'), from: '—', to: nd, dept: true }], date: when || new Date(2026, 9, 1) });
+      return { steps: ['read', 'perm', 'diff'], text: L('名簿に追加する案です。氏名・所属は下書きなので、予約前にいつでも変えられます。', 'Đây là phương án thêm vào danh bạ. Họ tên và bộ phận đang là bản nháp, bạn đổi được bất cứ lúc nào trước khi đặt lịch.'),
+        card: { type: 'plan', id: p4.id } };
+    }
+    // 6) Thao tác chính app: theme · ngôn ngữ · お気に入り · thông báo
+    if (/ダーク|暗く|dark|toi/.test(q + ' ' + n) && !/データ|du lieu/.test(q + n)) return { steps: [], text: L('ダークテーマに切り替えました。', 'Đã chuyển sang giao diện tối.'), run: function () { if (themeNow() !== 'dark') setTheme('dark'); } };
+    if (/ライト|明るく|light|sang/.test(q + ' ' + n) && !/sang (phong|bo phan)/.test(n)) return { steps: [], text: L('ライトテーマに切り替えました。', 'Đã chuyển sang giao diện sáng.'), run: function () { if (themeNow() !== 'light') setTheme('light'); } };
+    if (/ベトナム語|tieng viet|vietnam/.test(q + ' ' + n)) return { steps: [], text: L('表示をベトナム語に切り替えました。', 'Đã chuyển giao diện sang tiếng Việt.'), run: function () { if (LANG !== 'vi') setLang('vi'); } };
+    if (/日本語|tieng nhat|japanese/.test(q + ' ' + n)) return { steps: [], text: L('表示を日本語に切り替えました。', 'Đã chuyển giao diện sang tiếng Nhật.'), run: function () { if (LANG !== 'ja') setLang('ja'); } };
+    if (/お気に入り|yeu thich/.test(q + ' ' + n)) {
+      if (ROUTE.name !== 'page') return { steps: [], text: L('お気に入りに追加できるのはメニューのページです。追加したいページを開いてから、もう一度頼んでください。', 'Chỉ thêm được các trang trong menu vào yêu thích. Hãy mở trang đó rồi nhờ mình lại nhé.') };
+      var fk = ROUTE.key, on = S.favs.indexOf(fk) >= 0;
+      return { steps: [], text: on ? L('「' + PAGES[fk].node.ja + '」はすでにお気に入りにあります。', '“' + (PAGES[fk].node.vi || PAGES[fk].node.ja) + '” đã có trong yêu thích.') : L('「' + PAGES[fk].node.ja + '」をお気に入りに追加しました。サイドパネルの一番上から開けます。', 'Đã thêm “' + (PAGES[fk].node.vi || PAGES[fk].node.ja) + '” vào yêu thích. Bạn mở được từ đầu side panel.'),
+        run: function () { if (!on) { toggleFav(fk); renderSide(); renderPage(false); } } };
+    }
+    if (/通知|thong bao.*(mo|xem)|(mo|xem).*thong bao/.test(q + ' ' + n) && !/既読|da doc/.test(q + n)) return { steps: [], text: L('通知センターを開きました。', 'Đã mở trung tâm thông báo.'), run: function () { openInbox(); } };
+    // 7) Tra dữ liệu
+    if (/担当者|誰が|nguoi phu trach|ai co/.test(q + ' ' + n)) return { steps: ['read', 'find', 'sum'], text: L('8〜9月の受注を担当者ごとに合計しました。1位は' + pilotTable('ae').rows[0].label + 'さんです。', 'Mình đã cộng đơn hàng T8–T9 theo người phụ trách. Đứng đầu là ' + pilotTable('ae').rows[0].label + '.'), card: { type: 'table', kind: 'ae', csv: /csv/i.test(q) } };
+    if (/受注|売上|don hang|doanh so|doanh thu/.test(q + ' ' + n)) {
+      var tb = pilotTable('deals');
+      return { steps: ['read', 'find', 'sum'], text: L('9月の受注を事業部ごとにまとめました。合計は' + yen(tb.rows.reduce(function (s, r) { return s + r.v; }, 0)) + '、最も大きいのは' + PRODUCTS.filter(function (p) { return tr(p) === tb.rows[0].label; }).map(function (p) { return p.ja; })[0] + 'です。', 'Mình đã gom đơn hàng tháng 9 theo mảng. Tổng ' + yen(tb.rows.reduce(function (s, r) { return s + r.v; }, 0)) + ', lớn nhất là ' + tb.rows[0].label + '.'),
+        card: { type: 'table', kind: 'deals', csv: /csv/i.test(q) } };
+    }
+    if (/入社|新入社員|新メンバー|nhan vien moi|vao cong ty/.test(q + ' ' + n)) return { steps: ['read', 'find', 'sum'], text: L('9月に入社したのは' + NEW_HIRES.length + '人です。部署ごとの内訳はこちら。', 'Tháng 9 có ' + NEW_HIRES.length + ' người vào công ty. Chi tiết theo phòng như sau.'), card: { type: 'table', kind: 'hires', csv: /csv/i.test(q) } };
+    if (/既読|お知らせ|da doc|thong bao/.test(q + ' ' + n)) return { steps: ['read', 'find', 'sum'], text: L('既読率が低いお知らせから並べました。上の方は、もう一度案内すると届きやすくなります。', 'Mình đã xếp các thông báo có tỉ lệ đọc thấp lên trước. Những thông báo đầu danh sách nên nhắc lại một lần nữa.'), card: { type: 'table', kind: 'reads', csv: /csv/i.test(q) } };
+    // 8) Mở trang
+    var pg = pilotPage(q);
+    if (pg) return { steps: ['page'], text: L('「' + pg.node.ja + '」を開きました。このまま、このページについて聞いてください。', 'Đã mở “' + (pg.node.vi || pg.node.ja) + '”. Bạn cứ hỏi tiếp về trang này nhé.'), card: { type: 'page', key: pg.key }, run: function () { S.drawer = false; go(href(pg.key)); } };
+    // 9) Chào / hỏi khả năng / không hiểu
+    if (/こんにちは|おはよう|こんばんは|ありがとう|xin chao|chao|cam on|hello|hi\b/.test(q + ' ' + n)) return { steps: [], text: L(me + 'さん、どういたしまして。ほかに進めたいことがあれば、そのまま話しかけてください。', 'Không có gì đâu! Còn việc gì cần làm, bạn cứ nói với mình nhé.'), chips: true };
+    return { steps: ['read'], text: L('ごめんなさい、その依頼はまだデモで用意していません。いまできるのは「ページを開く・切り替える」「受注や入社などの集計」「組織図・名簿の変更（確認してから反映・予約）」です。', 'Xin lỗi, yêu cầu này chưa có trong bản demo. Hiện mình làm được: mở/chuyển trang, tổng hợp đơn hàng hay số người vào công ty, và thay đổi sơ đồ tổ chức/danh bạ (xác nhận rồi mới áp dụng hoặc đặt lịch).'), chips: true };
+  }
+
+  // ── Vẽ ──
+  function pilotCtxKey() {
+    if (ROUTE.name === 'deals') return 'deals';
+    if (ROUTE.name === 'home') return 'home';
+    if (ROUTE.name === 'page' && PAGES[ROUTE.key].block.key === 'staff') return 'staff';
+    return '_';
+  }
+  var PILOT_TONE = { act: 'blue', data: 'green', edit: 'orange' };
+  function pilotSuggestHtml() {
+    var tag = { act: t('ページ操作'), data: t('データ'), edit: t('データ更新') };
+    return '<div class="jw-pilot-sugs">' + (PILOT_SUGGEST[pilotCtxKey()] || PILOT_SUGGEST._).map(function (s) {
+      return '<button type="button" class="jw-pilot-sug" data-act="pilot-ask" data-q="' + esc(tr(s.text)) + '"><span class="jw-pilot-sug-tag jw-tone-' + PILOT_TONE[s.kind] + '">' + esc(tag[s.kind]) + '</span><span class="jw-pilot-sug-text">' + esc(tr(s.text)) + '</span>' + ic('arrow-right', 14) + '</button>';
+    }).join('') + '</div>';
+  }
+  function pilotHelloHtml() {
+    var me = SETTINGS_ME.name.split(' ')[0];
+    var caps = [
+      { icon: 'cursor', title: t('ページを操作'), desc: t('開く・お気に入り・表示の切り替えまで') },
+      { icon: 'chart-2', title: t('データを調べる'), desc: t('受注・入社・既読などをその場で集計') },
+      { icon: 'pen-new-square', title: t('データを更新'), desc: t('組織図・名簿を、確認してから反映・予約') }
+    ];
+    return '<div class="jw-pilot-hello">' +
+      '<div class="jw-pilot-hello-face jw-pmark-host" aria-hidden="true">' + pilotMark(68, true) + '</div>' +
+      '<h3 class="jw-pilot-hello-title">' + esc(t('{name}さん、何を進めましょう？', { name: me })) + '</h3>' +
+      '<p class="jw-pilot-hello-sub">' + esc(t('どのページからでも、話しかけるだけで操作・集計・更新ができます。')) + '</p>' +
+      '<ul class="jw-pilot-caps">' + caps.map(function (c) {
+        return '<li>' + ic(c.icon, 17) + '<span><b>' + esc(c.title) + '</b><small>' + esc(c.desc) + '</small></span></li>';
+      }).join('') + '</ul>' +
+      '<div class="jw-pilot-sugs-title">' + esc(t('おすすめ')) + '</div>' + pilotSuggestHtml() + '</div>';
+  }
+  function pilotCardHtml(c) {
+    if (!c) return '';
+    if (c.type === 'page') {
+      var p = PAGES[c.key];
+      return '<a class="jw-pilot-card jw-pilot-pagecard" href="' + href(c.key) + '">' + nodeIcon(p.node, 18) + '<span><small>' + esc(pathLabel(p)) + '</small><b>' + esc(nm(p.node)) + '</b></span>' + ic('alt-arrow-right', 15) + '</a>';
+    }
+    if (c.type === 'deny') {
+      return '<div class="jw-pilot-card jw-pilot-deny">' + ic('lock-keyhole-minimalistic', 20) +
+        '<div><b>' + esc(t('権限が必要です')) + '</b><p>' + esc(t('「{x}」は人材戦略部の管理者が付与します。依頼すると、承認後に私からも操作できるようになります。', { x: tr(c.what) })) + '</p>' +
+        '<div class="jw-pilot-actions"><button type="button" class="jw-btn jw-btn--sm" data-act="pilot-perm">' + t('権限をリクエスト') + '</button>' +
+        '<a class="jw-btn jw-btn--ghost jw-btn--sm" href="' + setHref('権限') + '">' + t('権限の一覧') + '</a></div></div></div>';
+    }
+    if (c.type === 'table') {
+      var tb = pilotTable(c.kind);
+      var max = tb.rows.reduce(function (m, r) { return Math.max(m, r.v); }, 0) || 1;
+      var total = tb.rows.reduce(function (s, r) { return s + r.v; }, 0);
+      return '<figure class="jw-pilot-card jw-pilot-table">' +
+        '<figcaption><b>' + esc(tr(tb.title)) + '</b><span class="jw-pilot-sample">' + esc(t('サンプルデータ')) + '</span></figcaption>' +
+        '<div class="jw-pilot-rows">' + tb.rows.map(function (r) {
+          var val = tb.money ? cnt(r.v, 'yen') : tb.pct ? cnt(r.v) + '%' : cnt(r.v);
+          return '<div class="jw-pilot-trow' + (r.prod ? ' jw-prod' : '') + '"' + (r.prod ? prodStyle(r.prod) : '') + '><span class="jw-pilot-tlabel" title="' + esc(r.label) + '">' + (r.prod ? prodDot(r.prod) : '') + esc(r.label) + '</span>' +
+            (tb.cols.length > 2 ? '<span class="jw-pilot-tn jw-num">' + cnt(r.n) + '</span>' : '') +
+            '<span class="jw-pilot-tv jw-num">' + val + '</span>' +
+            '<span class="jw-pilot-tbar" style="--w:' + Math.max(4, Math.round(r.v / max * 100)) + '%"></span></div>';
+        }).join('') + '</div>' +
+        (tb.money ? '<div class="jw-pilot-ttotal"><span>' + t('合計') + '</span><b class="jw-num">' + cnt(total, 'yen') + '</b></div>' : '') +
+        '<div class="jw-pilot-actions">' + (tb.link ? '<a class="jw-btn jw-btn--ghost jw-btn--sm" href="' + tb.link + '">' + esc(tr(tb.linkLabel)) + ic('alt-arrow-right', 14) + '</a>' : '') +
+          (c.csv ? '<button type="button" class="jw-btn jw-btn--ghost jw-btn--sm" data-act="pilot-csv" data-v="' + c.kind + '">' + ic('copy', 14) + t('CSVをコピー') + '</button>' : '') + '</div>' +
+      '</figure>';
+    }
+    if (c.type === 'plan') return pilotPlanCard(planById(c.id));
+    return '';
+  }
+  function planStateHtml(p) {
+    if (p.state === 'scheduled') return '<div class="jw-pilot-state jw-pilot-state--sched">' + ic('clock-circle', 16) + '<span>' + esc(t('予約済み — {d} 0:00 に自動で反映します', { d: fmtYMDw(p.date) })) + '</span>' +
+      '<button type="button" class="jw-linkbtn-sm" data-act="pilot-plan" data-v="cancel" data-id="' + p.id + '">' + t('予約を取り消す') + '</button></div>';
+    if (p.state === 'applied') return '<div class="jw-pilot-state jw-pilot-state--ok">' + ic('check-circle', 16) + '<span>' + esc(t('反映しました — {d}', { d: fmtYMDw(p.appliedAt || pilotToday()) })) + '</span>' +
+      (p.danger ? '<button type="button" class="jw-linkbtn-sm" data-act="pilot-plan" data-v="undo" data-id="' + p.id + '">' + t('元に戻す') + '</button>' : '') + '</div>';
+    if (p.state === 'draft') return '<div class="jw-pilot-state">' + ic('document-add', 16) + '<span>' + esc(t('下書きに保存しました')) + '</span>' +
+      '<button type="button" class="jw-linkbtn-sm" data-act="pilot-plan" data-v="reopen" data-id="' + p.id + '">' + t('続きを編集') + '</button></div>';
+    if (p.state === 'cancelled') return '<div class="jw-pilot-state jw-pilot-state--off">' + ic('close-circle', 16) + '<span>' + esc(t('取り消しました（何も変更していません）')) + '</span></div>';
+    var future = p.date && daysLeft(p.date) > 0;
+    return '<div class="jw-pilot-actions">' +
+      (future ? '<button type="button" class="jw-btn jw-btn--solid jw-btn--sm" data-act="pilot-plan" data-v="schedule" data-id="' + p.id + '">' + ic('calendar-mark', 15) + esc(t('{d}に予約', { d: fmtMDs(p.date) })) + '</button>' : '') +
+      '<button type="button" class="jw-btn ' + (future ? 'jw-btn--ghost' : p.danger ? 'jw-btn--danger' : 'jw-btn--solid') + ' jw-btn--sm" data-act="pilot-plan" data-v="apply" data-id="' + p.id + '">' + esc(p.danger ? t('名簿から外す') : t('今すぐ反映')) + '</button>' +
+      '<button type="button" class="jw-btn jw-btn--ghost jw-btn--sm" data-act="pilot-plan" data-v="draft" data-id="' + p.id + '">' + t('下書きに保存') + '</button>' +
+      '<button type="button" class="jw-pilot-textbtn" data-act="pilot-plan" data-v="cancel" data-id="' + p.id + '">' + t('やめる') + '</button></div>';
+  }
+  function pilotPlanCard(p) {
+    if (!p) return '';
+    var icon = p.kind === 'org' ? ic('structure', 18) : p.kind === 'move' ? ic('transfer-horizontal', 18) : p.kind === 'add' ? ic('user-plus-rounded', 18) : ic('user-minus-rounded', 18);
+    var body = p.rows
+      ? '<ul class="jw-pilot-changes">' + p.rows.map(function (r) { return '<li><span class="jw-pilot-kind jw-pilot-kind--' + r.kind + '">' + esc(tr(r.label)) + '</span><span>' + esc(tr(r.text)) + '</span></li>'; }).join('') + '</ul>'
+      : '<div class="jw-pilot-person">' + ic('user-rounded', 16) + '<b>' + esc(tr(p.person.name)) + '</b><span>' + esc(deptName(p.person.dept)) + '</span></div>' +
+        '<dl class="jw-pilot-diff">' + p.diff.map(function (d) {
+          var f = d.dept ? deptName(d.from) : tr(d.from), to = d.dept ? deptName(d.to) : tr(d.to);
+          return '<div><dt>' + esc(tr(d.label)) + '</dt><dd><s>' + esc(f) + '</s>' + ic('arrow-right', 13) + '<ins>' + esc(to) + '</ins></dd></div>';
+        }).join('') + '</dl>';
+    return '<section class="jw-pilot-card jw-pilot-plan' + (p.danger ? ' jw-pilot-plan--danger' : '') + '" data-plan="' + p.id + '" data-state="' + p.state + '">' +
+      '<header class="jw-pilot-plan-head">' + icon + '<b>' + esc(tr(p.title)) + '</b><span class="jw-pilot-perm">' + ic('shield-check', 13) + esc(t('編集権限あり')) + '</span></header>' +
+      body +
+      '<div class="jw-pilot-meta"><span>' + ic('calendar', 14) + esc(t('適用日')) + '：<b>' + (p.date ? esc(fmtYMDw(p.date)) + (daysLeft(p.date) > 0 ? ' <em>' + esc(t('あと{n}日', { n: daysLeft(p.date) })) + '</em>' : '') : esc(t('指定なし（今すぐ）'))) + '</b></span>' +
+        '<span>' + ic('database', 14) + esc(t('反映先')) + '：' + esc(tr(p.target)) + '</span></div>' +
+      planStateHtml(p) + '</section>';
+  }
+  function pilotMsgHtml(m, i) {
+    if (m.who === 'me') return '<div class="jw-pilot-row jw-pilot-row--me" data-i="' + i + '"><div class="jw-pilot-bubble">' + esc(m.text) + '</div></div>';
+    var vis = (m.steps || []).filter(function (s) { return s.state !== 'hide'; });
+    var steps = vis.length ? '<ol class="jw-pilot-steps">' + vis.map(function (s) {
+      var done = s.state === 'done', label = done ? STEP_DONE[s.key] : STEP[s.key === 'permNo' ? 'perm' : s.key];
+      return '<li data-state="' + s.state + '"' + (s.key === 'permNo' && done ? ' data-bad' : '') + '>' + (done ? (s.key === 'permNo' ? ic('forbidden-circle', 15) : ic('check-circle', 15)) : '<span class="jw-pilot-spin" aria-hidden="true"></span>') + '<span>' + esc(tr(label)) + '</span></li>';
+    }).join('') + '</ol>' : '';
+    var text = tr(m.text);
+    var shown = m.reveal == null || m.reveal >= text.length ? text : text.slice(0, m.reveal);
+    var typing = m.reveal != null && m.reveal < text.length;
+    return '<div class="jw-pilot-row jw-pilot-row--bot" data-i="' + i + '">' +
+      '<div class="jw-pilot-who"><span class="jw-pilot-whoico">' + pilotMark(16, false) + '</span>JOY Pilot</div>' + steps +
+      (m.phase === 'text' || m.phase === 'done' ? '<p class="jw-pilot-text">' + esc(shown) + (typing ? '<span class="jw-pilot-caret" aria-hidden="true"></span>' : '') + '</p>' : '') +
+      (m.phase === 'done' ? pilotCardHtml(m.card) + (m.chips ? pilotSuggestHtml() : '') : '') +
+      (m.phase === 'wait' ? '<div class="jw-pilot-dots" aria-label="' + esc(t('考えています')) + '"><i></i><i></i><i></i></div>' : '') + '</div>';
+  }
+  function pilotPlansHtml() {
+    var groups = [
+      { id: 'scheduled', label: t('予約中'), icon: 'clock-circle' },
+      { id: 'draft', label: t('下書き'), icon: 'document-add' },
+      { id: 'applied', label: t('反映済み（操作ログ）'), icon: 'history' }
+    ];
+    var any = PILOT.plans.some(function (p) { return p.state === 'scheduled' || p.state === 'draft' || p.state === 'applied'; });
+    if (!any) return '<div class="jw-pilot-empty">' + ic('calendar-add', 34) + '<b>' + esc(t('予約や下書きはまだありません')) + '</b><p>' + esc(t('日付を指定して変更を頼むと、当日まで下書きとして保持し、0:00に自動で反映します。')) + '</p>' +
+      '<button type="button" class="jw-pilot-sug" data-act="pilot-ask" data-q="' + esc(tr(PILOT_SUGGEST._[2].text)) + '"><span class="jw-pilot-sug-tag jw-tone-orange">' + esc(t('データ更新')) + '</span><span class="jw-pilot-sug-text">' + esc(tr(PILOT_SUGGEST._[2].text)) + '</span>' + ic('arrow-right', 14) + '</button></div>';
+    return groups.map(function (g) {
+      var list = PILOT.plans.filter(function (p) { return p.state === g.id; });
+      if (!list.length) return '';
+      return '<section class="jw-pilot-plans-sec"><h4>' + ic(g.icon, 15) + esc(g.label) + '<span class="jw-num">' + list.length + '</span></h4>' + list.map(function (p) {
+        var d = p.date || p.appliedAt || pilotToday();
+        return '<article class="jw-pilot-item" data-state="' + p.state + '"><span class="jw-pilot-date"><b class="jw-num">' + fmtMDs(d) + '</b><small>' + WD[LANG][d.getDay()] + '</small></span>' +
+          '<span class="jw-pilot-item-body"><b>' + esc(tr(p.title)) + '</b><small>' + esc(tr(p.target)) + (p.state === 'scheduled' && p.date ? ' · ' + esc(t('あと{n}日', { n: daysLeft(p.date) })) : '') + '</small></span>' +
+          '<span class="jw-pilot-item-act">' +
+            (p.state === 'scheduled' ? '<button type="button" class="jw-pilot-textbtn" data-act="pilot-advance" data-id="' + p.id + '" data-tip="' + esc(t('デモ用：適用日まで時間を進めて、自動反映を確認します')) + '">' + ic('forward', 14) + t('当日にする') + '</button>' +
+              '<button type="button" class="jw-pilot-textbtn" data-act="pilot-plan" data-v="cancel" data-id="' + p.id + '">' + t('取り消す') + '</button>' : '') +
+            (p.state === 'draft' ? '<button type="button" class="jw-pilot-textbtn" data-act="pilot-plan" data-v="reopen" data-id="' + p.id + '">' + t('続きを編集') + '</button>' : '') +
+          '</span></article>';
+      }).join('') + '</section>';
+    }).join('');
+  }
+  function pilotBodyHtml() {
+    if (PILOT.tab === 'plans') return '<div class="jw-pilot-plans">' + pilotPlansHtml() + '</div>';
+    return PILOT.msgs.length ? '<div class="jw-pilot-log">' + PILOT.msgs.map(pilotMsgHtml).join('') + '</div>' : pilotHelloHtml();
+  }
+  function pilotCountPlans() { return PILOT.plans.filter(function (p) { return p.state === 'scheduled' || p.state === 'draft'; }).length; }
+  function pilotHtml() {
+    var n = pilotCountPlans();
+    var page = pageTitleText();
+    return '<header class="jw-pilot-head">' +
+        '<span class="jw-pilot-avatar jw-pmark-host">' + pilotMark(26, true) + '</span>' +
+        '<span class="jw-pilot-brand">' + pilotWordmark() +
+          '<span class="jw-pilot-link" tabindex="0" data-tip="' + esc(t('デモモード — BigQuery MCP にはまだ接続していません。回答はサンプルデータです。')) + '" data-tip-pos="bottom" aria-label="' + esc(t('接続状態：デモ')) + '"><span class="jw-pilot-dot"></span></span></span>' +
+        '<span class="jw-pilot-head-sp"></span>' +
+        '<button type="button" class="jw-iconbtn" data-act="pilot-new" aria-label="' + esc(t('会話をクリア')) + '" data-tip="' + esc(t('会話をクリア')) + '" data-tip-pos="bottom"' + (PILOT.msgs.length ? '' : ' disabled') + '>' + ic('notification-lines-remove', 18) + '</button>' +
+        '<button type="button" class="jw-iconbtn jw-pilot-fullbtn" data-act="pilot-full" aria-pressed="' + PILOT.full + '" aria-label="' + esc(PILOT.full ? t('パネルに戻す') : t('広げる')) + '" data-tip="' + esc(PILOT.full ? t('パネルに戻す') : t('広げる')) + '" data-tip-pos="bottom">' + (PILOT.full ? ic('minimize-square-minimalistic', 18) : ic('maximize-square-minimalistic', 18)) + '</button>' +
+        '<button type="button" class="jw-iconbtn" data-act="pilot-close" aria-label="' + esc(t('閉じる')) + '" data-tip="' + esc(t('閉じる')) + '（Esc）" data-tip-pos="bottom">' + ic('close', 18) + '</button>' +
+      '</header>' +
+      '<div class="jw-pilot-tabs">' + seg('pilot-tab', [{ v: 'chat', label: t('チャット') }, { v: 'plans', label: t('予約・下書き') + (n ? ' ' + n : '') }], PILOT.tab, 'JOY Pilot', 'pilotTab') + '</div>' +
+      '<div class="jw-pilot-body" id="pilotBody" data-fade-y>' + pilotBodyHtml() + '</div>' +
+      '<div class="jw-pilot-foot">' +
+        '<div class="jw-pilot-ctx"><span class="jw-pilot-ctx-page" data-tip="' + esc(t('JOY Pilot はこのページの内容をふまえて答えます')) + '">' + ic('document', 13) + '<span>' + esc(page) + '</span></span>' +
+          '<span class="jw-pilot-ctx-perm" data-tip="' + esc(tr(PILOT_ME.role)) + '">' + ic('key-square', 13) + '<span>' + esc(t('組織図・名簿を編集できます')) + '</span></span></div>' +
+        '<div class="jw-pilot-compose">' +
+          '<textarea id="pilotInput" class="jw-pilot-input" rows="1" placeholder="' + esc(t('JOY Pilot に頼む…')) + '" aria-label="' + esc(t('JOY Pilot に頼む…')) + '"></textarea>' +
+          '<button type="button" class="jw-pilot-send" id="pilotSend" data-act="pilot-send" aria-label="' + esc(t('送信')) + '" data-tip="' + esc(t('送信')) + '（Enter）"' + (PILOT.busy ? ' disabled' : '') + '>' + ic('undo-left', 20) + '</button>' +
+        '</div>' +
+        '<p class="jw-pilot-note">' + esc(t('Shift+Enter で改行 · データの書き込みは必ず確認してから実行します')) + '</p>' +
+      '</div>';
+  }
+  function renderPilotBtn() {
+    var b = $('#pilotBtn');
+    if (!b) return;
+    if (!b.firstChild) b.innerHTML = pilotMark(26, true);
+    b.setAttribute('aria-expanded', String(PILOT.open));
+    b.setAttribute('aria-label', 'JOY Pilot');
+    b.setAttribute('data-tip', 'JOY Pilot BETA（' + (/Mac|iP/.test(navigator.platform || '') ? '⌘J' : 'Ctrl+J') + '）');
+  }
+  function pilotSync() {
+    var h = document.documentElement;
+    if (PILOT.open) h.setAttribute('data-pilot', PILOT.full ? 'full' : 'dock'); else h.removeAttribute('data-pilot');
+    renderPilotBtn();
+  }
+  // Vẽ lại cả panel; núm segmented TRƯỢT từ vị trí cũ (cùng mẹo với renderPage)
+  function renderPilot() {
+    var box = $('#pilot');
+    if (!box) return;
+    var sg = $('.jw-seg[data-seg="pilotTab"]', box);
+    var old = sg ? sg.style.getPropertyValue('--seg-i') : null;
+    var draft = $('#pilotInput', box);
+    var keep = draft ? draft.value : '';
+    var hadFocus = draft && document.activeElement === draft;
+    var ob = $('#pilotBody', box);
+    var oldTop = ob ? ob.scrollTop : 0, oldEnd = ob ? ob.scrollHeight - ob.scrollTop - ob.clientHeight < 40 : true, oldTab = box.getAttribute('data-tab');
+    box.innerHTML = pilotHtml();
+    box.setAttribute('data-tab', PILOT.tab);
+    var sg2 = $('.jw-seg[data-seg="pilotTab"]', box);
+    var now = sg2.style.getPropertyValue('--seg-i');
+    if (old != null && old !== now) sg2.style.setProperty('--seg-i', old);
+    var inp = $('#pilotInput', box);
+    inp.value = keep;
+    pilotGrow(inp);
+    void box.offsetWidth;
+    if (old != null && old !== now) sg2.style.setProperty('--seg-i', now);
+    if (hadFocus) inp.focus({ preventScroll: true });
+    // Giữ chỗ đang đọc (đổi 広げる / vẽ lại); sang lại tab チャット thì về câu mới nhất
+    var nb = $('#pilotBody', box);
+    nb.scrollTop = oldTab === PILOT.tab && !oldEnd ? oldTop : nb.scrollHeight;
+    syncFades(box);
+  }
+  function renderPilotBody(stick) {
+    var body = $('#pilotBody');
+    if (!body) return;
+    var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+    body.innerHTML = pilotBodyHtml();
+    var last = PILOT.msgs[PILOT.msgs.length - 1];
+    if (last && last.who === 'bot' && last.phase === 'done' && !last.counted) {
+      last.counted = true;
+      if (!REDUCED) $$('.jw-pilot-row:last-child [data-count-to]', body).forEach(function (el) { countUp(el, 1000, 120); });
+    }
+    if (stick || atEnd) body.scrollTo({ top: body.scrollHeight, behavior: REDUCED ? 'auto' : 'smooth' });
+    syncFades(body);
+    var clr = $('#pilot [data-act="pilot-new"]');
+    if (clr) clr.disabled = !PILOT.msgs.length;
+  }
+  function pilotGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 150) + 'px'; }
+  function openPilot(q) {
+    closeMenu(); closeInbox(); closeGs(); hideTip();
+    if (!PILOT.open) {
+      PILOT.open = true;
+      var box = $('#pilot');
+      box.hidden = false;
+      renderPilot();
+      void box.offsetWidth;
+      box.classList.add('jw-pilot--open');
+      pilotSync();
+    }
+    if (narrow()) S.drawer = false;
+    var inp = $('#pilotInput');
+    if (q) pilotSend(q);
+    else if (inp) setTimeout(function () { inp.focus({ preventScroll: true }); }, REDUCED ? 0 : 120);
+  }
+  function closePilot() {
+    if (!PILOT.open) return;
+    PILOT.open = false;
+    var box = $('#pilot');
+    box.classList.remove('jw-pilot--open');
+    pilotSync();
+    setTimeout(function () { if (!PILOT.open) box.hidden = true; }, REDUCED ? 0 : 320);
+    var b = $('#pilotBtn');
+    if (b && box.contains(document.activeElement)) b.focus({ preventScroll: true });
+  }
+  function pilotLater(fn, ms) { var id = setTimeout(fn, REDUCED ? 0 : ms); PILOT.timers.push(id); }
+  function pilotSend(raw) {
+    var text = String(raw || '').trim();
+    if (!text || PILOT.busy) return;
+    if (PILOT.tab !== 'chat') { PILOT.tab = 'chat'; renderPilot(); }
+    var inp = $('#pilotInput');
+    if (inp) { inp.value = ''; pilotGrow(inp); }
+    PILOT.msgs.push({ who: 'me', text: text });
+    var plan = pilotPlan(text);
+    var m = { who: 'bot', text: plan.text, card: plan.card, chips: plan.chips, steps: (plan.steps || []).map(function (k) { return { key: k, state: 'run' }; }), phase: 'wait', reveal: 0 };
+    m.steps.forEach(function (s) { s.state = 'hide'; });
+    PILOT.msgs.push(m);
+    PILOT.busy = true;
+    var send = $('#pilotSend'); if (send) send.disabled = true;
+    renderPilotBody(true);
+    var i = 0;
+    function nextStep() {
+      if (i > 0) m.steps[i - 1].state = 'done';
+      if (i >= m.steps.length) { pilotLater(startText, m.steps.length ? 260 : 520); renderPilotBody(); return; }
+      m.steps[i].state = 'run';
+      m.phase = 'steps';
+      if (m.steps[i].key === 'page' && plan.run) { var r = plan.run; plan.run = null; pilotLater(r, 380); }
+      i++;
+      renderPilotBody();
+      pilotLater(nextStep, 620 + (i === 1 ? 120 : 0));
+    }
+    function startText() {
+      m.phase = 'text';
+      m.reveal = 0;
+      var full = tr(m.text).length;
+      renderPilotBody(true);
+      if (plan.run) { var r2 = plan.run; plan.run = null; r2(); }
+      (function type() {
+        m.reveal = Math.min(full, m.reveal + (LANG === 'vi' ? 4 : 2));
+        var el = $('#pilotBody .jw-pilot-row[data-i="' + (PILOT.msgs.length - 1) + '"] .jw-pilot-text');
+        if (el) el.innerHTML = esc(tr(m.text).slice(0, m.reveal)) + (m.reveal < full ? '<span class="jw-pilot-caret" aria-hidden="true"></span>' : '');
+        if (m.reveal < full && !REDUCED) { pilotLater(type, 22); return; }
+        m.reveal = null;
+        m.phase = 'done';
+        PILOT.busy = false;
+        renderPilotBody(true);
+        var s2 = $('#pilotSend'); if (s2) s2.disabled = false;
+      })();
+    }
+    pilotLater(nextStep, 380);
+  }
+  function pilotPlanAct(id, v) {
+    var p = planById(id);
+    if (!p) return;
+    if (v === 'schedule') { p.state = 'scheduled'; toast(t('{d} 0:00 に自動で反映する予約を入れました', { d: fmtMDs(p.date) }), ic('calendar-mark', 16)); }
+    else if (v === 'apply') { p.state = 'applied'; p.appliedAt = pilotToday(); toast(p.danger ? t('名簿から外しました（30日間は元に戻せます）') : t('変更を反映しました'), ic('check-circle', 16)); }
+    else if (v === 'draft') { p.state = 'draft'; toast(t('下書きに保存しました'), ic('document-add', 16)); }
+    else if (v === 'reopen') { p.state = 'proposed'; PILOT.tab = 'chat'; }
+    else if (v === 'undo') { p.state = 'cancelled'; toast(t('元に戻しました'), ic('restart', 16)); }
+    else if (v === 'cancel') { p.state = 'cancelled'; }
+    renderPilot();
+    if (v === 'reopen') { var el = $('#pilot [data-plan="' + id + '"]'); if (el) el.scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' }); }
+  }
+  // Demo: tua tới ngày áp dụng ⇒ bản nháp TỰ áp, có thông báo — đúng hành vi "đợi tới 1/10 thì tự lên"
+  function pilotAdvance(id) {
+    var p = planById(id);
+    if (!p || p.state !== 'scheduled') return;
+    p.state = 'applied';
+    p.appliedAt = p.date;
+    toast(t('{d} 0:00 — 予約していた「{x}」を自動で反映しました', { d: fmtMDs(p.date), x: tr(p.title) }), pilotMark(18, false));
+    renderPilot();
+  }
+  function pilotCsv(kind) {
+    var tb = pilotTable(kind);
+    var csv = [tb.cols.join(',')].concat(tb.rows.map(function (r) { return [r.label, tb.cols.length > 2 ? r.n : null, r.v].filter(function (x) { return x !== null; }).join(','); })).join('\n');
+    try { if (navigator.clipboard) navigator.clipboard.writeText(csv); } catch (e) { /* bỏ qua */ }
+    toast(t('CSVをクリップボードにコピーしました'), ic('copy', 16));
+  }
+
   // ── §Khởi động ──
   LANG = load(KEY.lang, 'ja') === 'vi' ? 'vi' : 'ja';
   document.documentElement.lang = LANG;
@@ -1818,6 +2520,7 @@
   window.addEventListener('hashchange', onRoute);
   if (!location.hash) { try { history.replaceState(null, '', '#/home'); } catch (e) { /* file:// */ } }
   onRoute();
+  renderPilotBtn();
   // Cho script kiểm (tools/verify.mjs) đọc danh sách trang + chữ chưa dịch
   window.__JOYSTART__ = { pages: PAGE_LIST.map(function (p) { return p.key; }), routes: PAGE_LIST.map(function (p) { return '#/' + p.path; }), missing: I18N_MISSING, announce: ANNOUNCEMENTS.map(function (a) { return a.id; }), settings: SETTINGS_TABS.map(function (x) { return x.slug; }) };
 })();

@@ -15,17 +15,19 @@ function L(ja, vi) { return { ja: ja, vi: vi }; }
 var HOME_TODAY = new Date(2026, 8, 27);
 
 /* §PROダクト — tên + tông màu + icon dùng chung mọi nơi */
+/* 事業部 (プロダクト): KHÔNG icon — nhận diện bằng MÀU, đúng bảng màu プロダクト của JOY Analytics
+   (`src/data/visionCopy.ts` › VISION_COPY.accent). Cách pha chữ/chip theo cùng công thức bên đó (styles.css §事業部). */
 var PRODUCTS = [
-  { ja: '医薬連携', slug: 'pharma', vi: 'Liên kết Y Dược', icon: 'pills', tone: 'plum' },
-  { ja: '労務支援', slug: 'hr-support', vi: 'Hỗ trợ Lao động', icon: 'clock-square', tone: 'green' },
-  { ja: 'AI電話', slug: 'ai-phone', vi: 'Điện thoại AI', icon: 'phone-calling-rounded', tone: 'blue' },
-  { ja: 'スマート面会', slug: 'smart-visit', vi: 'Gặp mặt thông minh', icon: 'chat-round-video', tone: 'rose' },
-  { ja: '院内メディア', slug: 'hospital-media', vi: 'Truyền thông nội viện', icon: 'tv', tone: 'gold' }
+  { ja: '医薬連携', slug: 'pharma', vi: 'Liên kết Y Dược', color: '#3fa9f5' },
+  { ja: '労務支援', slug: 'hr-support', vi: 'Hỗ trợ Lao động', color: '#F18D00' },
+  { ja: 'AI電話', slug: 'ai-phone', vi: 'Điện thoại AI', color: '#7C3AED' },
+  { ja: 'スマート面会', slug: 'smart-visit', vi: 'Gặp mặt thông minh', color: '#fe9dac' },
+  { ja: '院内メディア', slug: 'hospital-media', vi: 'Truyền thông nội viện', color: '#046b4f' }
 ];
 var PRODUCT_BY_JA = {};
 PRODUCTS.forEach(function (p) { PRODUCT_BY_JA[p.ja] = p; });
 function productKids() {
-  return PRODUCTS.map(function (p) { return { ja: p.ja, slug: p.slug, vi: p.vi, icon: p.icon }; });
+  return PRODUCTS.map(function (p) { return { ja: p.ja, slug: p.slug, vi: p.vi, prod: p.ja }; });
 }
 
 /* §MENU — cây 3 tầng (大 → 中 → 小). Nút có `children` là NHÓM, còn lại là TRANG.
@@ -727,3 +729,55 @@ var FX = [
   { from: '1 JPY', to: 164.82, unit: 'VND', unitJa: 'VND', digits: 2 },
   { from: '1 USD', to: 25965.7, unit: 'VND', unitJa: 'VND', digits: 1 }
 ];
+
+/* §JOY Pilot — trợ lý dùng chung cho MỌI trang (thao tác trang · tra dữ liệu · sửa dữ liệu có quyền).
+   ⚠ MOCKUP: chưa nối BigQuery MCP. Mọi câu trả lời là KỊCH BẢN trên dữ liệu MẪU của chính file này
+   (受注速報 · 新入社員 · お知らせ), nên chấm trạng thái luôn VÀNG (デモ), không bao giờ báo xanh. */
+var PILOT_ME = {
+  role: L('人材戦略部 マネージャー', 'Quản lý · Phòng Chiến lược Nhân sự'),
+  // Quyền GHI mà JOY Pilot được phép dùng thay người này (mọi cú ghi vẫn hỏi xác nhận trước)
+  can: { org: true, directory: true, pl: false, salary: false }
+};
+// Nhân viên MẪU mà JOY Pilot tra/sửa được (名簿 = một bảng, 組織図 đọc từ cùng bảng đó)
+var PILOT_STAFF = [
+  { name: '佐藤 美咲', dept: 'AI電話事業部', role: 'カスタマーサクセス' },
+  { name: '高橋 健太', dept: '医薬連携事業部', role: '法人営業' },
+  { name: '鈴木 悠斗', dept: '労務支援事業部', role: 'オンボーディング' },
+  { name: 'サンプル 太郎', dept: 'AI事業開発部', role: 'AE' },
+  { name: 'サンプル 花子', dept: '人材戦略部', role: 'TA' },
+  { name: 'Nguyễn Thị Lan', dept: 'AI電話事業部', role: 'テクニカルサポート' }
+];
+var PILOT_DEPT_VI = {
+  'AI電話事業部': 'Mảng Điện thoại AI', '医薬連携事業部': 'Mảng Liên kết Y Dược', '労務支援事業部': 'Mảng Hỗ trợ Lao động',
+  'AI事業開発部': 'Phòng Phát triển kinh doanh AI', '人材戦略部': 'Phòng Chiến lược Nhân sự', '研究開発部': 'Phòng R&D',
+  'スマート面会事業部': 'Mảng Gặp mặt thông minh'
+};
+// 10/1付 組織変更 — cùng nội dung với お知らせ a02 (「10月1日付 組織変更のお知らせ」)
+var PILOT_ORG_CHANGES = [
+  { kind: 'add', label: L('新設', 'Thành lập'), text: L('AI電話事業部 › オンボーディング課', 'Mảng Điện thoại AI › Nhóm Onboarding') },
+  { kind: 'move', label: L('独立', 'Tách riêng'), text: L('研究開発部 QAチーム → 品質保証課', 'Phòng R&D · Nhóm QA → Nhóm Đảm bảo chất lượng') },
+  { kind: 'split', label: L('分割', 'Chia đôi'), text: L('ハノイ拠点 TSチーム → TS第1 / TS第2', 'Nhóm TS Hà Nội → TS 1 / TS 2') }
+];
+// Gợi ý theo NGỮ CẢNH trang (khoá = khối hoặc khoá trang); không khớp thì dùng `_`
+var PILOT_SUGGEST = {
+  _: [
+    { kind: 'act', text: L('組織図を開いて', 'Mở sơ đồ tổ chức') },
+    { kind: 'data', text: L('今月の受注を事業部別に集計して', 'Tổng hợp đơn hàng tháng này theo mảng') },
+    { kind: 'edit', text: L('10/1付の組織変更を予約して', 'Đặt lịch thay đổi cơ cấu ngày 1/10') }
+  ],
+  staff: [
+    { kind: 'edit', text: L('佐藤 美咲さんを10/1付で人材戦略部へ異動', 'Chuyển Sato Misaki sang Phòng Chiến lược Nhân sự từ 1/10') },
+    { kind: 'data', text: L('今月の入社人数を部署別に', 'Số người vào công ty tháng này theo phòng') },
+    { kind: 'edit', text: L('10/1付の組織変更を予約して', 'Đặt lịch thay đổi cơ cấu ngày 1/10') }
+  ],
+  deals: [
+    { kind: 'data', text: L('今月の受注を事業部別に集計して', 'Tổng hợp đơn hàng tháng này theo mảng') },
+    { kind: 'data', text: L('受注額の多い担当者は？', 'Ai có doanh số đơn hàng cao nhất?') },
+    { kind: 'act', text: L('このページをお気に入りに追加', 'Thêm trang này vào yêu thích') }
+  ],
+  home: [
+    { kind: 'data', text: L('お知らせの既読率が低い順に', 'Thông báo có tỉ lệ đã đọc thấp nhất') },
+    { kind: 'act', text: L('組織図を開いて', 'Mở sơ đồ tổ chức') },
+    { kind: 'edit', text: L('10/1付の組織変更を予約して', 'Đặt lịch thay đổi cơ cấu ngày 1/10') }
+  ]
+};

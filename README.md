@@ -17,6 +17,22 @@ liquid glass, cây điều hướng, panel, control.
 - **Song ngữ 日本語 / Tiếng Việt**. Ngôn ngữ, theme, khối đang mở, お気に入り nhớ trong `localStorage`.
 - **お気に入り**: sao hover = cam, đã ghim = sao đặc cam (Solar bản Bold, ngoại lệ duy nhất của quy tắc
   "chỉ Outline"). Hover một hàng trong danh sách お気に入り hiện nút × để gỡ.
+- **JOY Pilot** (trợ lý dùng chung cho MỌI trang, cùng nhận diện với JOY Pilot của JOY Analytics:
+  mặt robot, chữ Pilot cam `#f08c00`, chip BETA, chấm trạng thái). Mở bằng nút mặt robot cạnh chuông,
+  phím **⌘J / Ctrl+J**, hoặc dòng đầu của ô tìm toàn bộ (「JOY Pilot に頼む」). Là panel NEO bên phải:
+  khổ ≥1180px thì đẩy nội dung sang trái (vừa chat vừa thấy trang đổi), khổ vừa thì phủ lên, ≤640px
+  toàn màn hình; nút 広げる phủ hết vùng nội dung. Chuyển trang vẫn giữ hội thoại, chip dưới ô nhập
+  cho biết đang đứng ở trang nào; gợi ý đổi theo trang.
+  - **Thao tác trang**: mở trang (「組織図を開いて」), thêm お気に入り, đổi theme / ngôn ngữ, mở 通知.
+  - **Tra dữ liệu**: tổng hợp tại chỗ từ dữ liệu mẫu (受注 theo 事業部 / theo người, 入社, 既読率);
+    CSV chỉ khi người dùng tự yêu cầu.
+  - **Sửa dữ liệu khi có quyền** (組織図 · 名簿: 組織変更, 異動, thêm người, gỡ khỏi 名簿): luôn
+    qua THẺ PHƯƠNG ÁN (trước → sau, ngày áp dụng, nơi phản ánh) với 今すぐ反映 / 予約 / 下書き /
+    やめる. Ngày áp dụng ở tương lai ⇒ giữ bản nháp và TỰ phản ánh lúc 0:00 ngày đó; tab
+    予約・下書き có nút demo 「当日にする」 để xem việc tự phản ánh. Không có quyền (給与 · 評価 · PL)
+    ⇒ giải thích + 権限をリクエスト, không làm gì cả.
+  - ⚠ **Chưa nối BigQuery MCP**: mọi câu trả lời là kịch bản trên dữ liệu mẫu, nên chấm trạng thái
+    luôn VÀNG (デモ). Nối thật thì chỉ đổi `pilotPlan()` trong `app.js`.
 - **通知センター**: nút chuông nổi ở góc phải trên (số = tổng mục). Panel có hàng tab すべて ·
   承認待ち · 期限切れ · 今日の予定 · 未読のお知らせ: bấm một tab thì chỉ hiện nhóm đó.
 - **Home**: lời chào + ô tìm, rồi **MVV** thành sân khấu chính (MISSION chữ lớn, VISION + số giờ đã
@@ -34,6 +50,14 @@ liquid glass, cây điều hướng, panel, control.
   dropdown) đục hẳn nên chữ phía sau không lọt qua. Theme tối vẫn là kính.
 - **Cuộn tới đâu hiện tới đó** (mọi trang): từng khối trượt lên khi vào vùng nhìn, hàng/thẻ con nối
   đuôi nhau. Vẽ lại tại chỗ (đổi tab, lọc) thì hiện ngay.
+- **Số thống kê chạy** (số tiền, số lượng, điểm, tỉ giá, số ngày…): từng con số đếm từ 0 lên đúng lúc
+  CHÍNH nó vào vùng nhìn (hàng dưới mép màn chỉ chạy khi cuộn tới); cuộn nhảy qua thì hiện ngay số cuối.
+- **Accordion** (khối của cây menu, accordion trên trang, 過去 của スケジュール): mở thì khung giãn ra
+  và từng mục phóng ra lần lượt; đóng thì các mục mờ đi rồi khung thu lại.
+- **事業部 không dùng icon** — nhận diện bằng màu, đúng bảng màu プロダクト của JOY Analytics
+  (医薬連携 `#3fa9f5` · 労務支援 `#F18D00` · AI電話 `#7C3AED` · スマート面会 `#fe9dac` ·
+  院内メディア `#046b4f`) và cùng công thức pha: chấm/thanh = màu gốc, chữ = 44% với màu mực, chip =
+  nền 22% + chữ 36%.
 - **Ít icon hơn**: đầu thẻ, breadcrumb, link chữ, mục menu tầng 3 và tab 設定 chỉ còn chữ.
 - **Hiệu ứng hover**: icon nhích lên; chữ trong hàng/mục nhích 2px; link chữ có gạch chân mọc
   từ trái; "đèn" theo con trỏ kiểu Reveal của Windows (nền mục đang hover + viền các mục/thẻ lân
@@ -89,7 +113,8 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
 - **Thêm chữ:** viết tiếng Nhật trong `t('…')` và thêm bản dịch vào `I18N_VI`. Thiếu bản dịch thì
   màn Tiếng Việt hiện chữ Nhật và `verify.mjs` báo đỏ.
 - **`verify.mjs`** quét 135 route × 日本語/Tiếng Việt × 1440px/390px, rồi chạy các thao tác chính (mở khối,
-  sang trang, ghim お気に入り, tab của 通知センター, mở/đóng tất cả, ô tìm menu gập/bung + tìm ở cả 2
+  sang trang, ghim お気に入り, tab của 通知センター, mở/đóng tất cả, JOY Pilot (予約 → tự phản ánh,
+  mở trang, tổng hợp, không quyền, đủ bản dịch, 390px), ô tìm menu gập/bung + tìm ở cả 2
   ngôn ngữ, tìm toàn bộ, bánh răng → đổi
   ngôn ngữ + theme → vào 設定, đăng xuất, và ở 390px: dải icon → ngăn kéo → chọn trang). Nó báo đỏ khi
   có: lỗi/cảnh báo console, cuộn ngang, chữ chưa dịch. Cần Playwright (`npm i -g playwright` hoặc
