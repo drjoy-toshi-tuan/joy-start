@@ -15,16 +15,25 @@ liquid glass, cây điều hướng, panel, control.
 - **Song ngữ 日本語 / Tiếng Việt**. Ngôn ngữ, theme, khối đang mở, お気に入り nhớ trong `localStorage`.
 - **お気に入り**: sao hover = cam, đã ghim = sao đặc cam (Solar bản Bold, ngoại lệ duy nhất của quy tắc
   "chỉ Outline"). Hover một hàng trong danh sách お気に入り hiện nút × để gỡ.
-- **Hiệu ứng hover**: icon nhảy lên + phóng nhẹ; và "đèn" theo con trỏ kiểu Reveal của Windows —
-  nền của mục đang hover sáng quanh chuột, viền của các mục lân cận sáng dần theo khoảng cách.
+- **通知センター**: nút chuông nổi ở góc phải trên (số = tổng mục), mở ra panel 4 nhóm 承認待ち ·
+  期限切れ · 今日の予定 · 未読のお知らせ. Thay cho dải số việc ở Home trước đây.
+- **Home**: lời chào + ô tìm, rồi **MVV** thành sân khấu chính (MISSION chữ lớn, VISION + số giờ đã
+  giảm đếm lên, 5 VALUE đánh số) trên nền quầng cam trôi chậm; bên dưới là lưới thẻ.
+- **Cuộn tới đâu hiện tới đó** (mọi trang): từng khối trượt lên khi vào vùng nhìn, hàng/thẻ con nối
+  đuôi nhau. Vẽ lại tại chỗ (đổi tab, lọc) thì hiện ngay.
+- **Ít icon hơn**: đầu thẻ, breadcrumb, link chữ, mục menu tầng 3 và tab 設定 chỉ còn chữ.
+- **Hiệu ứng hover**: icon nhích lên; chữ trong hàng/mục nhích 2px; link chữ có gạch chân mọc
+  từ trái; "đèn" theo con trỏ kiểu Reveal của Windows (nền mục đang hover + viền các mục/thẻ lân
+  cận, kể cả thẻ nhỏ nằm trong thẻ lớn). Nút chỉ có icon (sao, ×…) thì chỉ đổi màu icon, không nền.
   Tắt khi hệ điều hành bật giảm chuyển động.
+- Đường nhánh của cây menu: 1px, góc vuông.
 - **Icon: toàn bộ lấy từ Solar, bản Outline** (161 icon).
 - **Không lấy nền ribbon** của JOY Analytics. Chỉ giữ 3 vệt loang màu rất nhẹ sau lớp kính: kính cần
   một nền có sắc để còn đọc ra là kính. Muốn nền phẳng hẳn thì xoá khối `.jw-ambient` ở `styles.css`.
 
 ## Mở
 
-Mở thẳng **`joy-start-mockup.html`** bằng trình duyệt. File tự chứa (CSS, JS, icon, ảnh minh hoạ đều
+Mở thẳng **`index.html`** bằng trình duyệt. File tự chứa (CSS, JS, icon, ảnh minh hoạ đều
 nằm trong file), gửi đi được như mockup gốc. Font lấy từ Google Fonts; không có mạng thì trình duyệt
 dùng font hệ thống.
 
@@ -47,12 +56,13 @@ Slug của từng trang khai ở `slug:` trong `MENU` (`mockup/data.js`). Link c
 | `mockup/i18n.js` | từ điển Tiếng Việt: KHOÁ là câu tiếng Nhật, `t('日本語')` tra ra bản Việt |
 | `mockup/illustrations.js` | avatar + ảnh minh hoạ SVG (giữ nguyên từ bản gốc) |
 | `mockup/icons.js` | **file sinh ra** — icon Solar Outline, đừng sửa tay |
-| `joy-start-mockup.html` | **file build** — ghép tất cả thành một file |
+| `index.html` | **file build** — ghép tất cả thành một file (tên `index.html` để URL Pages chỉ là `…/joy-start/#/home`) |
+| `joy-start-mockup.html` | tên cũ — chỉ còn là trang chuyển tiếp sang `./#…` cho link cũ |
 
 ## Lệnh (chỉ cần node, không cần `npm install`)
 
 ```sh
-node tools/build.mjs                    # ghép mockup/* → joy-start-mockup.html
+node tools/build.mjs                    # ghép mockup/* → index.html
 node tools/build.mjs --check            # kiểm file build có khớp nguồn không (exit 1 nếu lệch)
 node tools/sync-icons.mjs <Solar.zip | thư mục svg>   # sinh lại mockup/icons.js
 node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình duyệt thật (cần Playwright)
@@ -80,8 +90,8 @@ không publish. Muốn chạy tay: Actions → Deploy to GitHub Pages → Run wo
 
 - Nên đặt Settings → Pages → Source = **GitHub Actions**: khi đó chỉ workflow này deploy (có cổng).
   Nếu để "Deploy from a branch" thì GitHub chạy thêm một lượt deploy riêng, lấy nguyên nhánh làm
-  site (không qua cổng). Lúc đó `index.html` ở gốc repo chuyển sang `joy-start-mockup.html` (giữ
-  nguyên `#/…`), còn `.nojekyll` tắt Jekyll.
+  site (không qua cổng); vì mockup đã là `index.html` ở gốc repo nên cách nào cũng ra cùng một trang.
+  `.nojekyll` tắt Jekyll.
 - Đổi default branch (ví dụ sang `main`) thì nhánh mới tự thành nhánh deploy. Nhưng phải thêm nó vào
   Settings → Environments → `github-pages` → Deployment branches, không thì bước deploy bị từ chối.
 

@@ -37,11 +37,11 @@ jobs:
       - name: Cổng build
         run: node tools/build.mjs --check
 
-      # Trang chủ = chính file mockup; giữ thêm tên gốc để link cũ vẫn mở được.
+      # Trang chủ = index.html (URL chỉ là …/joy-start/#/home); tên cũ = trang chuyển tiếp.
       - name: Dựng thư mục site
         run: |
           mkdir -p _site
-          cp joy-start-mockup.html _site/index.html
+          cp index.html _site/index.html
           cp joy-start-mockup.html _site/joy-start-mockup.html
 
       - uses: actions/configure-pages@v5

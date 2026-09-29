@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// Ghép mockup/template.html + CSS + JS thành MỘT file tự chứa: joy-start-mockup.html
-// (mở thẳng bằng trình duyệt, gửi đi được — như mockup gốc).
+// Ghép mockup/template.html + CSS + JS thành MỘT file tự chứa: index.html ở gốc repo
+// (mở thẳng bằng trình duyệt, gửi đi được — như mockup gốc). Là `index.html` để URL trên
+// GitHub Pages chỉ là …/joy-start/#/home — không có tên file.
+// `joy-start-mockup.html` (tên cũ) nay chỉ là trang chuyển tiếp sang `./#…` cho link cũ.
 //
 //   node tools/build.mjs          # build
 //   node tools/build.mjs --check  # chỉ kiểm file build có khớp nguồn không (exit 1 nếu lệch)
@@ -18,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'mockup');
-const OUT = join(ROOT, 'joy-start-mockup.html');
+const OUT = join(ROOT, 'index.html');
 const check = process.argv.includes('--check');
 
 let html = readFileSync(join(SRC, 'template.html'), 'utf8');
@@ -39,11 +41,11 @@ if (leaked.length) throw new Error(`file build chứa email @drjoy.jp (${leaked.
 if (check) {
   const cur = existsSync(OUT) ? readFileSync(OUT, 'utf8') : '';
   if (cur !== html) {
-    console.error('✖ joy-start-mockup.html KHÔNG khớp nguồn — chạy: node tools/build.mjs');
+    console.error('✖ index.html KHÔNG khớp nguồn — chạy: node tools/build.mjs');
     process.exit(1);
   }
-  console.log('✔ joy-start-mockup.html khớp nguồn');
+  console.log('✔ index.html khớp nguồn');
 } else {
   writeFileSync(OUT, html);
-  console.log(`✔ joy-start-mockup.html — ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB (${used.join(' + ')})`);
+  console.log(`✔ index.html — ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB (${used.join(' + ')})`);
 }

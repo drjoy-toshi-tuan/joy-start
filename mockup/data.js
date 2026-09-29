@@ -352,13 +352,32 @@ var PAGE_DS_MAP = {
 
 /* §HOME — MVV */
 var MVV = {
-  mission: L('すべての医療従事者に、<span class="jw-mvv-nb">次の一手を</span>', 'Mang đến <span class="jw-mvv-nb">bước đi tiếp theo</span> cho mọi nhân viên y tế'),
+  mission: L('すべての<wbr>医療従事者に、<wbr><span class="jw-mvv-nb">次の一手を</span>', 'Mang đến <span class="jw-mvv-nb">bước đi tiếp theo</span> cho mọi nhân viên y tế'),
   vision: L('不要な非臨床業務を<span class="jw-mvv-nb"><span class="jw-mvv-em">"1秒"</span>でも減らす</span>', 'Giảm bớt công việc phi lâm sàng không cần thiết, <span class="jw-mvv-nb">dù chỉ <span class="jw-mvv-em">"1 giây"</span></span>'),
   values: [L('変数どこ？', 'Biến số ở đâu?'), L('素直さ is King', 'Cầu thị is King'), L('まずAI', 'AI trước tiên'), L('自分ごと', 'Coi là việc của mình'), L('やりきり力', 'Làm đến cùng')],
   impactHours: 1284
 };
 
 /* §HOME — số việc của tôi (mẫu) */
+/* §通知センター (nút chuông góc phải) — mục MẪU cho 承認待ち · 期限切れ · 今日の予定.
+   Số đếm của mỗi nhóm = số mục ở đây; 未読のお知らせ lấy thẳng từ ANNOUNCEMENTS. */
+var INBOX = {
+  approval: [
+    { title: L('経費精算：学会参加費', 'Thanh toán chi phí: phí dự hội nghị'), meta: L('サンプル 太郎・¥12,800・9/26 申請', 'サンプル 太郎 · ¥12.800 · gửi 26/9'), page: 'todo/承認' },
+    { title: L('休暇申請：10/3（金）', 'Đơn nghỉ phép: 3/10 (T6)'), meta: L('サンプル 花子・9/25 申請', 'サンプル 花子 · gửi 25/9'), page: 'todo/承認' },
+    { title: L('出張申請：大阪（10/8〜10/9）', 'Đơn công tác: Osaka (8–9/10)'), meta: L('サンプル 次郎・9/24 申請', 'サンプル 次郎 · gửi 24/9'), page: 'todo/承認' }
+  ],
+  overdue: [
+    { title: L('商談報告：サンプル大学病院', 'Báo cáo đàm phán: Bệnh viện Đại học Mẫu'), meta: L('期限 9/25・2日超過', 'Hạn 25/9 · quá 2 ngày'), page: 'todo/報告/商談' },
+    { title: L('顧客クレームの記録：さくら記念病院', 'Ghi nhận khiếu nại: Bệnh viện Sakura'), meta: L('期限 9/26・1日超過', 'Hạn 26/9 · quá 1 ngày'), page: 'todo/報告/顧客クレーム' }
+  ],
+  today: [
+    { time: '09:30', title: L('朝会', 'Họp sáng'), meta: L('オンライン', 'Trực tuyến'), page: 'todo/予定' },
+    { time: '11:00', title: L('商談：みなと総合病院', 'Đàm phán: Bệnh viện Minato'), meta: L('訪問', 'Gặp trực tiếp'), page: 'todo/予定' },
+    { time: '14:00', title: L('1on1：サンプル 花子', '1on1: サンプル 花子'), meta: L('会議室A', 'Phòng họp A'), page: 'todo/予定' },
+    { time: '17:00', title: L('週次レビュー', 'Review hàng tuần'), meta: L('本社ラウンジ', 'Sảnh trụ sở chính'), page: 'todo/予定' }
+  ]
+};
 var HOME_COUNTS = [
   { label: '承認待ち', icon: 'verified-check', num: 3, page: 'todo/承認' },
   { label: '期限切れ', icon: 'alarm', num: 2, page: 'todo/予定' },

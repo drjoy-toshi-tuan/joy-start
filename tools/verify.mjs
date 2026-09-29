@@ -26,7 +26,7 @@ try { ({ chromium } = require('playwright')); } catch {
   process.exit(2);
 }
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const FILE = pathToFileURL(join(ROOT, 'joy-start-mockup.html')).href;
+const FILE = pathToFileURL(join(ROOT, 'index.html')).href;
 const argv = process.argv.slice(2);
 const shotDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : null;
 const CACHE = process.env.PW_FONT_CACHE || null;
@@ -137,6 +137,18 @@ let steps = 0;
     await page.evaluate(() => { location.hash = '#/settings/' + encodeURIComponent('通知'); });
     await page.waitForFunction(() => location.hash === '#/settings/notifications');
   });
+  await step('通知センター: chuông góc phải → 4 nhóm → bấm một mục thì đi + đóng', async () => {
+    await go(page, '#/home');
+    const badge = Number(await page.textContent('#inboxBtn .jw-inbox-badge'));
+    await page.click('#inboxBtn');
+    await page.waitForSelector('#inboxPanel.jw-inbox--open');
+    const secs = await page.$$eval('#inboxPanel .jw-inbox-sec', (e) => e.length);
+    const items = await page.$$eval('#inboxPanel .jw-inbox-item', (e) => e.length);
+    if (secs !== 4) throw new Error(`có ${secs}/4 nhóm`);
+    if (items !== badge) throw new Error(`badge ${badge} ≠ ${items} mục`);
+    await page.click('#inbox-approval .jw-inbox-item');
+    await page.waitForFunction(() => location.hash === '#/todo/approvals' && !document.querySelector('#inboxPanel.jw-inbox--open'));
+  });
   await step('mở tất cả / đóng tất cả', async () => {
     await page.click('[data-act="expand-all"]');
     const n = await page.$$eval('.jw-sn-block--open', (e) => e.length);
@@ -209,6 +221,15 @@ let steps = 0;
     await page.click('.jw-tree-leaf[href="#/todo/reports/supervisor"]');
     await page.waitForFunction(() => location.hash === '#/todo/reports/supervisor' && !document.documentElement.hasAttribute('data-drawer'));
     await page.waitForSelector('.jw-sidenav--rail');
+  });
+  await step('通知センター vừa màn 390px', async () => {
+    await page.keyboard.press('Escape');
+    await page.click('#inboxBtn');
+    await page.waitForSelector('#inboxPanel.jw-inbox--open');
+    await page.waitForTimeout(400);
+    const r = await page.evaluate(() => { const b = document.querySelector('#inboxPanel').getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width }; });
+    if (r.w < 280 || r.l < 0 || r.r > 390) throw new Error(`panel ${Math.round(r.l)}–${Math.round(r.r)} (${Math.round(r.w)}px)`);
+    await page.keyboard.press('Escape');
   });
   await step('ngăn kéo: bánh răng mở panel cài đặt nổi TRÊN ngăn kéo', async () => {
     await page.click('[data-act="rail"]');

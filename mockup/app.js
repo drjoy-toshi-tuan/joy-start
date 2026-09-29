@@ -156,6 +156,7 @@
     linkFilter: '',
     homeDraft: null,
     menuOpen: false,
+    inboxOpen: false,
     gsHot: -1,
     photos: PHOTOS.slice(),
     pendingScroll: null,
@@ -164,6 +165,8 @@
   if (Array.isArray(readRaw)) readRaw.forEach(function (id) { S.read[id] = true; });
   if (Array.isArray(openRaw)) openRaw.forEach(function (k) { if (BLOCKS[k] && BLOCKS[k].children) S.open[k] = true; });
   function saveOpen() { save(KEY.open, Object.keys(S.open)); }
+  // Người dùng bật "giảm chuyển động" ⇒ tắt hiện-dần-khi-cuộn, đếm số, đèn theo con trỏ.
+  var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   // ≤640px (như mockup gốc): side panel luôn là dải icon; nút gập mở nó thành NGĂN KÉO.
   var mqNarrow = window.matchMedia ? window.matchMedia('(max-width: 640px)') : null;
   function narrow() { return !!(mqNarrow && mqNarrow.matches); }
@@ -330,7 +333,7 @@
   function leafItem(k, n) {
     var on = isCurrent(k);
     return '<li class="jw-tree-kid"><a class="jw-tree-leaf' + (on ? ' jw-tree-on' : '') + '" href="' + href(k) + '"' + (on ? ' aria-current="page"' : '') + tipAttr(n) + '>' +
-      ic(n.icon, 14) + '<span class="jw-tree-leafname">' + esc(nm(n)) + '</span>' +
+      '<span class="jw-tree-leafname">' + esc(nm(n)) + '</span>' +
       (n.badge ? '<span class="jw-count">' + n.badge + '</span>' : '') + '</a>' + favBtn(k) + '</li>';
   }
   function treeHtml(b) {
@@ -458,6 +461,7 @@
 
   function closeFloating() {
     closeMenu();
+    closeInbox();
     closeGs();
     hideTip();
   }
@@ -469,8 +473,8 @@
       eb = '<nav class="jw-page-eyebrow" aria-label="' + esc(t('パンくずリスト')) + '">' + o.crumbs.map(function (c, i) {
         var sep = i ? '<span class="jw-page-sep" aria-hidden="true">' + ic('alt-arrow-right', 12) + '</span>' : '';
         return sep + (c.href
-          ? '<a class="jw-page-crumb-btn" href="' + c.href + '">' + (c.icon || '') + esc(c.label) + '</a>'
-          : '<span class="jw-page-crumb-txt">' + (c.icon || '') + esc(c.label) + '</span>');
+          ? '<a class="jw-page-crumb-btn" href="' + c.href + '">' + esc(c.label) + '</a>'
+          : '<span class="jw-page-crumb-txt">' + esc(c.label) + '</span>');
       }).join('') + '</nav>';
     }
     return '<header class="jw-page-head">' + eb +
@@ -499,7 +503,8 @@
   }
   function panel(o) {
     return '<section class="jw-panel jw-glass' + (o.cls ? ' ' + o.cls : '') + '"' + (o.id ? ' data-card="' + o.id + '" id="card-' + o.id + '"' : '') + '>' +
-      (o.title ? '<header class="jw-panel-head"><div class="jw-panel-lead">' + (o.icon ? '<span class="jw-panel-ico">' + o.icon + '</span>' : '') +
+      // Đầu thẻ KHÔNG còn ô icon (bớt icon thừa) — `o.icon` được bỏ qua có chủ ý
+      (o.title ? '<header class="jw-panel-head"><div class="jw-panel-lead">' +
         '<h2 class="jw-panel-name"><span>' + esc(o.title) + '</span>' + (o.sub || '') + '</h2></div>' +
         (o.actions ? '<div class="jw-panel-actions">' + o.actions + '</div>' : '') + '</header>' : '') +
       (o.body || '') + '</section>';
@@ -565,6 +570,48 @@
     }
     if (ROUTE.name === 'settings' && ROUTE.row && isNav) flashDsRow(ROUTE.row);
     document.title = pageTitleText() + ' — JOY START';
+    srScan(isNav);
+    renderInboxBtn();
+  }
+
+  // ── §Hiện dần khi cuộn (mọi trang) ──
+  // Khối (đầu trang · hero · MVV · thẻ) trượt lên + hiện khi vào vùng nhìn; phần tử con trong khối
+  // (hàng, thẻ nhỏ, ô…) nối đuôi nhau theo --sr-i. Chỉ chạy khi ĐỔI TRANG — vẽ lại tại chỗ (đổi tab,
+  // lọc…) thì hiện ngay, không nhảy lại. Số có `data-count-to` đếm lên lúc khối hiện ra.
+  var SR_BLOCK = '.jw-page-head, .jw-hero, .jw-mvv2, .jw-panel, .jw-set-tabs, .jw-search-page > :first-child';
+  var SR_ITEM = '.jw-rowi, .jw-nh-card, .jw-photo, .jw-fx-row, .jw-mvv2-value, .jw-set-row, .jw-table tbody tr, .jw-linkbtn, .jw-tile, .jw-acc-item';
+  var srIO = !REDUCED && 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      srIO.unobserve(en.target);
+      srShow(en.target);
+    });
+  }, { root: $('#main'), rootMargin: '0px 0px -6% 0px', threshold: 0.04 }) : null;
+  function srShow(el) {
+    el.classList.add('jw-sr-in');
+    $$('[data-count-to]', el).forEach(countUp);
+    setTimeout(function () { el.classList.add('jw-sr-done'); }, 1400);
+  }
+  function srScan(animate) {
+    if (srIO && animate) srIO.disconnect();
+    $$(SR_BLOCK, $('#screen')).forEach(function (el) {
+      if (el.hasAttribute('data-sr') || (el.parentElement && el.parentElement.closest('[data-sr]'))) return;
+      el.setAttribute('data-sr', '');
+      $$(SR_ITEM, el).forEach(function (it, i) { it.style.setProperty('--sr-i', Math.min(i, 14)); });
+      if (animate && srIO) srIO.observe(el);
+      else el.classList.add('jw-sr-in', 'jw-sr-done');
+    });
+  }
+  function countUp(el) {
+    var to = Number(el.getAttribute('data-count-to'));
+    if (!isFinite(to) || el.hasAttribute('data-counted')) return;
+    el.setAttribute('data-counted', '');
+    var t0 = performance.now(), dur = 1400;
+    (function frame(now) {
+      var k = Math.min(1, (now - t0) / dur);
+      el.textContent = nf(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(frame);
+    })(t0);
   }
   function pageTitleText() {
     if (ROUTE.name === 'page') return nm(PAGES[ROUTE.key].node);
@@ -619,16 +666,25 @@
     health: cardHealth, photos: cardPhotos, bizdays: cardBizdays, fx: cardFx
   };
   function cardIcon(id) { return ic(HOME_CARD_DEFS[id].icon, 18); }
+  // Home = lời chào + ô tìm (hero) → MVV (xương sống của công ty) → lưới thẻ.
+  // Số việc (承認待ち…) KHÔNG còn ở đây — đã dời vào 通知センター ở góc phải.
   function pageHome() {
     var cfg = homeCfg();
     function col(c) { return cfg[c].filter(function (id) { return !cfg.hidden[id]; }).map(function (id) { return CARD_HTML[id](); }).join(''); }
-    return pageHead({ crumbs: [{ label: fmtLong(HOME_TODAY), icon: ic('calendar-minimalistic', 13) }], title: t('ホーム'), icon: ic('home-2', 20) }) +
-      '<div class="jw-home">' +
-        '<div data-card="search">' + gsearchHtml() + '</div>' +
-        '<div data-card="counts">' + countsHtml() + '</div>' +
-        mvvHtml() +
+    return '<div class="jw-home">' + heroHtml() + mvvHtml() +
         '<div class="jw-home-grid"><div class="jw-home-col">' + col('left') + '</div><div class="jw-home-col jw-home-col--side">' + col('right') + '</div></div>' +
       '</div>';
+  }
+  function greeting() {
+    var h = new Date().getHours();
+    return h >= 5 && h < 11 ? t('おはようございます') : h >= 11 && h < 18 ? t('こんにちは') : t('こんばんは');
+  }
+  function heroHtml() {
+    var name = LANG === 'vi' ? SETTINGS_ME.name : SETTINGS_ME.name.split(' ')[0];
+    return '<section class="jw-hero" data-card="hero">' +
+      '<p class="jw-hero-date">' + esc(fmtLong(HOME_TODAY)) + '</p>' +
+      '<h1 class="jw-hero-title">' + esc(greeting()) + (LANG === 'vi' ? ', ' : '、') + '<span class="jw-hero-name">' + esc(t('{name}さん', { name: name })) + '</span></h1>' +
+      '<div class="jw-hero-search">' + gsearchHtml() + '</div></section>';
   }
   function gsearchHtml() {
     return '<div class="jw-gsearch" id="gsearch"><label class="jw-gsearch-box jw-glass">' + ic('magnifier', 18) +
@@ -636,25 +692,83 @@
       '<button type="button" class="jw-sn-find-x" id="gsClear" data-act="gs-clear" aria-label="' + esc(t('検索をクリア')) + '" hidden>' + ic('close', 14) + '</button>' +
       '<kbd class="jw-kbd" aria-hidden="true">/</kbd></label><div class="jw-gs-drop jw-glass" id="gsDrop" hidden></div></div>';
   }
-  function countsHtml() {
-    return '<div class="jw-counts" role="group" aria-label="' + esc(t('自分宛ての件数')) + '">' + HOME_COUNTS.map(function (c) {
-      var n = c.unread ? unreadCount() : c.num;
-      var inner = ic(c.icon, 17) + '<span>' + esc(t(c.label)) + '</span><b>' + n + '</b>';
-      return c.page
-        ? '<a class="jw-countchip jw-rim" href="' + href(c.page) + '"' + (n ? '' : ' data-zero') + '>' + inner + '</a>'
-        : '<button type="button" class="jw-countchip jw-rim" data-act="count-ann"' + (n ? '' : ' data-zero') + '>' + inner + '</button>';
-    }).join('') + '</div>';
-  }
+  // MVV — sân khấu chính của Home: MISSION chữ lớn, VISION + số giờ đã giảm (đếm lên khi hiện),
+  // 5 VALUE đánh số. Nền: 3 quầng cam trôi chậm + mark Dr.JOY chìm.
   function mvvHtml() {
-    return '<section class="jw-panel jw-glass jw-mvv" data-card="mvv" aria-label="MISSION · VISION · VALUE">' +
-      '<div class="jw-mvv-line"><div class="jw-mvv-label">MISSION</div><div class="jw-mvv-text">' + tr(MVV.mission) + '</div></div>' +
-      '<div class="jw-mvv-line"><div class="jw-mvv-label">VISION</div><div class="jw-mvv-text">' + tr(MVV.vision) + '</div>' +
-        '<div class="jw-mvv-impact"><span class="jw-mvv-impact-label">' + t('今月減らせた時間') + '</span>' +
-        '<span class="jw-mvv-impact-num">' + esc(t('{n}時間', { n: nf(MVV.impactHours) })) + '</span>' +
-        '<button type="button" class="jw-link" data-act="toast" data-msg="Vision Report（準備中のモック）">' + t('詳細') + ic('alt-arrow-right', 14) + '</button></div></div>' +
-      '<div class="jw-mvv-line"><div class="jw-mvv-label">VALUE</div><div class="jw-mvv-values">' +
-        MVV.values.map(function (v) { return '<span class="jw-mvv-chip">' + esc(tr(v)) + '</span>'; }).join('') + '</div></div>' +
-    '</section>';
+    return '<section class="jw-mvv2" data-card="mvv" aria-label="MISSION · VISION · VALUE">' +
+      '<div class="jw-mvv2-bg" aria-hidden="true"><span class="jw-mvv2-blob jw-mvv2-blob--a"></span><span class="jw-mvv2-blob jw-mvv2-blob--b"></span><span class="jw-mvv2-blob jw-mvv2-blob--c"></span>' +
+        DRJOY_MARK.replace('jw-brand-mark', 'jw-mvv2-mark') + '</div>' +
+      '<div class="jw-mvv2-top">' +
+        '<div class="jw-mvv2-mission"><span class="jw-mvv2-label">MISSION</span><p class="jw-mvv2-statement">' + tr(MVV.mission) + '</p></div>' +
+        '<div class="jw-mvv2-vision"><span class="jw-mvv2-label">VISION</span><p class="jw-mvv2-vtext">' + tr(MVV.vision) + '</p>' +
+          '<div class="jw-mvv2-impact"><span class="jw-mvv2-num"><span class="jw-num" data-count-to="' + MVV.impactHours + '">' + nf(MVV.impactHours) + '</span><small>' + t('時間') + '</small></span>' +
+            '<span class="jw-mvv2-impact-label">' + t('今月減らせた時間') + '</span>' +
+            '<button type="button" class="jw-link" data-act="toast" data-msg="Vision Report（準備中のモック）">' + t('詳細') + ic('alt-arrow-right', 14) + '</button></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="jw-mvv2-values"><span class="jw-mvv2-label">VALUE</span><ol class="jw-mvv2-list">' +
+        MVV.values.map(function (v, i) { return '<li class="jw-mvv2-value"><span class="jw-mvv2-no">' + pad(i + 1) + '</span><span class="jw-mvv2-vname">' + esc(tr(v)) + '</span></li>'; }).join('') +
+      '</ol></div></section>';
+  }
+
+  // ── §通知センター — nút chuông góc phải + panel (承認待ち · 期限切れ · 今日の予定 · 未読) ──
+  function inboxGroups() {
+    function map(list) { return list.map(function (x) { return { lead: x.time || '', title: tr(x.title), meta: tr(x.meta), href: href(x.page) }; }); }
+    var unread = ANNOUNCEMENTS.filter(isUnread).sort(byDate(-1)).map(function (a) {
+      return { lead: '', title: tr(a.title), meta: fmtMD(a.date) + ' · ' + t(a.cat), href: '#/announce/' + a.id, important: !!a.important };
+    });
+    return [
+      { id: 'approval', label: t('承認待ち'), tone: 'orange', more: href('todo/承認'), items: map(INBOX.approval) },
+      { id: 'overdue', label: t('期限切れ'), tone: 'rose', more: href('todo/アクション'), items: map(INBOX.overdue) },
+      { id: 'today', label: t('今日の予定'), tone: 'blue', more: href('todo/予定'), items: map(INBOX.today) },
+      { id: 'unread', label: t('未読のお知らせ'), tone: 'plum', more: '', items: unread }
+    ];
+  }
+  function inboxTotal() { return inboxGroups().reduce(function (n, g) { return n + g.items.length; }, 0); }
+  function renderInboxBtn() {
+    var btn = $('#inboxBtn');
+    if (!btn) return;
+    var n = inboxTotal();
+    btn.innerHTML = ic('bell', 20) + (n ? '<span class="jw-inbox-badge jw-num">' + (n > 99 ? '99+' : n) + '</span>' : '');
+    btn.setAttribute('aria-label', t('通知を開く') + (n ? ' — ' + n + ' ' + t('件の通知') : ''));
+    btn.setAttribute('aria-expanded', String(S.inboxOpen));
+  }
+  function inboxHtml() {
+    var gs = inboxGroups();
+    var total = gs.reduce(function (n, g) { return n + g.items.length; }, 0);
+    return '<div class="jw-inbox-head"><span class="jw-inbox-title">' + t('通知') + '</span><span class="jw-inbox-total jw-num">' + total + '</span></div>' +
+      '<div class="jw-inbox-sum">' + gs.map(function (g) {
+        return '<button type="button" class="jw-inbox-tile jw-tone-' + g.tone + '" data-act="inbox-jump" data-v="' + g.id + '"><b class="jw-num">' + g.items.length + '</b><span>' + esc(g.label) + '</span></button>';
+      }).join('') + '</div>' +
+      '<div class="jw-inbox-body" id="inboxBody">' + gs.map(function (g) {
+        return '<section class="jw-inbox-sec jw-tone-' + g.tone + '" id="inbox-' + g.id + '"><div class="jw-inbox-sec-head"><span class="jw-inbox-sec-name">' + esc(g.label) + '</span>' +
+          '<span class="jw-inbox-n jw-num">' + g.items.length + '</span>' + (g.more ? '<a class="jw-link" href="' + g.more + '">' + t('すべて見る') + '</a>' : '') + '</div>' +
+          (g.items.length ? g.items.map(function (it) {
+            return '<a class="jw-inbox-item" href="' + it.href + '">' + (it.lead ? '<span class="jw-inbox-time jw-num">' + esc(it.lead) + '</span>' : '<span class="jw-inbox-dot"></span>') +
+              '<span class="jw-inbox-txt"><span class="jw-inbox-name">' + esc(it.title) + '</span><span class="jw-inbox-meta">' + esc(it.meta) + '</span></span>' +
+              (it.important ? '<span class="jw-badge jw-badge--crit">' + t('重要') + '</span>' : '') + '</a>';
+          }).join('') : '<p class="jw-inbox-none">' + t('未読はありません') + '</p>') + '</section>';
+      }).join('') + '</div>';
+  }
+  function openInbox() {
+    closeFloating();
+    S.inboxOpen = true;
+    $('#inboxLayer').innerHTML = '<div class="jw-scrim jw-scrim--clear" data-act="inbox-close" aria-hidden="true"></div>' +
+      '<div class="jw-inbox jw-glass" role="dialog" id="inboxPanel" aria-label="' + esc(t('通知センター')) + '">' + inboxHtml() + '</div>';
+    var p = $('#inboxPanel');
+    void p.offsetHeight;
+    p.classList.add('jw-inbox--open');
+    renderInboxBtn();
+  }
+  function closeInbox() {
+    if (!S.inboxOpen) return;
+    S.inboxOpen = false;
+    var box = $('#inboxLayer');
+    var p = $('#inboxPanel');
+    var sc = box.querySelector('.jw-scrim');
+    if (sc) sc.remove();
+    if (p) { p.classList.remove('jw-inbox--open'); setTimeout(function () { if (!S.inboxOpen && p.parentNode) p.remove(); }, 220); }
+    renderInboxBtn();
   }
   function dealIsNew(d) { var diff = dayDiff(HOME_TODAY, pd(d.date)); return diff >= 0 && diff <= DEAL_NEW_DAYS; }
   function dealsSorted() { return DEALS.slice().sort(byDate(-1)); }
@@ -703,7 +817,7 @@
     }).join('') + '</div>';
     return panel({ id: 'announce', icon: cardIcon('announce'), title: t('お知らせ'),
       actions: '<span class="jw-ann-unread"' + (unread ? '' : ' data-zero') + '>' + esc(t('未読 {n}', { n: unread })) + '</span>' +
-        '<button type="button" class="jw-link" data-act="ann-readall"' + (unread ? '' : ' disabled') + '>' + ic('check-read', 15) + t('すべて既読') + '</button>',
+        '<button type="button" class="jw-link" data-act="ann-readall"' + (unread ? '' : ' disabled') + '>' + t('すべて既読') + '</button>',
       body: tabs + (list.length ? '<div class="jw-rows">' + list.map(annRow).join('') + '</div>' : '<p class="jw-empty">' + ic('inbox', 34) + t('該当するお知らせはありません') + '</p>') });
   }
   function cardNewhire() {
@@ -723,13 +837,13 @@
     }).join('');
     return panel({ id: 'newhire', icon: cardIcon('newhire'), title: t('今月の新入社員'),
       sub: '<span class="jw-panel-sub">' + fmtYM(NEW_HIRES_MONTH.y, NEW_HIRES_MONTH.m) + '</span>',
-      actions: '<span class="jw-hchip">' + ic('users-group-rounded', 14) + esc(t('{n}名', { n: NEW_HIRES.length })) + '</span>', body: groups });
+      actions: '<span class="jw-hchip">' + esc(t('{n}名', { n: NEW_HIRES.length })) + '</span>', body: groups });
   }
   function schRow(e, isPast) {
     var diff = dayDiff(pd(e.date), HOME_TODAY);
     var badge = isPast ? '' : diff === 0 ? '<span class="jw-badge jw-badge--solid">' + t('今日') + '</span>' : diff === 1 ? '<span class="jw-badge">' + t('明日') + '</span>' : '';
     return '<div class="jw-rowi jw-sch"' + (isPast ? ' data-past' : '') + '><span class="jw-sch-date">' + fmtMD(e.date) + badge + '</span>' +
-      '<span class="jw-sch-name">' + esc(tr(e.name)) + '</span><span class="jw-sch-place">' + ic('map-point', 13) + '<span>' + esc(tr(e.place)) + '</span></span></div>';
+      '<span class="jw-sch-name">' + esc(tr(e.name)) + '</span><span class="jw-sch-place"><span>' + esc(tr(e.place)) + '</span></span></div>';
   }
   function cardSchedule() {
     var past = S.schedPast
@@ -737,7 +851,7 @@
         '<div class="jw-sch-today">' + esc(t('今日 {d}', { d: fmtMDs(HOME_TODAY) })) + '</div>'
       : '';
     return panel({ id: 'schedule', icon: cardIcon('schedule'), title: t('スケジュール'),
-      actions: '<button type="button" class="jw-link" data-act="sched-past" aria-expanded="' + S.schedPast + '">' + ic('history', 15) + (S.schedPast ? t('過去を閉じる') : t('過去')) + '</button>',
+      actions: '<button type="button" class="jw-link" data-act="sched-past" aria-expanded="' + S.schedPast + '">' + (S.schedPast ? t('過去を閉じる') : t('過去')) + '</button>',
       body: past + '<div class="jw-rows">' + SCHEDULE_EVENTS.map(function (e) { return schRow(e, false); }).join('') + '</div>' });
   }
   function rankFace(r) { return '<span class="jw-face">' + avatarSvg(HEALTH_AVATARS[r.name] || AVATAR_POOL[(Math.max(1, r.rank) - 1) % AVATAR_POOL.length]) + '</span>'; }
@@ -1164,7 +1278,7 @@
   function pageSettings() {
     var tab = ROUTE.tab;
     var tabs = '<div class="jw-tabs" role="tablist" id="setTabs" data-keep data-fade-x aria-label="' + esc(t('設定')) + '">' + SETTINGS_TABS.map(function (x) {
-      return '<a class="jw-tab" role="tab" aria-selected="' + (x.id === tab) + '" href="' + setHref(x.id) + '">' + ic(x.icon, 15) + esc(t(x.id)) + '</a>';
+      return '<a class="jw-tab" role="tab" aria-selected="' + (x.id === tab) + '" href="' + setHref(x.id) + '">' + esc(t(x.id)) + '</a>';
     }).join('') + '</div>';
     return pageHead({ crumbs: [{ label: t('ホーム'), href: '#/home', icon: ic('home-2', 13) }], title: t('設定'), icon: ic('settings', 20) }) +
       '<div class="jw-stack">' + setBox(tabs) + '<div class="jw-stack" id="setBody">' + SETTINGS_BODY[tab]() + '</div></div>';
@@ -1298,6 +1412,7 @@
     document.documentElement.lang = LANG;
     renderSide();
     renderPage(false);
+    if (S.inboxOpen) { var ip = $('#inboxPanel'); if (ip) ip.innerHTML = inboxHtml(); }
     if (S.menuOpen) {
       var panel = $('#menuPanel');
       if (panel) {
@@ -1407,7 +1522,9 @@
       case 'gs-clear': { var gi = $('#gsInput'); if (gi) { gi.value = ''; gi.focus(); } el.hidden = true; closeGs(); break; }
       case 'gs-all': { var inp = $('#gsInput'); S.searchTab = 'all'; go('#/search?q=' + encodeURIComponent(inp ? inp.value.trim() : '')); break; }
       case 'search-tab': S.searchTab = v; renderPage(false); break;
-      case 'count-ann': { var c = document.getElementById('card-announce'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); break; }
+      case 'inbox': if (S.inboxOpen) closeInbox(); else openInbox(); break;
+      case 'inbox-close': closeInbox(); break;
+      case 'inbox-jump': { var sec = document.getElementById('inbox-' + v), body = $('#inboxBody'); if (sec && body) body.scrollTo({ top: sec.offsetTop - body.offsetTop - 4, behavior: 'smooth' }); break; }
       case 'ann-tab': S.announceTab = v; renderPage(false); break;
       case 'ann-readall':
         ANNOUNCEMENTS.forEach(function (a) { if (a.unread) S.read[a.id] = true; });
@@ -1522,6 +1639,7 @@
     if (e.key === 'Escape') {
       if (closeModal()) return;
       if (S.menuOpen) { closeMenu(); var mb = $('#setBtn'); if (mb) mb.focus(); return; }
+      if (S.inboxOpen) { closeInbox(); var ib = $('#inboxBtn'); if (ib) ib.focus(); return; }
       if (e.target.id === 'gsInput') { closeGs(); e.target.blur(); return; }
       if (e.target.id === 'sideFind') { S.sideQuery = ''; renderSide(); return; }
       if (S.drawer) { S.drawer = false; renderSide(); return; }
@@ -1555,15 +1673,17 @@
   // Mỗi khung hình: mọi phần tử (trong cùng vùng với con trỏ) cách chuột ≤ RV_R px được bật
   // `data-rv` + toạ độ chuột TÍNH TRONG nó (--mx/--my) ⇒ CSS vẽ viền sáng dần theo khoảng cách.
   // Chỉ chuột (không chạm), và một lượt đọc hết rồi mới ghi (tránh layout thrash).
-  var RV_SEL = '.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-sn-tool, .jw-sn-toggle, .jw-sn-gear, .jw-rim, a.jw-rowi, button.jw-rowi, .jw-panel:not(.jw-panel--flat)';
+  // Nút CHỈ có icon (sao, ×, mở/đóng tất cả, bánh răng…) KHÔNG nằm trong danh sách: chỉ đổi màu icon.
+  var RV_SEL = '.jw-sn-top, .jw-tree-row, .jw-tree-leaf, .jw-sn-fav, .jw-sn-hit, .jw-sn-me, .jw-rim:not(.jw-inbox-btn), a.jw-rowi, button.jw-rowi, ' +
+    '.jw-panel:not(.jw-panel--flat), .jw-pane, .jw-photo-thumb, .jw-mvv2, .jw-mvv2-value, .jw-inbox-item, .jw-inbox-tile';
   var RV_R = 96;
   var rvLit = [], rvPt = null, rvRaf = 0;
-  var rvOff = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var rvOff = REDUCED;
   function rvSchedule() { if (!rvRaf) rvRaf = requestAnimationFrame(rvFrame); }
   function rvFrame() {
     rvRaf = 0;
     var next = [];
-    var scope = rvPt && rvPt.t && rvPt.t.closest ? rvPt.t.closest('.jw-sidenav, .jw-menu, .jw-main, .jw-dialog') : null;
+    var scope = rvPt && rvPt.t && rvPt.t.closest ? rvPt.t.closest('.jw-sidenav, .jw-menu, .jw-main, .jw-dialog, .jw-inbox') : null;
     if (scope) {
       var x = rvPt.x, y = rvPt.y, els = scope.querySelectorAll(RV_SEL);
       for (var i = 0; i < els.length; i++) {
