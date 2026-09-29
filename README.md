@@ -23,6 +23,12 @@ liquid glass, cây điều hướng, panel, control.
   khổ ≥1180px thì đẩy nội dung sang trái (vừa chat vừa thấy trang đổi), khổ vừa thì phủ lên, ≤640px
   toàn màn hình; nút 広げる phủ hết vùng nội dung. Chuyển trang vẫn giữ hội thoại, chip dưới ô nhập
   cho biết đang đứng ở trang nào; gợi ý đổi theo trang.
+  - **Khung hội thoại giống hệt JOY Pilot của JOY Analytics**: câu trả lời MỚI NHẤT có mặt robot
+    động 72px ở cột trái (28 biểu cảm, đổi qua `neutral`; mắt nhìn theo chuột; chọt vào thì cười,
+    chọt quá 2 lần trong 30s thì bực; 45s không ai đụng thì ngủ, gõ chữ thì giật mình dậy) và dòng
+    trạng thái có đèn đổi màu theo mặt, sóng "đang nói" khi đang viết. Câu đã qua thu về chấm tâm
+    trạng + 「JOY PILOT · 回答」. Mở ra là một lời chào gõ dần, kèm gợi ý theo trang đang xem.
+    Đang trả lời thì nút gửi thành nút dừng.
   - **Thao tác trang**: mở trang (「組織図を開いて」), thêm お気に入り, đổi theme / ngôn ngữ, mở 通知.
   - **Tra dữ liệu**: tổng hợp tại chỗ từ dữ liệu mẫu (受注 theo 事業部 / theo người, 入社, 既読率);
     CSV chỉ khi người dùng tự yêu cầu.

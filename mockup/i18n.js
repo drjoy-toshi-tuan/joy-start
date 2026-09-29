@@ -338,6 +338,9 @@ var I18N_VI = {
   '代表取締役社長': 'Tổng giám đốc (CEO)',
   'JP（東京本社）': 'JP (Trụ sở Tokyo)',
   /* §JOY Pilot */
+  'JOY Pilot をくすぐる': 'Cù JOY Pilot',
+  '（停止しました）': '(đã dừng)',
+  '停止': 'Dừng',
   'CSVをクリップボードにコピーしました': 'Đã sao chép CSV vào bộ nhớ tạm',
   'CSVをコピー': 'Sao chép CSV',
   'JOY Pilot に頼む…': 'Nhờ JOY Pilot…',

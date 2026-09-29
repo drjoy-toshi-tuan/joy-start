@@ -595,7 +595,7 @@
     if (PILOT.open) {
       var cx = $('#pilot .jw-pilot-ctx-page span');
       if (cx) cx.textContent = pageTitleText();
-      if (!PILOT.msgs.length && PILOT.tab === 'chat') renderPilotBody();
+      pilotRefreshChips();
     }
   }
 
@@ -1640,7 +1640,9 @@
       case 'pilot': if (PILOT.open) closePilot(); else openPilot(); break;
       case 'pilot-close': closePilot(); break;
       case 'pilot-full': PILOT.full = !PILOT.full; pilotSync(); renderPilot(); break;
-      case 'pilot-new': PILOT.timers.forEach(clearTimeout); PILOT.timers = []; PILOT.msgs = []; PILOT.busy = false; PILOT.plans = PILOT.plans.filter(function (p) { return p.state !== 'proposed'; }); renderPilot(); break;
+      case 'pilot-new': pilotClear(); break;
+      case 'pilot-stop': pilotStop(); break;
+      case 'pilot-poke': pilotPoke(el); break;
       case 'pilot-tab': PILOT.tab = v; renderPilot(); break;
       case 'pilot-ask': openPilot(el.getAttribute('data-q')); break;
       case 'pilot-send': { var pi = $('#pilotInput'); if (pi) pilotSend(pi.value); break; }
@@ -1844,7 +1846,7 @@
     if (!el || !el.id) return;
     if (el.id === 'sideFind') { S.sideQuery = el.value; refreshSideBody(); }
     else if (el.id === 'gsInput') { renderGsDrop(el.value); var cl = $('#gsClear'); if (cl) cl.hidden = !el.value; }
-    else if (el.id === 'pilotInput') pilotGrow(el);
+    else if (el.id === 'pilotInput') { pilotGrow(el); pilotOnType(); }
     else if (el.id === 'linkFilter') { S.linkFilter = el.value; var lr = $('#linkResults'); if (lr) lr.innerHTML = linkBody(); }
   }
   document.addEventListener('change', function (e) {
@@ -1994,7 +1996,9 @@
   // XÁC NHẬN; có ngày áp dụng trong tương lai thì giữ bản nháp rồi TỰ áp vào đúng ngày.
   // ⚠ MOCKUP: chưa nối BigQuery MCP — `pilotPlan()` là chỗ DUY NHẤT phải đổi khi nối thật
   // (câu hỏi → kế hoạch trả lời); khung chat chỉ đọc hình dạng kế hoạch đó.
-  var PILOT = { open: false, full: false, tab: 'chat', msgs: [], busy: false, plans: [], seq: 0, timers: [] };
+  var PILOT = { open: false, full: false, tab: 'chat', msgs: [], busy: false, plans: [], seq: 0, timers: [], ticker: null,
+    F: null, face: 'idle', status: null, stick: true, pokes: [], annoyPending: false, wakeUntil: 0, lastType: 0, lastActive: 0,
+    idleTimer: 0, sleepTimer: 0, listenTimer: 0, tickleTimer: 0 };
   // Màu nhân vật = HẰNG SỐ (cùng bộ với JOY Pilot của JOY Analytics), không theo theme
   var PC = { head: '#f5f5f6', shade: '#e3e4e7', line: '#d9d3cc', orange: '#ff8c1a', orangeDark: '#d9670b', visor: '#2a2b2e', eye: '#45c8ff', star: '#ffc94d' };
   var P_HEAD = 'M100 54 C150 54 176 84 176 118 C176 152 146 172 100 172 C54 172 24 152 24 118 C24 84 50 54 100 54 Z';
@@ -2012,7 +2016,8 @@
     }).join('');
     var happy = live ? '<g class="jw-pmark-happy"><path d="M68 106 Q77.5 91 87 106" fill="none" stroke="' + PC.eye + '" stroke-width="6" stroke-linecap="round"/>' +
       '<path d="M113 106 Q122.5 91 132 106" fill="none" stroke="' + PC.eye + '" stroke-width="6" stroke-linecap="round"/>' +
-      '<path transform="translate(170 62) scale(1.6)" d="M0 -7 L1.8 -1.8 L7 0 L1.8 1.8 L0 7 L-1.8 1.8 L-7 0 L-1.8 -1.8 Z" fill="' + PC.star + '"/></g>' : '';
+      '<g transform="translate(170 62) scale(1.6)"><g>' + (still ? '' : '<animateTransform attributeName="transform" type="scale" values="0.4;1;0.4" dur="1.6s" begin="0s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>') +
+      '<path d="M0 -7 L1.8 -1.8 L7 0 L1.8 1.8 L0 7 L-1.8 1.8 L-7 0 L-1.8 -1.8 Z" fill="' + PC.star + '"/></g></g></g>' : '';
     return '<svg class="jw-pmark" viewBox="0 0 200 200" width="' + size + '" height="' + size + '" aria-hidden="true" focusable="false">' +
       '<g>' + bob(-4, '0.3s') + '<ellipse cx="100" cy="32" rx="29" ry="13" fill="none" stroke="' + PC.orange + '" stroke-width="11" transform="rotate(-8 100 32)"/></g>' +
       '<g>' + bob(-3, '0s') +
@@ -2022,6 +2027,234 @@
         '<g class="jw-pmark-idle">' + eyes + '</g>' + happy +
       '</g></svg>';
   }
+  // ── Mặt robot ĐỘNG — port NGUYÊN của `PilotFace.tsx` + `face.ts` (JOY Analytics): 28 biểu cảm,
+  // mọi cú chuyển đi qua `neutral` (trừ phản xạ `tickled` · cặp `tickled → angry`), đèn trán đổi
+  // màu, cú nảy riêng, nghiêng đầu, mắt nhìn theo chuột. Mỗi biểu cảm là một LỚP enter → in → out
+  // (cũ mờ TRONG LÚC mới nở ⇒ không có khung trống). Tắt chuyển động ⇒ mọi SMIL `indefinite`.
+  var PFC = { head: '#f5f5f6', shade: '#e3e4e7', line: '#d9d3cc', orange: '#ff8c1a', orangeDark: '#d9670b', slot: '#b85407', visor: '#2a2b2e', eye: '#45c8ff', mic: '#6b7078', drop: '#8fcdff', star: '#ffc94d', heart: '#ff6b8b', ok: '#4ade80', warn: '#ffb020', err: '#ff5a5f', dim: '#5a6570', blush: '#ff8fab', blushLine: '#f06a8c', gloom: '#8a8f96' };
+  var PF_EXPR = ['neutral', 'idle', 'listening', 'typing', 'happy', 'wink', 'confused', 'love', 'thinking', 'searching', 'trendUp', 'trendDown', 'surprised', 'warning', 'success', 'excited', 'starry', 'shy', 'proud', 'moved', 'sad', 'angry', 'celebrate', 'tickled', 'loading', 'dizzy', 'sleepy', 'oops'];
+  var PF_LED = { idle: [PFC.eye, '3s'], listening: [PFC.eye, '0.8s'], typing: [PFC.eye, '0.6s'], happy: [PFC.ok, '1.5s'], wink: [PFC.ok, '1.5s'], confused: [PFC.warn, '1.4s'], love: [PFC.heart, '1s'], thinking: [PFC.warn, '0.5s'], searching: [PFC.warn, '0.8s'], trendUp: [PFC.ok, '1.5s'], trendDown: [PFC.warn, '1.5s'], surprised: [PFC.warn, '0.4s'], warning: [PFC.warn, '0.3s'], success: [PFC.ok, '1.2s'], excited: [PFC.star, '0.4s'], starry: [PFC.star, '0.6s'], shy: [PFC.heart, '2s'], proud: [PFC.ok, '2s'], moved: [PFC.drop, '1.6s'], sad: [PFC.drop, '3s'], angry: [PFC.err, '0.5s'], celebrate: [PFC.star, '0.5s'], tickled: [PFC.heart, '0.35s'], loading: [PFC.eye, '0.4s'], dizzy: [PFC.warn, '0.3s'], sleepy: [PFC.dim, '4s'], oops: [PFC.err, '0.35s'] };
+  function faceLed(e) { return PF_LED[e] || [PFC.eye, '3s']; }
+  var PF_HOP = { happy: ['0 0;0 -6;0 0', '1s'], love: ['0 0;0 -4;0 0', '1.4s'], surprised: ['0 0;0 -8;0 0', '0.7s'], typing: ['0 0;0 -2;0 0', '1.1s'], excited: ['0 0;0 -7;0 0', '0.6s'], starry: ['0 0;0 -5;0 0', '0.8s'], celebrate: ['0 0;0 -6;0 0', '0.9s'], success: ['0 0;0 -3;0 0', '1s'], tickled: ['0 0;-3 -2;3 -3;-3 -2;3 -1;0 0', '0.5s'] };
+  var PF_TILT = { confused: -6, sleepy: 6, listening: -3, shy: -4, proud: -5, sad: 5 };
+  var PF_ENTER = 40, PF_PRUNE = 320, PF_NEUTRAL_HOLD = 440;
+  var PF_DIRECT_IN = { tickled: 1 };
+  var PF_LOOK_MAX = { x: 12, y: 7 };
+  function lookAt(dx, dy, range) {
+    var dist = Math.hypot(dx, dy);
+    if (!(range > 0) || dist > range) return null;
+    if (dist === 0) return { x: 0, y: 0 };
+    var m = Math.min(1, dist / (range * 0.4));
+    return { x: (dx / dist) * m * PF_LOOK_MAX.x, y: (dy / dist) * m * PF_LOOK_MAX.y };
+  }
+  var PF_SPL = ' calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"';
+  function pfA(attr, values, dur, begin, kt, spline) { return '<animate attributeName="' + attr + '" values="' + values + '" dur="' + dur + '" begin="' + begin + '" repeatCount="indefinite"' + (spline ? PF_SPL : kt ? ' keyTimes="' + kt + '"' : '') + '/>'; }
+  function pfT(type, values, dur, begin, kt, spline) { return '<animateTransform attributeName="transform" type="' + type + '" values="' + values + '" dur="' + dur + '" begin="' + begin + '" repeatCount="indefinite"' + (spline ? PF_SPL : kt ? ' keyTimes="' + kt + '"' : '') + '/>'; }
+  var PF_STAR4 = 'M0 -7 L1.8 -1.8 L7 0 L1.8 1.8 L0 7 L-1.8 1.8 L-7 0 L-1.8 -1.8 Z';
+  var PF_STAR5 = 'M0 -11.5 L2.94 -4.05 L10.94 -3.55 L4.76 1.55 L6.76 9.3 L0 5 L-6.76 9.3 L-4.76 1.55 L-10.94 -3.55 L-2.94 -4.05 Z';
+  var PF_HEART = 'M0 7 C-9 1 -10 -6 -5 -8 C-2 -9 0 -7 0 -5 C0 -7 2 -9 5 -8 C10 -6 9 1 0 7 Z';
+  var PF_DROP = 'M0 -4 C2.5 0 4 2.5 4 4 A4 4 0 0 1 -4 4 C-4 2.5 -2.5 0 0 -4 Z';
+  var PF_SPIRAL = 'M-1 0 A1 1 0 0 1 1 0 A2 2 0 0 1 -3 0 A3 3 0 0 1 3 0 A4 4 0 0 1 -5 0 A5 5 0 0 1 5 0 A6 6 0 0 1 -7 0';
+  var PF_ANGER = 'M-7 -2.5 Q-2.5 -2.5 -2.5 -7 M2.5 -7 Q2.5 -2.5 7 -2.5 M7 2.5 Q2.5 2.5 2.5 7 M-2.5 7 Q-2.5 2.5 -7 2.5';
+  var PF_BLINK = '0;0.9;0.94;0.98;1', PF_POP = '0;0.15;0.3;0.85;1';
+  function pfSparkle(x, y, s, bg) { return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><g>' + pfT('scale', '0;1;0', '1.6s', bg, null, true) + '<path d="' + PF_STAR4 + '" fill="' + PFC.star + '"/></g></g>'; }
+  function pfPop(x, y, dur, bg, inner) { return '<g transform="translate(' + x + ' ' + y + ')"><g>' + pfT('scale', '0.3;1.15;1;1;0.3', dur, bg, PF_POP) + inner + '</g></g>'; }
+  function pfEye(x, blink, bg) { return '<rect x="' + x + '" y="89" width="17" height="23" rx="4.5" fill="' + PFC.eye + '">' + (blink ? pfA('height', '23;23;3;23;23', '4.5s', bg, PF_BLINK) + pfA('y', '89;89;99;89;89', '4.5s', bg, PF_BLINK) : '') + '</rect>'; }
+  function pfBar(x, hs, bg) {
+    var loop = hs.concat([hs[0]]);
+    return '<rect x="' + x + '" y="' + (112 - hs[0]) + '" width="5" height="' + hs[0] + '" rx="1.5" fill="' + PFC.eye + '">' + pfA('height', loop.join(';'), '0.9s', bg) + pfA('y', loop.map(function (h) { return 112 - h; }).join(';'), '0.9s', bg) + '</rect>';
+  }
+  function pfDraw(d, len, dur, bg, w) { return '<path d="' + d + '" fill="none" stroke="' + PFC.eye + '" stroke-width="' + w + '" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="' + len + '" stroke-dashoffset="0">' + pfA('stroke-dashoffset', len + ';0;0', dur, bg, '0;0.45;1') + '</path>'; }
+  function pfTrend(d, len, end, ex, ey, b) { return '<path d="M56 124 H144" fill="none" stroke="' + PFC.eye + '" stroke-width="1.5" opacity="0.3"/>' + pfDraw(d, len, '2.4s', b.a, 4.5) + '<circle cx="' + ex + '" cy="' + ey + '" r="5" fill="' + end + '">' + pfA('opacity', '0;0;1;1', '2.4s', b.a, '0;0.4;0.5;1') + '</circle>'; }
+  function pfConfetti(x, y, dx, color, dur, bg, spin) { return '<g transform="translate(' + x + ' ' + y + ')"><g>' + pfT('translate', '0 0;' + dx + ' 118', dur, bg) + pfA('opacity', '1;1;0', dur, bg, '0;0.75;1') + '<rect x="-2.2" y="-3.8" width="4.4" height="7.6" rx="1.2" fill="' + color + '">' + pfT('rotate', '0 0 0;' + spin + ' 0 0', '0.9s', bg) + '</rect></g></g>'; }
+  var PF_SMILE = '<path d="M68 106 Q77.5 91 87 106" fill="none" stroke="' + PFC.eye + '" stroke-width="6" stroke-linecap="round"/><path d="M113 106 Q122.5 91 132 106" fill="none" stroke="' + PFC.eye + '" stroke-width="6" stroke-linecap="round"/>';
+  function pfArt(e, b) {
+    var C = PFC;
+    switch (e) {
+      case 'neutral': return '<rect x="71" y="94" width="13" height="13" rx="5" fill="' + C.eye + '"/><rect x="116" y="94" width="13" height="13" rx="5" fill="' + C.eye + '"/>';
+      case 'idle': return pfEye(69, true, b.a) + pfEye(114, true, b.a);
+      case 'listening': return '<rect x="70" y="91" width="15" height="19" rx="7.5" fill="' + C.eye + '"/><rect x="115" y="91" width="15" height="19" rx="7.5" fill="' + C.eye + '"/>' +
+        '<path d="M171.4 158 A12 12 0 0 1 167 174.4" fill="none" stroke="' + C.eye + '" stroke-width="3" stroke-linecap="round">' + pfA('opacity', '0.1;1;0.1', '1.2s', b.a) + '</path>' +
+        '<path d="M177.5 154.5 A19 19 0 0 1 170.5 180.5" fill="none" stroke="' + C.eye + '" stroke-width="3" stroke-linecap="round">' + pfA('opacity', '0.1;1;0.1', '1.2s', b.c) + '</path>';
+      case 'typing': return [[84, b.a], [100, b.b], [116, b.c]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="101" r="6" fill="' + C.eye + '">' + pfT('translate', '0 0;0 -7;0 0;0 0', '1.1s', p[1], '0;0.25;0.5;1') + pfA('opacity', '1;0.5;1;1', '1.1s', p[1], '0;0.25;0.5;1') + '</circle>';
+      }).join('');
+      case 'happy': return PF_SMILE + pfSparkle(34, 66, 1, b.a) + pfSparkle(168, 64, 1.2, b.c) + pfSparkle(160, 40, 0.8, b.e);
+      case 'wink': return '<path d="M68 104 Q77.5 91 87 104" fill="none" stroke="' + C.eye + '" stroke-width="6" stroke-linecap="round"/>' + pfEye(114, false, b.a) + pfSparkle(160, 72, 1.1, b.a);
+      case 'confused': return pfEye(69, false, b.a) + '<rect x="114" y="98" width="17" height="8" rx="4" fill="' + C.eye + '"/>' +
+        '<g transform="translate(164 60)"><g>' + pfT('rotate', '-14;14;-14', '2s', b.a, null, true) + '<text x="0" y="9" text-anchor="middle" font-family="Outfit, sans-serif" font-size="30" font-weight="700" fill="' + C.orange + '">?</text></g></g>';
+      case 'love': return [77.5, 122.5].map(function (cx) {
+          return '<g transform="translate(' + cx + ' 101)"><g transform="scale(1.45)">' + pfT('scale', '1.35;1.65;1.35', '0.8s', b.a, null, true) + '<path d="' + PF_HEART + '" fill="' + C.heart + '"/></g></g>';
+        }).join('') +
+        '<g transform="translate(164 64)"><g>' + pfT('translate', '0 6;0 -18', '2s', b.a) + pfA('opacity', '0;1;0', '2s', b.a) + '<path d="' + PF_HEART + '" fill="' + C.heart + '"/></g></g>' +
+        '<g transform="translate(38 70) scale(0.8)"><g>' + pfT('translate', '0 6;0 -18', '2s', b.d) + pfA('opacity', '0;1;0', '2s', b.d) + '<path d="' + PF_HEART + '" fill="' + C.heart + '"/></g></g>';
+      case 'thinking': return pfBar(67, [10, 20, 6], b.a) + pfBar(74.5, [17, 8, 22], b.b) + pfBar(82, [23, 12, 16], b.c) + pfBar(113, [14, 22, 9], b.b) + pfBar(120.5, [23, 10, 18], b.a) + pfBar(128, [8, 18, 12], b.c);
+      case 'searching': return '<g>' + pfT('translate', '-8 0;8 0;-8 0', '2.4s', b.a, null, true) + '<rect x="70.5" y="92" width="14" height="17" rx="4" fill="' + C.eye + '"/><rect x="115.5" y="92" width="14" height="17" rx="4" fill="' + C.eye + '"/></g>' +
+        '<rect x="54" y="84" width="92" height="2.5" rx="1.25" fill="' + C.eye + '" opacity="0.55">' + pfA('y', '82;120;82', '2s', b.a, null, true) + '</rect>';
+      case 'trendUp': return pfTrend('M56 118 L72 110 L86 114 L102 98 L116 102 L138 84', 100.1, C.ok, 138, 84, b);
+      case 'trendDown': return pfTrend('M56 84 L72 94 L86 90 L102 106 L116 102 L138 120', 101, C.warn, 138, 120, b);
+      case 'surprised': return '<circle cx="77.5" cy="100.5" r="11" fill="' + C.eye + '"/><circle cx="122.5" cy="100.5" r="11" fill="' + C.eye + '"/><circle cx="77.5" cy="100.5" r="4.5" fill="' + C.visor + '"/><circle cx="122.5" cy="100.5" r="4.5" fill="' + C.visor + '"/>' +
+        '<g transform="translate(164 58)"><g>' + pfT('scale', '0;1.25;1;1;0', '2.4s', b.a, '0;0.12;0.22;0.88;1') + '<rect x="-3.5" y="-16" width="7" height="20" rx="3.5" fill="' + C.warn + '"/><circle cx="0" cy="10" r="4" fill="' + C.warn + '"/></g></g>';
+      case 'warning': return [[77.5, b.a], [122.5, b.b]].map(function (p) {
+        return '<g>' + pfA('opacity', '1;0.35;1', '0.6s', p[1]) + '<rect x="' + (p[0] - 2.8) + '" y="88" width="5.6" height="15" rx="2.8" fill="' + C.warn + '"/><circle cx="' + p[0] + '" cy="109.5" r="3.2" fill="' + C.warn + '"/></g>';
+      }).join('');
+      case 'success': return pfDraw('M69 101 L75.5 107.5 L87 94', 28.9, '2s', b.a, 5.5) + pfDraw('M114 101 L120.5 107.5 L132 94', 28.9, '2s', b.b, 5.5) + pfSparkle(160, 70, 1, b.c);
+      case 'excited': return '<path d="M69 92 L84 100.5 L69 109" fill="none" stroke="' + C.eye + '" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M131 92 L116 100.5 L131 109" fill="none" stroke="' + C.eye + '" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        pfPop(158, 58, '1.4s', b.a, '<path d="M-1.4 -8 L-3.2 -18 M4 -7 L9.5 -16 M7.5 -2.8 L17 -6.4" fill="none" stroke="' + C.star + '" stroke-width="4" stroke-linecap="round"/>');
+      case 'starry': return [[77.5, b.a], [122.5, b.b]].map(function (p) {
+        return '<g transform="translate(' + p[0] + ' 100.5)"><g>' + pfT('scale', '1;1.18;1', '0.9s', p[1], null, true) + '<g>' + pfT('rotate', '-10;10;-10', '1.8s', p[1], null, true) + '<path d="' + PF_STAR5 + '" fill="' + C.star + '" stroke="' + C.star + '" stroke-width="2" stroke-linejoin="round"/></g></g></g>';
+      }).join('');
+      case 'shy': return '<path d="M70 105 Q77.5 95 85 105" fill="none" stroke="' + C.eye + '" stroke-width="5" stroke-linecap="round"/><path d="M115 105 Q122.5 95 130 105" fill="none" stroke="' + C.eye + '" stroke-width="5" stroke-linecap="round"/>' +
+        [[56, b.a], [144, b.b]].map(function (p) {
+          var cx = p[0];
+          return '<g><ellipse cx="' + cx + '" cy="148" rx="11" ry="6" fill="' + C.blush + '">' + pfA('opacity', '0.55;0.95;0.55', '1.6s', p[1], null, true) + '</ellipse>' +
+            '<path d="M' + (cx - 7) + ' 150 l3 -4.5 M' + (cx - 1) + ' 150.5 l3 -4.5 M' + (cx + 5) + ' 150 l3 -4.5" fill="none" stroke="' + C.blushLine + '" stroke-width="1.8" stroke-linecap="round"/></g>';
+        }).join('');
+      case 'proud': return '<path d="M69 101 H86 V107 A5 5 0 0 1 81 112 H74 A5 5 0 0 1 69 107 Z" fill="' + C.eye + '"/><path d="M114 101 H131 V107 A5 5 0 0 1 126 112 H119 A5 5 0 0 1 114 107 Z" fill="' + C.eye + '"/>' +
+        '<path d="M66 97 H89 M111 97 H134" fill="none" stroke="' + C.eye + '" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>' + pfSparkle(62, 84, 0.9, b.a) + pfSparkle(160, 66, 1.1, b.d);
+      case 'moved': return '<path d="M67 91 H88 M77.5 91 V108" fill="none" stroke="' + C.eye + '" stroke-width="5" stroke-linecap="round"/><path d="M112 91 H133 M122.5 91 V108" fill="none" stroke="' + C.eye + '" stroke-width="5" stroke-linecap="round"/>' +
+        [[77.5, b.a], [122.5, b.d]].map(function (p) {
+          return '<g transform="translate(' + p[0] + ' 112)"><g>' + pfT('translate', '0 0;0 30', '1.5s', p[1]) + pfA('opacity', '1;1;0', '1.5s', p[1]) + '<path d="' + PF_DROP + '" fill="' + C.drop + '"/></g></g>';
+        }).join('');
+      case 'sad': return '<g>' + pfT('translate', '0 0;0 3;0 0', '3s', b.a, null, true) +
+          '<rect x="69" y="96" width="17" height="9" rx="4.5" fill="' + C.eye + '" transform="rotate(-18 77.5 100.5)"/><rect x="114" y="96" width="17" height="9" rx="4.5" fill="' + C.eye + '" transform="rotate(18 122.5 100.5)"/></g>' +
+        '<path d="M60 57 V69 M68 55 V69 M76 57 V69" fill="none" stroke="' + C.gloom + '" stroke-width="2.5" stroke-linecap="round">' + pfA('opacity', '0.2;0.8;0.2', '2.4s', b.a, null, true) + '</path>';
+      case 'angry': return '<path d="M69 93 L86 100 V108 A4 4 0 0 1 82 112 H73 A4 4 0 0 1 69 108 Z" fill="' + C.eye + '"/><path d="M131 93 L114 100 V108 A4 4 0 0 0 118 112 H127 A4 4 0 0 0 131 108 Z" fill="' + C.eye + '"/>' +
+        pfPop(158, 62, '1.2s', b.a, '<path d="' + PF_ANGER + '" fill="none" stroke="' + C.err + '" stroke-width="3.2" stroke-linecap="round"/>');
+      case 'celebrate': return PF_SMILE + pfConfetti(34, 34, 6, C.orange, '2.2s', b.a, 360) + pfConfetti(54, 20, -4, C.eye, '2.6s', b.c, -360) + pfConfetti(74, 40, 5, C.star, '2s', b.e, 360) +
+        pfConfetti(94, 16, -6, C.heart, '2.4s', b.b, -360) + pfConfetti(112, 36, 4, C.ok, '2.1s', b.d, 360) + pfConfetti(130, 22, -5, C.orange, '2.5s', b.a, -360) +
+        pfConfetti(150, 38, 6, C.eye, '2.3s', b.e, 360) + pfConfetti(168, 24, -3, C.star, '2s', b.c, -360);
+      case 'tickled': return '<g>' + pfT('translate', '0 0;0 -1.5;0 0', '0.25s', b.a) +
+          '<path d="M70 93 L83 100.5 L70 108" fill="none" stroke="' + C.eye + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M130 93 L117 100.5 L130 108" fill="none" stroke="' + C.eye + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g>' +
+        '<path d="M91 113 Q100 113 109 113 Q108 123 100 123 Q92 123 91 113 Z" fill="' + C.eye + '">' + pfA('d', 'M91 113 Q100 113 109 113 Q108 123 100 123 Q92 123 91 113 Z;M92 113 Q100 113 108 113 Q107 119 100 119 Q93 119 92 113 Z;M91 113 Q100 113 109 113 Q108 123 100 123 Q92 123 91 113 Z', '0.25s', b.a) + '</path>' +
+        [[56, b.a], [144, b.b]].map(function (p) { return '<ellipse cx="' + p[0] + '" cy="148" rx="11" ry="6" fill="' + C.blush + '">' + pfA('opacity', '0.6;1;0.6', '0.9s', p[1], null, true) + '</ellipse>'; }).join('') +
+        [[64, b.a], [136, b.c]].map(function (p) { return '<g>' + pfT('translate', '0 0;0 9', '1.1s', p[1]) + pfA('opacity', '0;1;1;0', '1.1s', p[1], '0;0.15;0.7;1') + '<path d="' + PF_DROP + '" transform="translate(' + p[0] + ' 110) scale(0.9)" fill="' + C.drop + '"/></g>'; }).join('') +
+        pfPop(30, 70, '0.9s', b.a, '<path d="M-2 -10 L-9 -15 M-4 -2 L-13 -3 M-2 6 L-9 10" fill="none" stroke="' + C.star + '" stroke-width="3.5" stroke-linecap="round"/>') +
+        pfPop(170, 70, '0.9s', b.b, '<path d="M2 -10 L9 -15 M4 -2 L13 -3 M2 6 L9 10" fill="none" stroke="' + C.star + '" stroke-width="3.5" stroke-linecap="round"/>');
+      case 'loading': return [[77.5, b.a], [122.5, b.b]].map(function (p) {
+        var cx = p[0];
+        return '<g><circle cx="' + cx + '" cy="100.5" r="9" fill="none" stroke="' + C.eye + '" stroke-width="3" opacity="0.25"/><path d="M' + cx + ' 91.5 A9 9 0 0 1 ' + (cx + 7.79) + ' 105" fill="none" stroke="' + C.eye + '" stroke-width="4.5" stroke-linecap="round">' + pfT('rotate', '0 ' + cx + ' 100.5;360 ' + cx + ' 100.5', '0.9s', p[1]) + '</path></g>';
+      }).join('');
+      case 'dizzy': return [[77.5, '0;360'], [122.5, '360;0']].map(function (p) {
+          return '<g transform="translate(' + p[0] + ' 100.5) scale(1.5)"><g>' + pfT('rotate', p[1], '1.1s', b.a) + '<path d="' + PF_SPIRAL + '" fill="none" stroke="' + C.eye + '" stroke-width="1.9" stroke-linecap="round"/></g></g>';
+        }).join('') +
+        [[146, 44, 'M0 0 A61.3 14.7 0 1 1 -122.7 0 A61.3 14.7 0 1 1 0 0'], [54, 44, 'M0 0 A61.3 14.7 0 1 1 122.7 0 A61.3 14.7 0 1 1 0 0'], [100, 33, 'M0 0 A61.3 14.7 0 0 1 61.3 14.7 A61.3 14.7 0 0 1 0 29.3 A61.3 14.7 0 0 1 -61.3 14.7 A61.3 14.7 0 0 1 0 0']].map(function (p) {
+          return '<g transform="translate(' + p[0] + ' ' + p[1] + ') scale(0.75)"><path d="' + PF_STAR4 + '" fill="' + C.star + '"><animateMotion path="' + p[2] + '" dur="1.8s" begin="' + b.a + '" repeatCount="indefinite"/></path></g>';
+        }).join('');
+      case 'sleepy': return '<rect x="69" y="103" width="17" height="4" rx="2" fill="' + C.eye + '"/><rect x="114" y="103" width="17" height="4" rx="2" fill="' + C.eye + '"/>' +
+        [[148, 72, 13, b.a], [158, 58, 17, b.d], [170, 42, 21, b.e]].map(function (p) {
+          return '<g transform="translate(' + p[0] + ' ' + p[1] + ')"><g>' + pfT('translate', '0 4;6 -10', '3s', p[3]) + pfA('opacity', '0;1;0', '3s', p[3]) + '<text x="0" y="0" text-anchor="middle" font-family="Outfit, sans-serif" font-size="' + p[2] + '" font-weight="700" fill="' + C.eye + '">Z</text></g></g>';
+        }).join('');
+      case 'oops': return '<path d="M70 93 L85 108 M85 93 L70 108" fill="none" stroke="' + C.eye + '" stroke-width="5" stroke-linecap="round"/><path d="M115 93 L130 108 M130 93 L115 108" fill="none" stroke="' + C.eye + '" stroke-width="5" stroke-linecap="round"/>' +
+        '<g>' + pfT('translate', '0 0;0 12', '1.6s', b.a) + pfA('opacity', '1;1;0', '1.6s', b.a) + '<path d="M162 56 C168 66 172 72 172 77 A10 10 0 0 1 152 77 C152 72 156 66 162 56 Z" fill="' + C.drop + '"/></g>';
+    }
+    return '';
+  }
+  // Một mặt sống: tạo DOM một lần, đổi biểu cảm bằng `pfSet` (không vẽ lại cả SVG ⇒ SMIL không giật)
+  function pfCreate(size, e) {
+    var motion = !REDUCED;
+    var bg = function (v) { return motion ? v : 'indefinite'; };
+    var b = { a: bg('0s'), b: bg('0.15s'), c: bg('0.3s'), d: bg('0.7s'), e: bg('1s') };
+    var svg = '<svg class="jw-pilot-face" viewBox="0 0 200 200" width="' + size + '" height="' + size + '" aria-hidden="true" focusable="false" style="display:block;overflow:visible">' +
+      '<g>' + pfT('translate', '0 0;0 -4;0 0', '3s', b.c, null, true) + '<g transform="rotate(-8 100 32)"><ellipse cx="100" cy="32" rx="29" ry="13" fill="none" stroke="' + PFC.orange + '" stroke-width="11"/><g data-pf="orbit"></g></g></g>' +
+      '<g>' + pfT('translate', '0 0;0 -3;0 0', '3s', b.a, null, true) +
+        '<g data-pf="hop"><g data-pf="tilt" style="transform-origin:100px 118px;transform-box:view-box;transition:transform 520ms cubic-bezier(.34,1.4,.64,1)"><g data-pf="shake">' +
+          '<rect x="4" y="88" width="32" height="60" rx="10" fill="' + PFC.orangeDark + '"/><rect x="164" y="88" width="32" height="60" rx="10" fill="' + PFC.orangeDark + '"/>' +
+          '<rect x="4" y="88" width="32" height="46" rx="10" fill="' + PFC.orange + '"/><rect x="164" y="88" width="32" height="46" rx="10" fill="' + PFC.orange + '"/>' +
+          '<path d="M10 101 H20 M10 109 H20 M10 117 H20" fill="none" stroke="' + PFC.slot + '" stroke-width="2.5" stroke-linecap="round"/>' +
+          [[100, b.a], [109, b.b], [118, b.c]].map(function (p) { return '<circle cx="187" cy="' + p[0] + '" r="2.6" fill="' + PFC.eye + '">' + pfA('opacity', '0.25;1;0.25', '1.2s', p[1]) + '</circle>'; }).join('') +
+          '<path d="' + P_HEAD + '" fill="' + PFC.head + '" stroke="' + PFC.line + '" stroke-width="2"/><path d="' + P_CHIN + '" fill="' + PFC.shade + '"/>' +
+          '<rect data-pf="led" x="91" y="61" width="18" height="5.5" rx="2.75" style="transition:fill 350ms ease"></rect>' +
+          '<path d="' + P_VISOR + '" fill="' + PFC.visor + '"/>' +
+          '<path d="M54 84 H146 M52 96 H148 M52 108 H148 M54 120 H146" fill="none" stroke="' + PFC.eye + '" stroke-width="1" opacity="0.08"/><path d="M56 84 Q58 80 66 79" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.28"/>' +
+          '<g data-pf="look" style="transition:transform 160ms ease-out"></g>' +
+          '<path d="M178 146 L166 162" fill="none" stroke="' + PFC.mic + '" stroke-width="3.5" stroke-linecap="round"/><rect x="152" y="158" width="18" height="11" rx="5.5" fill="' + PFC.visor + '" transform="rotate(-28 161 163.5)"/>' +
+          '<circle data-pf="mic" cx="158" cy="165" r="2.2" fill="' + PFC.eye + '"></circle>' +
+        '</g></g></g></g></svg>';
+    var host = document.createElement('span');
+    host.innerHTML = svg;
+    var F = { el: host.firstChild, motion: motion, b: b, layers: {}, shown: null, target: e, timers: [], look: null };
+    F.q = function (k) { return F.el.querySelector('[data-pf="' + k + '"]'); };
+    pfLayer(F, e, 'in');
+    pfShow(F, e);
+    return F;
+  }
+  function pfLayer(F, k, st) {
+    var g = F.layers[k];
+    if (!g) {
+      g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('data-layer', k);
+      g.setAttribute('style', 'transform-origin:100px 101px;transform-box:view-box;transition:opacity 200ms ease-out, transform 300ms cubic-bezier(.34,1.35,.64,1);opacity:0;transform:scale(0.55)');
+      g.innerHTML = pfArt(k, F.b);
+      F.q('look').appendChild(g);
+      F.layers[k] = g;
+    }
+    g.setAttribute('data-st', st);
+    var on = st === 'in';
+    g.style.opacity = on ? '1' : '0';
+    g.style.transform = 'scale(' + (on ? 1 : 0.55) + ')';
+  }
+  // Biểu cảm ĐANG THỂ HIỆN đổi ⇒ đèn trán · cú nảy · nghiêng · quỹ đạo · lắc (oops) · đèn mic
+  function pfShow(F, e) {
+    if (F.shown === e) return;
+    var prev = F.shown;
+    F.shown = e;
+    var led = faceLed(e), led0 = prev ? faceLed(prev) : null;
+    var r = F.q('led');
+    r.style.fill = led[0];
+    if (!led0 || led0[1] !== led[1]) r.innerHTML = pfA('opacity', '1;0.3;1', led[1], F.b.a);
+    var hopG = F.q('hop'), old = hopG.querySelector(':scope > animateTransform');
+    var hop = F.motion ? PF_HOP[e] : null;
+    if (old) old.remove();
+    if (hop) hopG.insertAdjacentHTML('afterbegin', pfT('translate', hop[0], hop[1], '0s', null, true));
+    F.q('tilt').style.transform = 'rotate(' + (PF_TILT[e] || 0) + 'deg)';
+    var fast = e === 'thinking' || e === 'searching', fast0 = prev === 'thinking' || prev === 'searching';
+    if (!prev || fast !== fast0) {
+      var od = fast ? '1.6s' : '5s';
+      F.q('orbit').innerHTML = '<circle cx="129" cy="32" r="4.5" fill="' + PFC.eye + '" stroke="' + PFC.head + '" stroke-width="2"><animateMotion path="M0 0 A29 13 0 1 1 -58 0 A29 13 0 1 1 0 0" dur="' + od + '" begin="' + F.b.a + '" repeatCount="indefinite"/></circle>' +
+        '<circle cx="71" cy="32" r="3.5" fill="' + PFC.eye + '" stroke="' + PFC.head + '" stroke-width="2"><animateMotion path="M0 0 A29 13 0 1 1 58 0 A29 13 0 1 1 0 0" dur="' + od + '" begin="' + F.b.a + '" repeatCount="indefinite"/></circle>';
+    }
+    var sh = F.q('shake'), so = sh.querySelector(':scope > animateTransform');
+    if (so) so.remove();
+    if (F.motion && e === 'oops') sh.insertAdjacentHTML('afterbegin', pfT('translate', '0 0;-4 0;4 0;-3 0;3 0;0 0;0 0', '1.8s', '0s', '0;0.06;0.12;0.18;0.24;0.3;1'));
+    F.q('mic').innerHTML = F.motion && e === 'listening' ? pfA('opacity', '1;0.2;1', '0.6s', '0s') : '';
+    pfLook(F, F.look);
+  }
+  function pfLook(F, v) {
+    F.look = v;
+    var on = v && F.motion && F.shown !== 'sleepy';
+    F.q('look').style.transform = 'translate(' + (on ? v.x : 0) + 'px, ' + (on ? v.y : 0) + 'px)';
+  }
+  function pfBloom(F, target, delay) {
+    F.timers.push(setTimeout(function () {
+      Object.keys(F.layers).forEach(function (k) { if (k !== target) pfLayer(F, k, 'out'); });
+      pfLayer(F, target, 'enter');
+      pfShow(F, target);
+    }, delay));
+    F.timers.push(setTimeout(function () { pfLayer(F, target, 'in'); }, delay + PF_ENTER));
+    F.timers.push(setTimeout(function () {
+      Object.keys(F.layers).forEach(function (k) {
+        if (F.layers[k].getAttribute('data-st') === 'out') { F.layers[k].remove(); delete F.layers[k]; }
+      });
+    }, delay + PF_PRUNE));
+  }
+  function pfSet(F, e) {
+    if (!F || e === F.target) return;
+    F.target = e;
+    F.timers.forEach(clearTimeout);
+    F.timers = [];
+    if (!F.motion) {
+      Object.keys(F.layers).forEach(function (k) { F.layers[k].remove(); delete F.layers[k]; });
+      pfLayer(F, e, 'in');
+      pfShow(F, e);
+      return;
+    }
+    var from = F.shown;
+    var direct = from === 'neutral' || e === 'neutral' || PF_DIRECT_IN[e] || (from === 'tickled' && e === 'angry');
+    if (direct) pfBloom(F, e, 0);
+    else { pfBloom(F, 'neutral', 0); pfBloom(F, e, PF_NEUTRAL_HOLD); }
+  }
+
   function pilotWordmark() { return '<span class="jw-wordmark jw-pilot-wm"><b>JOY</b><em>Pilot</em></span><span class="jw-pilot-beta">BETA</span>'; }
   function deptName(d) { return LANG === 'vi' && PILOT_DEPT_VI[d] ? PILOT_DEPT_VI[d] : d; }
   function pilotToday() { return new Date(HOME_TODAY.getTime()); }
@@ -2189,40 +2422,404 @@
     var pg = pilotPage(q);
     if (pg) return { steps: ['page'], text: L('「' + pg.node.ja + '」を開きました。このまま、このページについて聞いてください。', 'Đã mở “' + (pg.node.vi || pg.node.ja) + '”. Bạn cứ hỏi tiếp về trang này nhé.'), card: { type: 'page', key: pg.key }, run: function () { S.drawer = false; go(href(pg.key)); } };
     // 9) Chào / hỏi khả năng / không hiểu
-    if (/こんにちは|おはよう|こんばんは|ありがとう|xin chao|chao|cam on|hello|hi\b/.test(q + ' ' + n)) return { steps: [], text: L(me + 'さん、どういたしまして。ほかに進めたいことがあれば、そのまま話しかけてください。', 'Không có gì đâu! Còn việc gì cần làm, bạn cứ nói với mình nhé.'), chips: true };
-    return { steps: ['read'], text: L('ごめんなさい、その依頼はまだデモで用意していません。いまできるのは「ページを開く・切り替える」「受注や入社などの集計」「組織図・名簿の変更（確認してから反映・予約）」です。', 'Xin lỗi, yêu cầu này chưa có trong bản demo. Hiện mình làm được: mở/chuyển trang, tổng hợp đơn hàng hay số người vào công ty, và thay đổi sơ đồ tổ chức/danh bạ (xác nhận rồi mới áp dụng hoặc đặt lịch).'), chips: true };
+    if (/こんにちは|おはよう|こんばんは|ありがとう|xin chao|chao|cam on|hello|hi\b/.test(q + ' ' + n)) return { steps: [], text: L(me + 'さん、どういたしまして。ほかに進めたいことがあれば、そのまま話しかけてください。', 'Không có gì đâu! Còn việc gì cần làm, bạn cứ nói với mình nhé.'), chips: true, face: 'love', status: L('どういたしまして', 'Không có gì') };
+    return { steps: ['read'], text: L('ごめんなさい、その依頼はまだデモで用意していません。いまできるのは「ページを開く・切り替える」「受注や入社などの集計」「組織図・名簿の変更（確認してから反映・予約）」です。', 'Xin lỗi, yêu cầu này chưa có trong bản demo. Hiện mình làm được: mở/chuyển trang, tổng hợp đơn hàng hay số người vào công ty, và thay đổi sơ đồ tổ chức/danh bạ (xác nhận rồi mới áp dụng hoặc đặt lịch).'), chips: true, face: 'confused', status: L('ほかの言い方で試してみてください', 'Bạn thử cách nói khác giúp mình nhé') };
   }
 
-  // ── Vẽ ──
+  // ── Hội thoại — cùng khung với `PilotScreen` › `BotRow` của JOY Analytics ──
+  // Hàng bot MỚI NHẤT: cột trái là MẶT SỐNG (72px, chọt được, mắt nhìn theo chuột) + dòng trạng thái
+  // (đèn theo mặt · câu trạng thái · sóng khi đang viết). Hàng đã qua: chấm tâm trạng + "JOY PILOT · 回答".
+  // ⚠ Mỗi nhịp chỉ SỬA đúng phần đổi (bước · chữ · trạng thái); vẽ lại cả khung là mọi tin nhắn
+  //   chạy lại hiệu ứng vào ⇒ chữ "hiện rồi mất". Hiệu ứng vào chỉ gắn cho phần tử MỚI (.jw-pilot-in).
+  var PT = { firstStep: 200, step: 1100, queryStep: 1400, think: 900, charsPerTick: 2, tick: 26, holdMood: 8500, tickle: 4000, annoyed: 4000, laughBeforeAnnoyed: 2000, pokeWindow: 30000, wake: 2800, stopped: 4000, listen: 2200, sleep: 45000 };
+  var PILOT_LIVE = {
+    idle: L('いつでもどうぞ', 'Sẵn sàng'), listening: L('聞いています…', 'Đang nghe…'), thinking: L('ちょっと考え中…', 'Đang nghĩ một chút…'),
+    typing: L('回答を書いています…', 'Đang viết câu trả lời…'), stopped: L('停止しました', 'Đã dừng'),
+    sleepy: L('スリープ中 · 話しかけると起きます', 'Đang ngủ · gõ gì đó để đánh thức'), wake: L('はっ！起きました', 'Ồ! Dậy rồi đây'),
+    tickled: L('くすぐったい〜！あはは', 'Ha ha, buồn quá, đừng cù nữa!'), annoyed: L('もう！くすぐりすぎ！', 'Hừm! Cù hoài bực rồi nha!')
+  };
+  var PILOT_MOOD = {
+    happy: { label: L('回答', 'Trả lời'), tone: 'accent' }, trendUp: { label: L('上昇トレンド', 'Xu hướng tăng'), tone: 'ok' },
+    surprised: { label: L('発見', 'Phát hiện'), tone: 'warn' }, success: { label: L('成功', 'Thành công'), tone: 'ok' },
+    oops: { label: L('エラー', 'Lỗi'), tone: 'crit' }, confused: { label: L('聞き返し', 'Hỏi lại'), tone: 'warn' },
+    love: { label: L('ありがとう', 'Cảm ơn'), tone: 'accent' }
+  };
+  PILOT.status = null;
+  var STEP_FACE = { read: 'thinking', find: 'searching', sum: 'loading', perm: 'searching', permNo: 'searching', diff: 'thinking', page: 'loading' };
+  var PILOT_GREETING = L('JOY Pilot、準備OKです！ページを開くのも、数字の確認も、組織図や名簿の更新も、話しかけるだけで大丈夫。「組織図を開いて」くらいの一言でどうぞ。',
+    'JOY Pilot sẵn sàng! Mở hay chuyển trang, xem con số, cập nhật sơ đồ tổ chức hay danh bạ — cứ nói với mình là được. Kiểu “Mở sơ đồ tổ chức” là đủ.');
+  var PILOT_FOLLOW = { deals: [L('受注額の多い担当者は？', 'Ai có doanh số đơn hàng cao nhất?'), L('10/1付の組織変更を予約して', 'Đặt lịch thay đổi cơ cấu ngày 1/10')], ae: [L('今月の受注を事業部別に集計して', 'Tổng hợp đơn hàng tháng này theo mảng')], hires: [L('佐藤 美咲さんを10/1付で人材戦略部へ異動', 'Chuyển Sato Misaki sang Phòng Chiến lược Nhân sự từ 1/10')], reads: [L('組織図を開いて', 'Mở sơ đồ tổ chức')] };
+  var RING_SPIN = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z" opacity="0.5" stroke-width="1" stroke="currentColor"/><path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z" stroke-width="1" stroke="currentColor">' + (REDUCED ? '' : '<animateTransform attributeName="transform" dur="1s" from="0 12 12" repeatCount="indefinite" to="360 12 12" type="rotate"/>') + '</path></svg>';
+  function pilotWave() {
+    var bars = [[0, 6, 14, '0.5s'], [6, 10, 4, '0.42s'], [12, 12, 5, '0.6s'], [18, 8, 14, '0.48s'], [24, 6, 11, '0.55s']];
+    return '<svg class="jw-pilot-wave" viewBox="0 0 27 14" width="27" height="14" aria-hidden="true">' + bars.map(function (x) {
+      var y0 = (14 - x[1]) / 2, y1 = (14 - x[2]) / 2, bg = REDUCED ? 'indefinite' : '0s';
+      return '<rect x="' + x[0] + '" y="' + y0 + '" width="3" height="' + x[1] + '" rx="1.5" fill="currentColor"><animate attributeName="height" values="' + x[1] + ';' + x[2] + ';' + x[1] + '" dur="' + x[3] + '" begin="' + bg + '" repeatCount="indefinite"/><animate attributeName="y" values="' + y0 + ';' + y1 + ';' + y0 + '" dur="' + x[3] + '" begin="' + bg + '" repeatCount="indefinite"/></rect>';
+    }).join('') + '</svg>';
+  }
   function pilotCtxKey() {
     if (ROUTE.name === 'deals') return 'deals';
     if (ROUTE.name === 'home') return 'home';
     if (ROUTE.name === 'page' && PAGES[ROUTE.key].block.key === 'staff') return 'staff';
     return '_';
   }
-  var PILOT_TONE = { act: 'blue', data: 'green', edit: 'orange' };
-  function pilotSuggestHtml() {
-    var tag = { act: t('ページ操作'), data: t('データ'), edit: t('データ更新') };
-    return '<div class="jw-pilot-sugs">' + (PILOT_SUGGEST[pilotCtxKey()] || PILOT_SUGGEST._).map(function (s) {
-      return '<button type="button" class="jw-pilot-sug" data-act="pilot-ask" data-q="' + esc(tr(s.text)) + '"><span class="jw-pilot-sug-tag jw-tone-' + PILOT_TONE[s.kind] + '">' + esc(tag[s.kind]) + '</span><span class="jw-pilot-sug-text">' + esc(tr(s.text)) + '</span>' + ic('arrow-right', 14) + '</button>';
+  function pilotChipsHtml(list, fresh) {
+    if (!list || !list.length) return '';
+    return '<div class="jw-pilot-chips' + (fresh ? ' jw-pilot-in' : '') + '">' + list.map(function (c) {
+      var label = tr(c);
+      return '<button type="button" class="jw-pilot-chip jw-pilot-chip--ask" data-act="pilot-ask" data-q="' + esc(label) + '">' + esc(label) + '</button>';
     }).join('') + '</div>';
   }
-  function pilotHelloHtml() {
-    var me = SETTINGS_ME.name.split(' ')[0];
-    var caps = [
-      { icon: 'cursor', title: t('ページを操作'), desc: t('開く・お気に入り・表示の切り替えまで') },
-      { icon: 'chart-2', title: t('データを調べる'), desc: t('受注・入社・既読などをその場で集計') },
-      { icon: 'pen-new-square', title: t('データを更新'), desc: t('組織図・名簿を、確認してから反映・予約') }
-    ];
-    return '<div class="jw-pilot-hello">' +
-      '<div class="jw-pilot-hello-face jw-pmark-host" aria-hidden="true">' + pilotMark(68, true) + '</div>' +
-      '<h3 class="jw-pilot-hello-title">' + esc(t('{name}さん、何を進めましょう？', { name: me })) + '</h3>' +
-      '<p class="jw-pilot-hello-sub">' + esc(t('どのページからでも、話しかけるだけで操作・集計・更新ができます。')) + '</p>' +
-      '<ul class="jw-pilot-caps">' + caps.map(function (c) {
-        return '<li>' + ic(c.icon, 17) + '<span><b>' + esc(c.title) + '</b><small>' + esc(c.desc) + '</small></span></li>';
-      }).join('') + '</ul>' +
-      '<div class="jw-pilot-sugs-title">' + esc(t('おすすめ')) + '</div>' + pilotSuggestHtml() + '</div>';
+  function pilotMsgChips(m) {
+    var r = m.reply;
+    if (r.chips === true) return (PILOT_SUGGEST[pilotCtxKey()] || PILOT_SUGGEST._).map(function (s) { return s.text; });
+    return r.chips || null;
   }
+  function pilotLiveIdx() { for (var i = PILOT.msgs.length - 1; i >= 0; i--) if (PILOT.msgs[i].who === 'bot') return i; return -1; }
+  function pilotStepLi(s, fresh) {
+    var state = s.state, label = state === 'run' ? STEP[s.key === 'permNo' ? 'perm' : s.key] : state === 'fail' ? STEP_DONE.permNo : STEP_DONE[s.key];
+    return '<li class="jw-pilot-step jw-pilot-step--' + state + (fresh ? ' jw-pilot-in' : '') + '"><span class="jw-pilot-step-ico" aria-hidden="true">' +
+      (state === 'run' ? RING_SPIN : state === 'done' ? ic('check-circle', 16) : ic('danger-triangle', 16)) + '</span><span class="jw-pilot-step-label">' + esc(tr(label)) + '</span></li>';
+  }
+  function pilotStatusInner() {
+    if (!PILOT.status) PILOT.status = PILOT_LIVE.idle;
+    var led = faceLed(PILOT.face)[0];
+    return '<span class="jw-pilot-led" style="background:' + led + ';box-shadow:0 0 8px ' + led + '" aria-hidden="true"></span><span class="jw-pilot-status-text">' + esc(tr(PILOT.status)) + '</span>' + (PILOT.face === 'typing' ? pilotWave() : '');
+  }
+  function pilotWhoHtml(m) {
+    var mood = m.reply.mood || PILOT_MOOD[m.reply.face];
+    return '<div class="jw-pilot-who" aria-hidden="true">' + pilotMark(16, false).replace('class="jw-pmark"', 'class="jw-pmark jw-pilot-whoico"') + '<span>JOY PILOT</span>' +
+      (mood && m.settled ? '<span class="jw-pilot-whomood jw-ptone--' + mood.tone + '">· ' + esc(tr(mood.label)) + '</span>' : '') + '</div>';
+  }
+  function pilotGutterHtml(m, live) {
+    var mood = m.reply.mood || PILOT_MOOD[m.reply.face];
+    return live ? '<button type="button" class="jw-pilot-facebtn" data-act="pilot-poke" aria-label="' + esc(t('JOY Pilot をくすぐる')) + '"></button>'
+      : '<span class="jw-pilot-mood jw-ptone--' + (mood ? mood.tone : 'accent') + '"></span>';
+  }
+  function pilotTextHtml(m) {
+    var text = tr(m.reply.text), shown = m.shown === Infinity ? text : text.slice(0, m.shown);
+    return esc(shown) + (m.streaming ? '<span class="jw-pilot-caret" aria-hidden="true"></span>' : '') + (m.stopped ? '<span class="jw-pilot-stopped"> ' + esc(t('（停止しました）')) + '</span>' : '');
+  }
+  function pilotRowHtml(m, i, live, last) {
+    if (m.who === 'me') return '<div class="jw-pilot-row jw-pilot-row--user" data-id="' + m.id + '"><p class="jw-pilot-bubble">' + esc(m.text) + '</p></div>';
+    var steps = m.steps.length ? '<ol class="jw-pilot-steps">' + m.steps.map(function (s) { return pilotStepLi(s, false); }).join('') + '</ol>' : '';
+    var hasText = m.shown > 0 || m.stopped;
+    return '<div class="jw-pilot-row jw-pilot-row--bot' + (live ? ' jw-pilot-row--live' : '') + '" data-id="' + m.id + '">' +
+      '<div class="jw-pilot-gutter" aria-hidden="true">' + pilotGutterHtml(m, live) + '</div>' +
+      '<div class="jw-pilot-body"><span class="jw-sr">JOY Pilot: </span>' +
+        (live ? '<div class="jw-pilot-status">' + pilotStatusInner() + '</div>' : pilotWhoHtml(m)) + steps +
+        (hasText ? '<p class="jw-pilot-text">' + pilotTextHtml(m) + '</p>' : '') +
+        (m.settled ? pilotCardHtml(m.reply.card) + (last && !PILOT.busy ? pilotChipsHtml(pilotMsgChips(m), false) : '') : '') +
+      '</div></div>';
+  }
+  function pilotRow(m) { return $('#pilotBody .jw-pilot-row[data-id="' + m.id + '"]'); }
+  // Gắn mặt sống (một phần tử duy nhất, tồn tại suốt phiên) vào hàng bot mới nhất
+  function pilotAttachFace() {
+    var btn = $('#pilotBody .jw-pilot-row--live .jw-pilot-facebtn');
+    if (!btn) return;
+    if (!PILOT.F) PILOT.F = pfCreate(72, PILOT.face);
+    if (PILOT.F.el.parentNode !== btn) btn.appendChild(PILOT.F.el);
+  }
+  function pilotRenderLog() {
+    var body = $('#pilotBody');
+    if (!body) return;
+    if (PILOT.tab === 'plans') { body.innerHTML = '<div class="jw-pilot-plans">' + pilotPlansHtml() + '</div>'; syncFades(body); return; }
+    var live = pilotLiveIdx();
+    body.innerHTML = '<div class="jw-pilot-thread" role="log" aria-label="JOY Pilot">' + PILOT.msgs.map(function (m, i) { return pilotRowHtml(m, i, i === live, i === PILOT.msgs.length - 1); }).join('') + '</div>';
+    pilotAttachFace();
+    syncFades(body);
+  }
+  function pilotToEnd(smooth) {
+    var body = $('#pilotBody');
+    if (!body || !PILOT.stick) return;
+    if (smooth && !REDUCED) body.scrollTo({ top: body.scrollHeight, behavior: 'smooth' });
+    else body.scrollTop = body.scrollHeight;
+  }
+  // Hàng bot trước đó thôi "sống": mặt → chấm tâm trạng, dòng trạng thái → "JOY PILOT · …", bỏ gợi ý
+  function pilotDemote(m) {
+    var row = pilotRow(m);
+    if (!row) return;
+    row.classList.remove('jw-pilot-row--live');
+    var g = $('.jw-pilot-gutter', row); if (g) g.innerHTML = pilotGutterHtml(m, false);
+    var st = $('.jw-pilot-status', row); if (st) st.outerHTML = pilotWhoHtml(m);
+    var ch = $('.jw-pilot-chips', row); if (ch) ch.remove();
+  }
+  function pilotAppend(msgs) {
+    var th = $('#pilotBody .jw-pilot-thread');
+    if (!th) { pilotRenderLog(); return; }
+    var prevLive = null;
+    for (var i = PILOT.msgs.length - msgs.length - 1; i >= 0; i--) if (PILOT.msgs[i].who === 'bot') { prevLive = PILOT.msgs[i]; break; }
+    if (prevLive) pilotDemote(prevLive);
+    msgs.forEach(function (m) {
+      var idx = PILOT.msgs.indexOf(m);
+      th.insertAdjacentHTML('beforeend', pilotRowHtml(m, idx, m.who === 'bot', idx === PILOT.msgs.length - 1));
+      th.lastElementChild.classList.add('jw-pilot-in');
+    });
+    pilotAttachFace();
+    syncFades($('#pilotBody'));
+    pilotToEnd(true);
+  }
+  function pilotPaintStatus() {
+    var st = $('#pilotBody .jw-pilot-row--live .jw-pilot-status');
+    if (!st) return;
+    var led = faceLed(PILOT.face)[0], dot = $('.jw-pilot-led', st), txt = $('.jw-pilot-status-text', st), wave = $('.jw-pilot-wave', st);
+    if (!dot) { st.innerHTML = pilotStatusInner(); return; }
+    dot.style.background = led;
+    dot.style.boxShadow = '0 0 8px ' + led;
+    txt.textContent = tr(PILOT.status);
+    if (PILOT.face === 'typing' && !wave) st.insertAdjacentHTML('beforeend', pilotWave());
+    if (PILOT.face !== 'typing' && wave) wave.remove();
+  }
+  function pilotMood(face, status) {
+    PILOT.face = face;
+    if (status) PILOT.status = status;
+    pfSet(PILOT.F, face);
+    pilotPaintStatus();
+  }
+  function pilotBackToIdle(face, ms) {
+    clearTimeout(PILOT.idleTimer);
+    PILOT.idleTimer = setTimeout(function () { if (!PILOT.busy && PILOT.face === face) pilotMood('idle', PILOT_LIVE.idle); }, REDUCED ? Math.min(ms, 1500) : ms);
+  }
+  function pilotTouch() {
+    PILOT.lastActive = Date.now();
+    clearTimeout(PILOT.sleepTimer);
+    PILOT.sleepTimer = setTimeout(function () {
+      if (PILOT.open && !PILOT.busy && PILOT.face === 'idle') pilotMood('sleepy', PILOT_LIVE.sleepy);
+    }, PT.sleep);
+  }
+  function pilotWake() {
+    PILOT.wakeUntil = Date.now() + PT.wake;
+    pilotMood('surprised', PILOT_LIVE.wake);
+    clearTimeout(PILOT.idleTimer);
+    PILOT.idleTimer = setTimeout(function () {
+      if (PILOT.busy || PILOT.face !== 'surprised') return;
+      var inp = $('#pilotInput');
+      if (inp && inp.value.trim() && Date.now() - PILOT.lastType < PT.listen - 700) { pilotMood('listening', PILOT_LIVE.listening); pilotListenEnd(); }
+      else pilotMood('idle', PILOT_LIVE.idle);
+    }, PT.wake);
+  }
+  function pilotListenEnd() {
+    clearTimeout(PILOT.listenTimer);
+    PILOT.listenTimer = setTimeout(function () { if (!PILOT.busy && PILOT.face === 'listening') pilotMood('idle', PILOT_LIVE.idle); }, PT.listen);
+  }
+  function pilotOnType() {
+    if (PILOT.busy) return;
+    pilotTouch();
+    PILOT.lastType = Date.now();
+    if (PILOT.face === 'sleepy') { pilotWake(); return; }
+    if (Date.now() < PILOT.wakeUntil) return;
+    if (PILOT.face !== 'listening') pilotMood('listening', PILOT_LIVE.listening);
+    pilotListenEnd();
+  }
+  // Chọt vào mặt: cười · quá 2 cú trong 30s thì cười ngắn rồi BỰC (chuyển thẳng) · đang ngủ thì dậy
+  function pilotPoke(btn) {
+    if (!REDUCED && btn && btn.animate) btn.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.9, 0.86)' }, { transform: 'scale(1.04, 1.02)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
+    if (PILOT.busy) return;
+    pilotTouch();
+    if (PILOT.face === 'sleepy') { pilotWake(); return; }
+    var now = Date.now();
+    PILOT.pokes = PILOT.pokes.filter(function (x) { return now - x < PT.pokeWindow; }).concat([now]);
+    var mood = PILOT.pokes.length > 2 ? 'angry' : 'tickled';
+    var act = PILOT.annoyPending ? 'wait' : mood === 'tickled' ? 'laugh' : PILOT.face === 'angry' ? 'annoyed' : 'laughThenAnnoy';
+    if (act === 'wait') return;
+    clearTimeout(PILOT.tickleTimer);
+    PILOT.wakeUntil = 0;
+    if (act === 'annoyed') { pilotMood('angry', PILOT_LIVE.annoyed); pilotBackToIdle('angry', PT.annoyed); return; }
+    pilotMood('tickled', PILOT_LIVE.tickled);
+    if (act === 'laugh') { pilotBackToIdle('tickled', PT.tickle); return; }
+    PILOT.annoyPending = true;
+    PILOT.tickleTimer = setTimeout(function () {
+      PILOT.annoyPending = false;
+      if (PILOT.busy || PILOT.face !== 'tickled') return;
+      pilotMood('angry', PILOT_LIVE.annoyed);
+      pilotBackToIdle('angry', PT.annoyed);
+    }, PT.laughBeforeAnnoyed);
+  }
+  // Mắt nhìn theo chuột: phạm vi = 2,2 × cạnh mặt tính từ tâm; gộp theo rAF; chạm thì bỏ qua
+  var pilotLookRaf = 0, pilotLookPt = null;
+  if (!REDUCED) {
+    document.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch' || !PILOT.open || !PILOT.F) return;
+      pilotLookPt = { x: e.clientX, y: e.clientY };
+      if (!pilotLookRaf) pilotLookRaf = requestAnimationFrame(function () {
+        pilotLookRaf = 0;
+        var F = PILOT.F;
+        if (!F || !F.el.isConnected || !pilotLookPt) return;
+        var r = F.el.getBoundingClientRect();
+        var v = lookAt(pilotLookPt.x - (r.left + r.width / 2), pilotLookPt.y - (r.top + r.height / 2), r.width * 2.2);
+        var c = F.look;
+        if (c === v || (c && v && Math.abs(c.x - v.x) < 0.2 && Math.abs(c.y - v.y) < 0.2)) return;
+        pfLook(F, v);
+      });
+    }, { passive: true });
+    document.documentElement.addEventListener('pointerleave', function () { pilotLookPt = null; if (PILOT.F) pfLook(PILOT.F, null); });
+  }
+  function pilotLater(fn, ms) { var id = setTimeout(fn, REDUCED ? 0 : ms); PILOT.timers.push(id); }
+  function pilotClearWork() {
+    PILOT.timers.forEach(clearTimeout);
+    PILOT.timers = [];
+    if (PILOT.ticker) { clearInterval(PILOT.ticker); PILOT.ticker = null; }
+  }
+  function pilotSetBusy(on) {
+    PILOT.busy = on;
+    var s = $('#pilotSend');
+    if (s) s.outerHTML = pilotSendHtml();
+    var last = PILOT.msgs[PILOT.msgs.length - 1];
+    if (on) { var ch = $('#pilotBody .jw-pilot-chips'); if (ch) ch.remove(); }
+    else if (last && last.who === 'bot' && last.settled) {
+      var row = pilotRow(last), body = row && $('.jw-pilot-body', row);
+      if (body && !$('.jw-pilot-chips', body)) { body.insertAdjacentHTML('beforeend', pilotChipsHtml(pilotMsgChips(last), true)); pilotToEnd(true); }
+    }
+  }
+  function pilotSendHtml() {
+    return PILOT.busy
+      ? '<button type="button" class="jw-pilot-send jw-pilot-send--stop" id="pilotSend" data-act="pilot-stop" aria-label="' + esc(t('停止')) + '" data-tip="' + esc(t('停止')) + '">' + ic('stop-circle', 20) + '</button>'
+      : '<button type="button" class="jw-pilot-send" id="pilotSend" data-act="pilot-send" aria-label="' + esc(t('送信')) + '" data-tip="' + esc(t('送信')) + '（Enter）">' + ic('undo-left', 20) + '</button>';
+  }
+  function pilotUpdSteps(m) {
+    var row = pilotRow(m);
+    if (!row) return;
+    var ol = $('.jw-pilot-steps', row);
+    if (!ol) {
+      var anchor = $('.jw-pilot-status, .jw-pilot-who', row);
+      anchor.insertAdjacentHTML('afterend', '<ol class="jw-pilot-steps jw-pilot-in"></ol>');
+      ol = $('.jw-pilot-steps', row);
+    }
+    m.steps.forEach(function (s, i) {
+      var li = ol.children[i];
+      if (!li) { ol.insertAdjacentHTML('beforeend', pilotStepLi(s, true)); return; }
+      if (!li.classList.contains('jw-pilot-step--' + s.state)) li.outerHTML = pilotStepLi(s, false);
+    });
+    pilotToEnd(false);
+  }
+  function pilotUpdText(m) {
+    var row = pilotRow(m);
+    if (!row) return;
+    var p = $('.jw-pilot-text', row);
+    if (!p) { $('.jw-pilot-body', row).insertAdjacentHTML('beforeend', '<p class="jw-pilot-text jw-pilot-in"></p>'); p = $('.jw-pilot-text', row); }
+    p.innerHTML = pilotTextHtml(m);
+    pilotToEnd(false);
+  }
+  function pilotSettle(m) {
+    var row = pilotRow(m);
+    if (!row) return;
+    var body = $('.jw-pilot-body', row);
+    var card = pilotCardHtml(m.reply.card);
+    if (card) {
+      body.insertAdjacentHTML('beforeend', card);
+      var el = body.lastElementChild;
+      el.classList.add('jw-pilot-in');
+      if (!REDUCED) $$('[data-count-to]', el).forEach(function (n) { countUp(n, 1000, 180); });
+    }
+    pilotToEnd(true);
+  }
+  function pilotStream(m, done) {
+    var total = tr(m.reply.text).length;
+    var step = total > 110 ? PT.charsPerTick : 1;
+    m.streaming = true;
+    m.shown = 0;
+    if (REDUCED) { m.shown = Infinity; m.streaming = false; pilotUpdText(m); done(); return; }
+    PILOT.ticker = setInterval(function () {
+      m.shown = Math.min(total, m.shown + step);
+      if (m.shown >= total) {
+        clearInterval(PILOT.ticker); PILOT.ticker = null;
+        m.streaming = false; m.shown = Infinity;
+        pilotUpdText(m);
+        done();
+        return;
+      }
+      pilotUpdText(m);
+    }, PT.tick);
+  }
+  function pilotFinish(m) {
+    var r = m.reply;
+    m.settled = true;
+    pilotSettle(m);
+    pilotMood(r.face || 'happy', r.status || PILOT_LIVE.idle);
+    pilotSetBusy(false);
+    pilotTouch();
+    pilotBackToIdle(r.face || 'happy', PT.holdMood);
+  }
+  function pilotGreet() {
+    var m = { who: 'bot', id: 'm' + (++PILOT.seq), reply: { text: PILOT_GREETING, face: 'happy', status: PILOT_LIVE.idle, chips: true, card: null }, steps: [], shown: 0, streaming: false, settled: false };
+    PILOT.msgs.push(m);
+    PILOT.stick = true;
+    pilotAppend([m]);
+    pilotSetBusy(true);
+    pilotMood('typing', PILOT_LIVE.typing);
+    pilotLater(function () { pilotStream(m, function () { pilotFinish(m); }); }, 380);
+  }
+  // Mặt + câu trạng thái của câu trả lời (planReply chỉ lo nội dung)
+  function pilotMeta(r) {
+    var c = r.card;
+    if (r.face) return r;
+    if (c && c.type === 'deny') { r.face = 'sad'; r.status = L('権限のリクエストをお待ちしています', 'Chờ bạn gửi yêu cầu cấp quyền'); r.mood = { label: L('権限なし', 'Không có quyền'), tone: 'warn' }; }
+    else if (c && c.type === 'plan') { r.face = 'happy'; r.status = L('内容を確認してください', 'Bạn kiểm tra nội dung giúp mình nhé'); r.mood = { label: L('変更案', 'Phương án'), tone: 'accent' }; }
+    else if (c && c.type === 'table') { r.face = 'happy'; r.status = L('まとめました', 'Đã tổng hợp xong'); r.chips = PILOT_FOLLOW[c.kind]; }
+    else if (c && c.type === 'page') { r.face = 'success'; r.status = L('ページを開きました', 'Đã mở trang'); }
+    else if (r.run) { r.face = 'success'; r.status = L('できました', 'Xong rồi'); }
+    else { r.face = 'happy'; r.status = PILOT_LIVE.idle; }
+    return r;
+  }
+  function pilotSend(raw) {
+    var text = String(raw || '').trim();
+    if (!text || PILOT.busy) return;
+    if (PILOT.tab !== 'chat') { PILOT.tab = 'chat'; renderPilot(); }
+    pilotClearWork();
+    clearTimeout(PILOT.idleTimer); clearTimeout(PILOT.listenTimer); clearTimeout(PILOT.tickleTimer);
+    PILOT.annoyPending = false; PILOT.wakeUntil = 0;
+    pilotTouch();
+    var inp = $('#pilotInput');
+    if (inp) { inp.value = ''; pilotGrow(inp); }
+    var r = pilotMeta(pilotPlan(text));
+    var u = { who: 'me', id: 'm' + (++PILOT.seq), text: text };
+    var m = { who: 'bot', id: 'm' + (++PILOT.seq), reply: r, steps: [], shown: 0, streaming: false, settled: false };
+    PILOT.msgs.push(u, m);
+    PILOT.stick = true;
+    pilotSetBusy(true);
+    pilotAppend([u, m]);
+    var keys = r.steps || [];
+    var run = r.run;
+    function answer() {
+      pilotMood('typing', PILOT_LIVE.typing);
+      if (run) { var f = run; run = null; f(); }
+      pilotStream(m, function () { pilotFinish(m); });
+    }
+    if (!keys.length) {
+      pilotLater(function () { pilotMood('thinking', PILOT_LIVE.thinking); }, 0);
+      pilotLater(answer, PT.think);
+      return;
+    }
+    var t0 = PT.firstStep;
+    keys.forEach(function (k, i) {
+      var start = t0, end = t0 + (i === 2 ? PT.queryStep : PT.step);
+      t0 = end;
+      pilotLater(function () {
+        m.steps.push({ key: k, state: 'run' });
+        pilotUpdSteps(m);
+        var lab = STEP[k === 'permNo' ? 'perm' : k];
+        pilotMood(STEP_FACE[k] || 'thinking', L(lab.ja + '…', lab.vi + '…'));
+        if (k === 'page' && run) { var f = run; run = null; pilotLater(f, 400); }
+      }, start);
+      pilotLater(function () { m.steps[i].state = k === 'permNo' ? 'fail' : 'done'; pilotUpdSteps(m); }, end);
+    });
+    pilotLater(answer, t0 + 200);
+  }
+  function pilotStop() {
+    if (!PILOT.busy) return;
+    pilotClearWork();
+    var m = PILOT.msgs[PILOT.msgs.length - 1];
+    if (m && m.who === 'bot') {
+      m.streaming = false; m.stopped = true;
+      m.steps.forEach(function (s) { if (s.state === 'run') s.state = 'fail'; });
+      pilotUpdSteps(m);
+      pilotUpdText(m);
+    }
+    pilotSetBusy(false);
+    pilotMood('surprised', PILOT_LIVE.stopped);
+    pilotBackToIdle('surprised', PT.stopped);
+  }
+
   function pilotCardHtml(c) {
     if (!c) return '';
     if (c.type === 'page') {
@@ -2288,22 +2885,6 @@
         '<span>' + ic('database', 14) + esc(t('反映先')) + '：' + esc(tr(p.target)) + '</span></div>' +
       planStateHtml(p) + '</section>';
   }
-  function pilotMsgHtml(m, i) {
-    if (m.who === 'me') return '<div class="jw-pilot-row jw-pilot-row--me" data-i="' + i + '"><div class="jw-pilot-bubble">' + esc(m.text) + '</div></div>';
-    var vis = (m.steps || []).filter(function (s) { return s.state !== 'hide'; });
-    var steps = vis.length ? '<ol class="jw-pilot-steps">' + vis.map(function (s) {
-      var done = s.state === 'done', label = done ? STEP_DONE[s.key] : STEP[s.key === 'permNo' ? 'perm' : s.key];
-      return '<li data-state="' + s.state + '"' + (s.key === 'permNo' && done ? ' data-bad' : '') + '>' + (done ? (s.key === 'permNo' ? ic('forbidden-circle', 15) : ic('check-circle', 15)) : '<span class="jw-pilot-spin" aria-hidden="true"></span>') + '<span>' + esc(tr(label)) + '</span></li>';
-    }).join('') + '</ol>' : '';
-    var text = tr(m.text);
-    var shown = m.reveal == null || m.reveal >= text.length ? text : text.slice(0, m.reveal);
-    var typing = m.reveal != null && m.reveal < text.length;
-    return '<div class="jw-pilot-row jw-pilot-row--bot" data-i="' + i + '">' +
-      '<div class="jw-pilot-who"><span class="jw-pilot-whoico">' + pilotMark(16, false) + '</span>JOY Pilot</div>' + steps +
-      (m.phase === 'text' || m.phase === 'done' ? '<p class="jw-pilot-text">' + esc(shown) + (typing ? '<span class="jw-pilot-caret" aria-hidden="true"></span>' : '') + '</p>' : '') +
-      (m.phase === 'done' ? pilotCardHtml(m.card) + (m.chips ? pilotSuggestHtml() : '') : '') +
-      (m.phase === 'wait' ? '<div class="jw-pilot-dots" aria-label="' + esc(t('考えています')) + '"><i></i><i></i><i></i></div>' : '') + '</div>';
-  }
   function pilotPlansHtml() {
     var groups = [
       { id: 'scheduled', label: t('予約中'), icon: 'clock-circle' },
@@ -2312,7 +2893,7 @@
     ];
     var any = PILOT.plans.some(function (p) { return p.state === 'scheduled' || p.state === 'draft' || p.state === 'applied'; });
     if (!any) return '<div class="jw-pilot-empty">' + ic('calendar-add', 34) + '<b>' + esc(t('予約や下書きはまだありません')) + '</b><p>' + esc(t('日付を指定して変更を頼むと、当日まで下書きとして保持し、0:00に自動で反映します。')) + '</p>' +
-      '<button type="button" class="jw-pilot-sug" data-act="pilot-ask" data-q="' + esc(tr(PILOT_SUGGEST._[2].text)) + '"><span class="jw-pilot-sug-tag jw-tone-orange">' + esc(t('データ更新')) + '</span><span class="jw-pilot-sug-text">' + esc(tr(PILOT_SUGGEST._[2].text)) + '</span>' + ic('arrow-right', 14) + '</button></div>';
+      pilotChipsHtml([PILOT_SUGGEST._[2].text], false) + '</div>';
     return groups.map(function (g) {
       var list = PILOT.plans.filter(function (p) { return p.state === g.id; });
       if (!list.length) return '';
@@ -2328,31 +2909,30 @@
       }).join('') + '</section>';
     }).join('');
   }
-  function pilotBodyHtml() {
-    if (PILOT.tab === 'plans') return '<div class="jw-pilot-plans">' + pilotPlansHtml() + '</div>';
-    return PILOT.msgs.length ? '<div class="jw-pilot-log">' + PILOT.msgs.map(pilotMsgHtml).join('') + '</div>' : pilotHelloHtml();
-  }
   function pilotCountPlans() { return PILOT.plans.filter(function (p) { return p.state === 'scheduled' || p.state === 'draft'; }).length; }
-  function pilotHtml() {
+  function pilotTabsHtml() {
     var n = pilotCountPlans();
+    return seg('pilot-tab', [{ v: 'chat', label: t('チャット') }, { v: 'plans', label: t('予約・下書き') + (n ? ' ' + n : '') }], PILOT.tab, 'JOY Pilot', 'pilotTab');
+  }
+  function pilotHtml() {
     var page = pageTitleText();
     return '<header class="jw-pilot-head">' +
         '<span class="jw-pilot-avatar jw-pmark-host">' + pilotMark(26, true) + '</span>' +
         '<span class="jw-pilot-brand">' + pilotWordmark() +
           '<span class="jw-pilot-link" tabindex="0" data-tip="' + esc(t('デモモード — BigQuery MCP にはまだ接続していません。回答はサンプルデータです。')) + '" data-tip-pos="bottom" aria-label="' + esc(t('接続状態：デモ')) + '"><span class="jw-pilot-dot"></span></span></span>' +
         '<span class="jw-pilot-head-sp"></span>' +
-        '<button type="button" class="jw-iconbtn" data-act="pilot-new" aria-label="' + esc(t('会話をクリア')) + '" data-tip="' + esc(t('会話をクリア')) + '" data-tip-pos="bottom"' + (PILOT.msgs.length ? '' : ' disabled') + '>' + ic('notification-lines-remove', 18) + '</button>' +
+        '<button type="button" class="jw-iconbtn" data-act="pilot-new" aria-label="' + esc(t('会話をクリア')) + '" data-tip="' + esc(t('会話をクリア')) + '" data-tip-pos="bottom">' + ic('notification-lines-remove', 18) + '</button>' +
         '<button type="button" class="jw-iconbtn jw-pilot-fullbtn" data-act="pilot-full" aria-pressed="' + PILOT.full + '" aria-label="' + esc(PILOT.full ? t('パネルに戻す') : t('広げる')) + '" data-tip="' + esc(PILOT.full ? t('パネルに戻す') : t('広げる')) + '" data-tip-pos="bottom">' + (PILOT.full ? ic('minimize-square-minimalistic', 18) : ic('maximize-square-minimalistic', 18)) + '</button>' +
         '<button type="button" class="jw-iconbtn" data-act="pilot-close" aria-label="' + esc(t('閉じる')) + '" data-tip="' + esc(t('閉じる')) + '（Esc）" data-tip-pos="bottom">' + ic('close', 18) + '</button>' +
       '</header>' +
-      '<div class="jw-pilot-tabs">' + seg('pilot-tab', [{ v: 'chat', label: t('チャット') }, { v: 'plans', label: t('予約・下書き') + (n ? ' ' + n : '') }], PILOT.tab, 'JOY Pilot', 'pilotTab') + '</div>' +
-      '<div class="jw-pilot-body" id="pilotBody" data-fade-y>' + pilotBodyHtml() + '</div>' +
+      '<div class="jw-pilot-tabs">' + pilotTabsHtml() + '</div>' +
+      '<div class="jw-pilot-scroll" id="pilotBody" data-fade-y aria-busy="' + PILOT.busy + '"></div>' +
       '<div class="jw-pilot-foot">' +
         '<div class="jw-pilot-ctx"><span class="jw-pilot-ctx-page" data-tip="' + esc(t('JOY Pilot はこのページの内容をふまえて答えます')) + '">' + ic('document', 13) + '<span>' + esc(page) + '</span></span>' +
           '<span class="jw-pilot-ctx-perm" data-tip="' + esc(tr(PILOT_ME.role)) + '">' + ic('key-square', 13) + '<span>' + esc(t('組織図・名簿を編集できます')) + '</span></span></div>' +
         '<div class="jw-pilot-compose">' +
           '<textarea id="pilotInput" class="jw-pilot-input" rows="1" placeholder="' + esc(t('JOY Pilot に頼む…')) + '" aria-label="' + esc(t('JOY Pilot に頼む…')) + '"></textarea>' +
-          '<button type="button" class="jw-pilot-send" id="pilotSend" data-act="pilot-send" aria-label="' + esc(t('送信')) + '" data-tip="' + esc(t('送信')) + '（Enter）"' + (PILOT.busy ? ' disabled' : '') + '>' + ic('undo-left', 20) + '</button>' +
+          pilotSendHtml() +
         '</div>' +
         '<p class="jw-pilot-note">' + esc(t('Shift+Enter で改行 · データの書き込みは必ず確認してから実行します')) + '</p>' +
       '</div>';
@@ -2370,7 +2950,7 @@
     if (PILOT.open) h.setAttribute('data-pilot', PILOT.full ? 'full' : 'dock'); else h.removeAttribute('data-pilot');
     renderPilotBtn();
   }
-  // Vẽ lại cả panel; núm segmented TRƯỢT từ vị trí cũ (cùng mẹo với renderPage)
+  // Vẽ lại cả panel (mở · đổi tab · đổi ngôn ngữ). Hàng chat vẽ KHÔNG kèm hiệu ứng vào; mặt sống giữ nguyên.
   function renderPilot() {
     var box = $('#pilot');
     if (!box) return;
@@ -2380,7 +2960,7 @@
     var keep = draft ? draft.value : '';
     var hadFocus = draft && document.activeElement === draft;
     var ob = $('#pilotBody', box);
-    var oldTop = ob ? ob.scrollTop : 0, oldEnd = ob ? ob.scrollHeight - ob.scrollTop - ob.clientHeight < 40 : true, oldTab = box.getAttribute('data-tab');
+    var oldTop = ob ? ob.scrollTop : 0, oldTab = box.getAttribute('data-tab');
     box.innerHTML = pilotHtml();
     box.setAttribute('data-tab', PILOT.tab);
     var sg2 = $('.jw-seg[data-seg="pilotTab"]', box);
@@ -2388,29 +2968,25 @@
     if (old != null && old !== now) sg2.style.setProperty('--seg-i', old);
     var inp = $('#pilotInput', box);
     inp.value = keep;
+    pilotRenderLog();
     pilotGrow(inp);
     void box.offsetWidth;
     if (old != null && old !== now) sg2.style.setProperty('--seg-i', now);
     if (hadFocus) inp.focus({ preventScroll: true });
-    // Giữ chỗ đang đọc (đổi 広げる / vẽ lại); sang lại tab チャット thì về câu mới nhất
     var nb = $('#pilotBody', box);
-    nb.scrollTop = oldTab === PILOT.tab && !oldEnd ? oldTop : nb.scrollHeight;
+    nb.scrollTop = oldTab === PILOT.tab && !PILOT.stick ? oldTop : nb.scrollHeight;
     syncFades(box);
   }
-  function renderPilotBody(stick) {
-    var body = $('#pilotBody');
-    if (!body) return;
-    var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
-    body.innerHTML = pilotBodyHtml();
+  function pilotRefreshTabs() {
+    var tb = $('#pilot .jw-pilot-tabs');
+    if (tb) tb.innerHTML = pilotTabsHtml();
+  }
+  // Đổi trang ⇒ gợi ý của lời chào (chips theo ngữ cảnh) đổi theo
+  function pilotRefreshChips() {
     var last = PILOT.msgs[PILOT.msgs.length - 1];
-    if (last && last.who === 'bot' && last.phase === 'done' && !last.counted) {
-      last.counted = true;
-      if (!REDUCED) $$('.jw-pilot-row:last-child [data-count-to]', body).forEach(function (el) { countUp(el, 1000, 120); });
-    }
-    if (stick || atEnd) body.scrollTo({ top: body.scrollHeight, behavior: REDUCED ? 'auto' : 'smooth' });
-    syncFades(body);
-    var clr = $('#pilot [data-act="pilot-new"]');
-    if (clr) clr.disabled = !PILOT.msgs.length;
+    if (!PILOT.open || PILOT.busy || !last || last.who !== 'bot' || !last.settled || last.reply.chips !== true) return;
+    var row = pilotRow(last), ch = row && $('.jw-pilot-chips', row);
+    if (ch) ch.outerHTML = pilotChipsHtml(pilotMsgChips(last), false);
   }
   function pilotGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 150) + 'px'; }
   function openPilot(q) {
@@ -2423,11 +2999,15 @@
       void box.offsetWidth;
       box.classList.add('jw-pilot--open');
       pilotSync();
+      pilotTouch();
     }
     if (narrow()) S.drawer = false;
-    var inp = $('#pilotInput');
     if (q) pilotSend(q);
-    else if (inp) setTimeout(function () { inp.focus({ preventScroll: true }); }, REDUCED ? 0 : 120);
+    else {
+      if (!PILOT.msgs.length && !PILOT.busy) pilotGreet();
+      var inp = $('#pilotInput');
+      if (inp) setTimeout(function () { inp.focus({ preventScroll: true }); }, REDUCED ? 0 : 120);
+    }
   }
   function closePilot() {
     if (!PILOT.open) return;
@@ -2439,62 +3019,33 @@
     var b = $('#pilotBtn');
     if (b && box.contains(document.activeElement)) b.focus({ preventScroll: true });
   }
-  function pilotLater(fn, ms) { var id = setTimeout(fn, REDUCED ? 0 : ms); PILOT.timers.push(id); }
-  function pilotSend(raw) {
-    var text = String(raw || '').trim();
-    if (!text || PILOT.busy) return;
-    if (PILOT.tab !== 'chat') { PILOT.tab = 'chat'; renderPilot(); }
-    var inp = $('#pilotInput');
-    if (inp) { inp.value = ''; pilotGrow(inp); }
-    PILOT.msgs.push({ who: 'me', text: text });
-    var plan = pilotPlan(text);
-    var m = { who: 'bot', text: plan.text, card: plan.card, chips: plan.chips, steps: (plan.steps || []).map(function (k) { return { key: k, state: 'run' }; }), phase: 'wait', reveal: 0 };
-    m.steps.forEach(function (s) { s.state = 'hide'; });
-    PILOT.msgs.push(m);
-    PILOT.busy = true;
-    var send = $('#pilotSend'); if (send) send.disabled = true;
-    renderPilotBody(true);
-    var i = 0;
-    function nextStep() {
-      if (i > 0) m.steps[i - 1].state = 'done';
-      if (i >= m.steps.length) { pilotLater(startText, m.steps.length ? 260 : 520); renderPilotBody(); return; }
-      m.steps[i].state = 'run';
-      m.phase = 'steps';
-      if (m.steps[i].key === 'page' && plan.run) { var r = plan.run; plan.run = null; pilotLater(r, 380); }
-      i++;
-      renderPilotBody();
-      pilotLater(nextStep, 620 + (i === 1 ? 120 : 0));
-    }
-    function startText() {
-      m.phase = 'text';
-      m.reveal = 0;
-      var full = tr(m.text).length;
-      renderPilotBody(true);
-      if (plan.run) { var r2 = plan.run; plan.run = null; r2(); }
-      (function type() {
-        m.reveal = Math.min(full, m.reveal + (LANG === 'vi' ? 4 : 2));
-        var el = $('#pilotBody .jw-pilot-row[data-i="' + (PILOT.msgs.length - 1) + '"] .jw-pilot-text');
-        if (el) el.innerHTML = esc(tr(m.text).slice(0, m.reveal)) + (m.reveal < full ? '<span class="jw-pilot-caret" aria-hidden="true"></span>' : '');
-        if (m.reveal < full && !REDUCED) { pilotLater(type, 22); return; }
-        m.reveal = null;
-        m.phase = 'done';
-        PILOT.busy = false;
-        renderPilotBody(true);
-        var s2 = $('#pilotSend'); if (s2) s2.disabled = false;
-      })();
-    }
-    pilotLater(nextStep, 380);
+  function pilotClear() {
+    pilotClearWork();
+    clearTimeout(PILOT.idleTimer); clearTimeout(PILOT.tickleTimer); clearTimeout(PILOT.listenTimer);
+    PILOT.msgs = [];
+    PILOT.busy = false;
+    PILOT.annoyPending = false;
+    PILOT.plans = PILOT.plans.filter(function (p) { return p.state !== 'proposed'; });
+    PILOT.tab = 'chat';
+    PILOT.face = 'idle'; PILOT.status = PILOT_LIVE.idle;
+    pfSet(PILOT.F, 'idle');
+    renderPilot();
+    pilotGreet();
   }
+  // Thẻ phương án: chỉ thay ĐÚNG thẻ đó (không vẽ lại hội thoại) + mặt robot phản ứng
   function pilotPlanAct(id, v) {
     var p = planById(id);
     if (!p) return;
-    if (v === 'schedule') { p.state = 'scheduled'; toast(t('{d} 0:00 に自動で反映する予約を入れました', { d: fmtMDs(p.date) }), ic('calendar-mark', 16)); }
-    else if (v === 'apply') { p.state = 'applied'; p.appliedAt = pilotToday(); toast(p.danger ? t('名簿から外しました（30日間は元に戻せます）') : t('変更を反映しました'), ic('check-circle', 16)); }
-    else if (v === 'draft') { p.state = 'draft'; toast(t('下書きに保存しました'), ic('document-add', 16)); }
-    else if (v === 'reopen') { p.state = 'proposed'; PILOT.tab = 'chat'; }
-    else if (v === 'undo') { p.state = 'cancelled'; toast(t('元に戻しました'), ic('restart', 16)); }
+    if (v === 'schedule') { p.state = 'scheduled'; toast(t('{d} 0:00 に自動で反映する予約を入れました', { d: fmtMDs(p.date) }), ic('calendar-mark', 16)); pilotMood('success', L('予約しました · ' + fmtYMDw(p.date) + ' 0:00 に反映', 'Đã đặt lịch · áp dụng 0:00 ngày ' + fmtMDs(p.date))); pilotBackToIdle('success', PT.holdMood); }
+    else if (v === 'apply') { p.state = 'applied'; p.appliedAt = pilotToday(); toast(p.danger ? t('名簿から外しました（30日間は元に戻せます）') : t('変更を反映しました'), ic('check-circle', 16)); pilotMood('success', L('反映しました', 'Đã áp dụng')); pilotBackToIdle('success', PT.holdMood); }
+    else if (v === 'draft') { p.state = 'draft'; toast(t('下書きに保存しました'), ic('document-add', 16)); pilotMood('wink', L('下書きに保存しました', 'Đã lưu bản nháp')); pilotBackToIdle('wink', PT.holdMood); }
+    else if (v === 'reopen') { p.state = 'proposed'; }
+    else if (v === 'undo') { p.state = 'cancelled'; toast(t('元に戻しました'), ic('restart', 16)); pilotMood('moved', L('元に戻しました', 'Đã khôi phục')); pilotBackToIdle('moved', PT.holdMood); }
     else if (v === 'cancel') { p.state = 'cancelled'; }
-    renderPilot();
+    if (v === 'reopen' && PILOT.tab !== 'chat') { PILOT.tab = 'chat'; renderPilot(); }
+    else if (PILOT.tab === 'plans') pilotRenderLog();
+    else $$('#pilot [data-plan="' + id + '"]').forEach(function (el) { el.outerHTML = pilotPlanCard(p); });
+    pilotRefreshTabs();
     if (v === 'reopen') { var el = $('#pilot [data-plan="' + id + '"]'); if (el) el.scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' }); }
   }
   // Demo: tua tới ngày áp dụng ⇒ bản nháp TỰ áp, có thông báo — đúng hành vi "đợi tới 1/10 thì tự lên"
@@ -2504,8 +3055,12 @@
     p.state = 'applied';
     p.appliedAt = p.date;
     toast(t('{d} 0:00 — 予約していた「{x}」を自動で反映しました', { d: fmtMDs(p.date), x: tr(p.title) }), pilotMark(18, false));
-    renderPilot();
+    pilotMood('celebrate', L('予約していた変更を反映しました', 'Đã áp dụng thay đổi theo lịch'));
+    pilotBackToIdle('celebrate', PT.holdMood);
+    pilotRenderLog();
+    pilotRefreshTabs();
   }
+
   function pilotCsv(kind) {
     var tb = pilotTable(kind);
     var csv = [tb.cols.join(',')].concat(tb.rows.map(function (r) { return [r.label, tb.cols.length > 2 ? r.n : null, r.v].filter(function (x) { return x !== null; }).join(','); })).join('\n');
