@@ -13,7 +13,7 @@
 
   // ── §Lưu trữ — localStorage luôn bọc try/catch (chế độ riêng tư có thể ném lỗi) ──
   var KEY = {
-    lang: 'joystart_lang', theme: 'joystart_theme', rail: 'joystart_rail',
+    lang: 'joystart_lang', theme: 'joystart_theme', rail: 'joystart_rail', open: 'joystart_open_blocks',
     favs: 'joystart_favorites', read: 'joystart_announce_read', cards: 'joystart_home_cards',
     tz: 'joystart_timezone', datefmt: 'joystart_datefmt', settings: 'joystart_settings_'
   };
@@ -128,12 +128,14 @@
   // ── §Trạng thái ──
   var favsRaw = loadJSON(KEY.favs, ['todo/予定', 'incident/台帳']);
   var readRaw = loadJSON(KEY.read, []);
+  var openRaw = loadJSON(KEY.open, []);
   var S = {
     rail: load(KEY.rail, '0') === '1',
     favs: Array.isArray(favsRaw) ? favsRaw.filter(function (k) { return typeof k === 'string' && (PAGES[k] || LINK_BY_KEY[k]); }) : [],
     read: {},
-    openBlock: null,
-    sideQuery: null,
+    open: {},
+    drawer: false,
+    sideQuery: '',
     announceTab: 'すべて',
     healthCat: '量',
     rankCat: '量',
@@ -146,13 +148,18 @@
     linkFilter: '',
     homeDraft: null,
     menuOpen: false,
-    bbarOpen: null,
     gsHot: -1,
     photos: PHOTOS.slice(),
     pendingScroll: null,
     missingFolder: ''
   };
   if (Array.isArray(readRaw)) readRaw.forEach(function (id) { S.read[id] = true; });
+  if (Array.isArray(openRaw)) openRaw.forEach(function (k) { if (BLOCKS[k] && BLOCKS[k].children) S.open[k] = true; });
+  function saveOpen() { save(KEY.open, Object.keys(S.open)); }
+  // ≤640px (như mockup gốc): side panel luôn là dải icon; nút gập mở nó thành NGĂN KÉO.
+  var mqNarrow = window.matchMedia ? window.matchMedia('(max-width: 640px)') : null;
+  function narrow() { return !!(mqNarrow && mqNarrow.matches); }
+  function railNow() { return narrow() ? !S.drawer : S.rail; }
   var ROUTE = { name: 'home' };
 
   function isUnread(a) { return !!a.unread && !S.read[a.id]; }
@@ -209,38 +216,26 @@
     }
     ROUTE = r;
     closeFloating();
+    S.drawer = false;
+    // Sang một trang ⇒ khối chứa nó MỞ ra (các khối đang mở khác GIỮ nguyên — mở được nhiều khối)
     if (r.name === 'page') {
       var b = PAGES[r.key].block;
-      S.openBlock = b.children ? b.key : null;
-    } else if (r.name === 'home') {
-      S.openBlock = null;
+      if (b.children && !S.open[b.key]) { S.open[b.key] = true; saveOpen(); }
     }
     if (r.name === 'settings') S.homeDraft = null;
     renderSide();
     revealCurrent();
-    renderBlockBar(true);
     renderPage(true);
   }
 
-  // ── §Header ──
-  function lockup(prefix, ver) {
-    var g = 'jsg-' + prefix;
-    return '<span class="jw-lockup-wrap"><span class="jw-lockup">' +
-      '<svg class="jw-lockup-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
-        '<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb370"/><stop offset="0.5" stop-color="#f07319"/><stop offset="1" stop-color="#c2571a"/></linearGradient></defs>' +
-        '<rect x="2" y="2" width="36" height="36" rx="10" fill="url(#' + g + ')"/>' +
-        '<circle cx="14.5" cy="12" r="3.4" fill="#fff"/>' +
-        '<path d="M16 16 L23 21 L18.5 23.5 L26 29" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<path d="M13 24 L19.5 20.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-      '</svg>' +
-      '<span class="jw-wordmark"><b>JOY</b><em>START</em></span></span>' +
-      (ver ? '<span class="jw-lockup-ver">' + esc(ver) + '</span>' : '') + '</span>';
-  }
-  function renderHeader() {
-    $('#header').innerHTML =
-      '<a class="jw-brandhome" href="#/home" aria-label="JOY START — ' + esc(t('ホーム')) + '"' + (ROUTE.name === 'home' ? ' aria-current="page"' : '') + '>' + lockup('hdr') + '</a>' +
-      '<button type="button" class="jw-menubtn jw-rim" id="menuBtn" data-act="menu" aria-haspopup="menu" aria-expanded="' + S.menuOpen + '" aria-label="' + esc(t('メニュー')) + '">' +
-        ic('hamburger-menu', 20, 'jw-mb-burger') + ic('close', 20, 'jw-mb-x') + '</button>';
+  // ── §Logo ──
+  // Mark Dr.JOY (hai bong bóng thoại) — path chép NGUYÊN VĂN từ `docs/brand/drjoy-mark.svg` của
+  // JOY Analytics, màu #f08c00 là hằng số thương hiệu. viewBox cắt sát hình (bbox 0 83 500 336).
+  var DRJOY_MARK = '<svg class="jw-brand-mark" viewBox="-6 77 512 348" aria-hidden="true" focusable="false"><g fill="#f08c00">' +
+    '<path d="M 476.558 113.792 L 318.801 113.792 C 304.829 113.792 292.353 122.543 287.601 135.68 L 219.463 323.986 C 213.938 339.256 225.25 355.378 241.489 355.378 L 289.757 355.378 L 256.43 418.954 L 336.729 355.378 L 399.246 355.378 C 413.218 355.378 425.694 346.622 430.447 333.485 L 498.583 145.182 C 504.106 129.913 492.796 113.792 476.558 113.792 M 389.296 329.948 L 257.006 329.948 C 252.948 329.948 250.118 325.919 251.499 322.103 L 312.575 153.009 C 314.528 147.596 319.67 143.989 325.423 143.989 L 457.719 143.989 C 461.777 143.989 464.602 148.017 463.226 151.834 L 402.146 320.927 C 400.194 326.341 395.055 329.948 389.296 329.948"/>' +
+    '<path d="M 192.486 350.609 C 192.486 350.609 103.929 277.498 0 351.645 L 85.873 114.513 C 188.172 44.763 278.358 113.481 278.358 113.481 L 192.486 350.609 Z"/></g></svg>';
+  function brandLockup() {
+    return '<span class="jw-brandlock">' + DRJOY_MARK + '<span class="jw-wordmark"><b>JOY</b><em>START</em></span></span>';
   }
   function slide(act, opts, cur, cls, aria) {
     var right = opts[1].v === cur;
@@ -250,22 +245,17 @@
         return '<span class="jw-slide-opt' + (o.v === cur ? ' jw-slide-opt--on' : '') + '" title="' + esc(o.title || o.label || '') + '">' + (o.icon || '') + (o.label ? esc(o.label) : '') + '</span>';
       }).join('') + '</button>';
   }
+  // ── §Panel cài đặt (nút bánh răng cạnh profile): ngôn ngữ · theme · vào màn 設定 ──
   function menuHtml() {
     var theme = themeNow();
-    return '<div class="jw-menu-brand">' + lockup('menu', t('モックアップ') + ' · 2026-09') + '</div>' +
-      '<div class="jw-menu-sec">' + t('表示設定') + '</div>' +
+    return '<div class="jw-menu-sec">' + t('表示設定') + '</div>' +
       '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('言語') + '</span>' +
         slide('lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, 'jw-slide--wide', t('言語')) + '</div>' +
       '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('テーマ') + '</span>' +
         slide('theme', [{ v: 'light', icon: ic('sun', 17), title: t('ライト') }, { v: 'dark', icon: ic('moon', 17), title: t('ダーク') }], theme, '', t('テーマ')) + '</div>' +
       '<div class="jw-menu-sep"></div>' +
-      '<div class="jw-menu-sec">' + t('ナビゲーション') + '</div>' +
-      '<a class="jw-menu-item jw-rim" href="#/home"' + (ROUTE.name === 'home' ? ' aria-current="page"' : '') + '>' + ic('home-2', 18) + t('ホーム') + '</a>' +
-      '<a class="jw-menu-item jw-rim" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' + ic('settings', 18) + t('設定') + '</a>' +
-      '<div class="jw-menu-sep"></div>' +
-      '<div class="jw-menu-account"><span class="jw-avatar">' + avatarSvg(HEALTH_AVATARS[SETTINGS_ME.name]) + '</span>' +
-        '<span class="jw-menu-who"><span class="jw-menu-name">' + esc(SETTINGS_ME.name) + '</span><span class="jw-menu-mail">' + esc(SETTINGS_ME.mail) + '</span></span></div>' +
-      '<button type="button" class="jw-menu-out jw-rim" data-act="logout">' + ic('logout-2', 16) + t('ログアウト') + '</button>';
+      '<a class="jw-menu-item jw-menu-item--go jw-rim" id="setGo" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' +
+        ic('settings', 18) + '<span>' + t('設定画面を開く') + '</span>' + ic('alt-arrow-right', 15) + '</a>';
   }
   function openMenu() {
     closeFloating();
@@ -273,23 +263,28 @@
     document.documentElement.setAttribute('data-menu-open', '');
     var layer = $('#layer');
     layer.innerHTML = '<div class="jw-scrim" data-act="menu-close" aria-hidden="true"></div>' +
-      '<div class="jw-menu jw-glass" role="menu" id="menuPanel" aria-label="' + esc(t('メニュー')) + '">' + menuHtml() + '</div>';
+      '<div class="jw-menu jw-glass" role="dialog" id="menuPanel" aria-label="' + esc(t('表示設定')) + '">' + menuHtml() + '</div>';
     placeMenu();
     var panel = $('#menuPanel');
     void panel.offsetHeight;
     panel.classList.add('jw-menu--open');
-    var btn = $('#menuBtn');
+    var btn = $('#setBtn');
     if (btn) btn.setAttribute('aria-expanded', 'true');
   }
+  // Mọc từ nút bánh răng: side panel đầy đủ ⇒ nằm TRÊN profile, canh mép trái panel;
+  // dải icon ⇒ nằm BÊN PHẢI dải, đáy canh đáy nút.
   function placeMenu() {
     var panel = $('#menuPanel');
-    var btn = $('#menuBtn');
+    var btn = $('#setBtn');
     if (!panel || !btn) return;
     var b = btn.getBoundingClientRect();
-    var hdr = $('#header').getBoundingClientRect();
-    var w = panel.offsetWidth;
-    panel.style.left = Math.round(Math.min(Math.max(8, b.right - w), window.innerWidth - w - 8)) + 'px';
-    panel.style.top = Math.round(hdr.bottom + 8) + 'px';
+    var side = $('#side').getBoundingClientRect();
+    var w = panel.offsetWidth, h = panel.offsetHeight;
+    var left, top;
+    if (railNow()) { left = side.right + 8; top = b.bottom - h; }
+    else { left = side.left + 8; top = b.top - h - 10; }
+    panel.style.left = Math.round(Math.max(8, Math.min(left, window.innerWidth - w - 8))) + 'px';
+    panel.style.top = Math.round(Math.max(8, top)) + 'px';
   }
   function closeMenu() {
     if (!S.menuOpen) return;
@@ -302,7 +297,7 @@
       panel.classList.remove('jw-menu--open');
       setTimeout(function () { if (!S.menuOpen && panel.parentNode) panel.remove(); }, 240);
     }
-    var btn = $('#menuBtn');
+    var btn = $('#setBtn');
     if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 
@@ -337,16 +332,17 @@
   }
   function blockHtml(b) {
     var here = routeBlock() === b.key;
-    var railTip = S.rail ? ' data-tip="' + esc(nm(b)) + '"' : '';
+    var rail = railNow();
+    var railTip = rail ? ' data-tip="' + esc(nm(b)) + '"' : '';
     if (!b.children) {
       return '<div class="jw-sn-block"><a class="jw-sn-top" href="' + href(b.key) + '"' + (here ? ' aria-current="page"' : '') + railTip +
-        (S.rail ? ' aria-label="' + esc(nm(b)) + '"' : '') + '><span class="jw-sn-topico">' + ic(b.icon, 18) + '</span>' +
+        (rail ? ' aria-label="' + esc(nm(b)) + '"' : '') + '><span class="jw-sn-topico">' + ic(b.icon, 18) + '</span>' +
         '<span class="jw-sn-topname">' + esc(nm(b)) + '</span></a></div>';
     }
-    var open = S.openBlock === b.key && !S.rail;
+    var open = !!S.open[b.key] && !rail;
     var badge = blockBadge(b);
     return '<div class="jw-sn-block' + (open ? ' jw-sn-block--open' : '') + (here ? ' jw-sn-block--here' : '') + '">' +
-      '<button type="button" class="jw-sn-top" data-act="block" data-k="' + b.key + '"' + (S.rail ? ' aria-label="' + esc(nm(b)) + '"' : ' aria-expanded="' + open + '"') + railTip + (badge ? ' data-count="' + badge + '"' : '') + '>' +
+      '<button type="button" class="jw-sn-top" data-act="block" data-k="' + b.key + '"' + (rail ? ' aria-label="' + esc(nm(b)) + '"' : ' aria-expanded="' + open + '"') + railTip + (badge ? ' data-count="' + badge + '"' : '') + '>' +
         '<span class="jw-sn-topico">' + ic(b.icon, 18) + '</span><span class="jw-sn-topname">' + esc(nm(b)) + '</span>' +
         (badge && !open ? '<span class="jw-count" aria-label="' + esc(t('{n}件', { n: badge })) + '">' + badge + '</span>' : '') +
         '<span class="jw-sn-caret">' + ic('alt-arrow-down', 14) + '</span></button>' +
@@ -385,29 +381,52 @@
     }).join('') + '</div>';
   }
   function sideBodyHtml() {
-    if (!S.rail && S.sideQuery !== null && S.sideQuery.trim()) return hitsHtml(S.sideQuery);
-    return (S.rail ? '' : favsHtml()) + '<nav class="jw-sn-nav" aria-label="' + esc(t('メニュー')) + '">' + MENU.map(blockHtml).join('') + '</nav>';
+    var rail = railNow();
+    if (!rail && S.sideQuery.trim()) return hitsHtml(S.sideQuery);
+    return (rail ? '' : favsHtml()) + '<nav class="jw-sn-nav" aria-label="' + esc(t('メニュー')) + '">' + MENU.map(blockHtml).join('') + '</nav>';
   }
+  function toolBtn(act, icon, label) {
+    return '<button type="button" class="jw-sn-tool" data-act="' + act + '" aria-label="' + esc(label) + '" data-tip="' + esc(label) + '" data-tip-pos="bottom">' + icon + '</button>';
+  }
+  // Side panel = 4 tầng như mockup gốc: logo (+ nút gập) · công cụ · cây (cuộn riêng) · profile + bánh răng
   function renderSide() {
     var el = $('#side');
-    var keep = el.scrollTop;
-    el.className = 'jw-sidenav jw-glass' + (S.rail ? ' jw-sidenav--rail' : '');
-    var find = '';
-    if (!S.rail) {
-      find = S.sideQuery !== null
-        ? '<label class="jw-sn-find">' + ic('magnifier', 15) + '<input class="jw-sn-find-input" id="sideFind" type="text" autocomplete="off" placeholder="' + esc(t('メニューを検索')) + '" aria-label="' + esc(t('メニューを検索')) + '" value="' + esc(S.sideQuery) + '">' +
-          '<button type="button" class="jw-sn-find-x" data-act="side-find-x" aria-label="' + esc(t('検索を閉じる')) + '">' + ic('close', 14) + '</button></label>'
-        : '<button type="button" class="jw-sn-find-btn" data-act="side-find" aria-label="' + esc(t('メニューを検索')) + '" data-tip="' + esc(t('メニューを検索')) + '" data-tip-pos="bottom">' + ic('magnifier', 18) + '</button>';
-    }
-    el.innerHTML = '<div class="jw-sn-bar">' + find +
-      '<button type="button" class="jw-sn-toggle" data-act="rail" aria-expanded="' + !S.rail + '" aria-label="' + esc(S.rail ? t('メニューを開く') : t('メニューを閉じる')) + '" data-tip="' + esc(S.rail ? t('メニューを開く') : t('メニューを閉じる')) + '"' + (S.rail ? '' : ' data-tip-pos="bottom"') + '>' + ic('sidebar-minimalistic', 18) + '</button></div>' +
-      '<div class="jw-sn-content" id="sideBody">' + sideBodyHtml() + '</div>';
-    el.scrollTop = keep;
+    var sc = $('#sideScroll');
+    var keep = sc ? sc.scrollTop : 0;
+    var rail = railNow();
+    var drawer = narrow() && S.drawer;
+    el.className = 'jw-sidenav jw-glass' + (rail ? ' jw-sidenav--rail' : '') + (drawer ? ' jw-sidenav--drawer' : '');
+    document.documentElement.toggleAttribute('data-drawer', drawer);
+    var toggleLabel = narrow() ? (drawer ? t('メニューを閉じる') : t('メニューを開く')) : (rail ? t('メニューを開く') : t('メニューを閉じる'));
+    var me = SETTINGS_ME;
+    var onAccount = ROUTE.name === 'settings' && ROUTE.tab === 'アカウント';
+    el.innerHTML =
+      '<div class="jw-sn-brand">' +
+        '<a class="jw-brandhome" href="#/home" aria-label="JOY START — ' + esc(t('ホーム')) + '"' + (rail ? ' data-tip="JOY START"' : '') + '>' + brandLockup() + '</a>' +
+        '<button type="button" class="jw-sn-toggle" data-act="rail" aria-expanded="' + !rail + '" aria-label="' + esc(toggleLabel) + '" data-tip="' + esc(toggleLabel) + '"' + (rail ? '' : ' data-tip-pos="bottom"') + '>' + ic('sidebar-minimalistic', 18) + '</button>' +
+      '</div>' +
+      (rail ? '' : '<div class="jw-sn-tools">' +
+        '<label class="jw-sn-find">' + ic('magnifier', 15) +
+          '<input class="jw-sn-find-input" id="sideFind" type="text" autocomplete="off" placeholder="' + esc(t('メニューを検索')) + '" aria-label="' + esc(t('メニューを検索')) + '" value="' + esc(S.sideQuery) + '">' +
+          '<button type="button" class="jw-sn-find-x" id="sideFindX" data-act="side-find-x" aria-label="' + esc(t('検索をクリア')) + '"' + (S.sideQuery ? '' : ' hidden') + '>' + ic('close', 14) + '</button></label>' +
+        toolBtn('expand-all', ic('double-alt-arrow-down', 18), t('すべて開く')) +
+        toolBtn('collapse-all', ic('double-alt-arrow-up', 18), t('すべて閉じる')) +
+      '</div>') +
+      '<div class="jw-sn-scroll" id="sideScroll" data-fade-y><div class="jw-sn-content" id="sideBody">' + sideBodyHtml() + '</div></div>' +
+      '<div class="jw-sn-foot">' +
+        '<a class="jw-sn-me" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (onAccount ? ' aria-current="page"' : '') +
+          ' aria-label="' + esc(me.name + ' — ' + t('アカウント')) + '"' + (rail ? ' data-tip="' + esc(me.name) + '"' : '') + '>' +
+          '<span class="jw-avatar">' + avatarSvg(HEALTH_AVATARS[me.name]) + '</span>' +
+          '<span class="jw-sn-who"><span class="jw-sn-name">' + esc(me.name) + '</span><span class="jw-sn-mail">' + esc(me.mail) + '</span></span></a>' +
+        '<button type="button" class="jw-sn-gear" id="setBtn" data-act="setpop" aria-haspopup="dialog" aria-expanded="' + S.menuOpen + '" aria-label="' + esc(t('表示設定')) + '" data-tip="' + esc(t('表示設定')) + '">' + ic('settings', 20) + '</button>' +
+      '</div>';
+    var nsc = $('#sideScroll');
+    nsc.scrollTop = keep;
     syncFades(el);
   }
   // Trang hiện tại nằm ngoài vùng nhìn của cột ⇒ cuộn cột tới đó (chỉ khi ĐỔI trang)
   function revealCurrent() {
-    var el = $('#side');
+    var el = $('#sideScroll');
     var cur = $('#side .jw-tree-on');
     if (!el || !cur) return;
     var er = el.getBoundingClientRect(), cr = cur.getBoundingClientRect();
@@ -415,93 +434,13 @@
   }
   function refreshSideBody() {
     var el = $('#sideBody');
-    if (el) { el.innerHTML = sideBodyHtml(); syncFades(el); }
+    if (el) { el.innerHTML = sideBodyHtml(); syncFades($('#sideScroll')); }
+    var x = $('#sideFindX');
+    if (x) x.hidden = !S.sideQuery;
   }
 
-  // ── §Dải khối (≤1100px) + pulldown ──
-  // reveal = đổi trang: tab của khối hiện tại bị khuất/cắt mép thì cuộn nó vào giữa.
-  // Các lượt vẽ lại khác (mở pulldown, ghim) giữ nguyên vị trí cuộn của dải.
-  function renderBlockBar(reveal) {
-    var cur = routeBlock();
-    var favTab = S.favs.length
-      ? '<button type="button" class="jw-gtab' + (S.bbarOpen === '__favs' ? ' jw-gtab--open' : '') + '" data-act="bbar" data-k="__favs" aria-haspopup="menu" aria-expanded="' + (S.bbarOpen === '__favs') + '">' +
-        '<span class="jw-gtab-pill">' + ic('star', 16) + '<span>' + t('お気に入り') + '</span><span class="jw-gtab-caret">' + ic('alt-arrow-down', 13) + '</span></span></button>'
-      : '';
-    var tabs = MENU.map(function (b, i) {
-      var active = cur === b.key;
-      if (!b.children) {
-        return '<a class="jw-gtab' + (active ? ' jw-gtab--active' : '') + '" href="' + href(b.key) + '"' + (active ? ' aria-current="page"' : '') + '>' +
-          '<span class="jw-gtab-pill">' + ic(b.icon, 16) + '<span>' + esc(nm(b)) + '</span></span></a>' + (i === 0 ? favTab : '');
-      }
-      var open = S.bbarOpen === b.key;
-      var badge = blockBadge(b);
-      return '<button type="button" class="jw-gtab' + (active ? ' jw-gtab--active' : '') + (open ? ' jw-gtab--open' : '') + '" data-act="bbar" data-k="' + b.key + '" aria-haspopup="menu" aria-expanded="' + open + '">' +
-        '<span class="jw-gtab-pill">' + ic(b.icon, 16) + '<span>' + esc(nm(b)) + '</span>' + (badge ? '<span class="jw-count">' + badge + '</span>' : '') +
-        '<span class="jw-gtab-caret">' + ic('alt-arrow-down', 13) + '</span></span></button>';
-    }).join('');
-    var el = $('#blockbar');
-    var keep = $('#bbarStrip') ? $('#bbarStrip').scrollLeft : null;
-    el.innerHTML = '<div class="jw-gbar-strip" id="bbarStrip" data-fade-x>' + tabs + '</div>';
-    var strip = $('#bbarStrip');
-    if (keep !== null) strip.scrollLeft = keep;
-    var act = $('#bbarStrip .jw-gtab--active');
-    if (act && (keep === null || reveal)) {
-      var sr = strip.getBoundingClientRect(), ar = act.getBoundingClientRect();
-      var cut = ar.left < sr.left + 8 || ar.right > sr.right - 8;
-      if (keep === null || cut) strip.scrollLeft = Math.max(0, strip.scrollLeft + (ar.left - sr.left) - (sr.width - ar.width) / 2);
-    }
-    syncFades(el);
-  }
-  function openBbar(k, btn) {
-    closeFloating();
-    S.bbarOpen = k;
-    var items = '';
-    var head = '';
-    if (k === '__favs') {
-      head = t('お気に入り');
-      items = S.favs.map(function (fk) {
-        var p = PAGES[fk];
-        var l = LINK_BY_KEY[fk];
-        if (l) return '<button type="button" class="jw-pick" data-act="extlink" data-k="' + esc(fk) + '"><span class="jw-pick-icon">' + ic('link-round', 16) + '</span><span class="jw-pick-name">' + esc(tr(l.item.label)) + '</span></button>';
-        if (!p) return '';
-        return '<a class="jw-pick' + (isCurrent(fk) ? ' jw-pick--on' : '') + '" href="' + href(fk) + '"><span class="jw-pick-icon">' + ic(p.node.icon, 16) + '</span><span class="jw-pick-name">' + esc(nm(p.node)) + '</span></a>';
-      }).join('');
-    } else {
-      var b = BLOCKS[k];
-      head = nm(b);
-      items = b.children.map(function (n) {
-        if (!n.children) {
-          var key = b.key + '/' + n.ja;
-          return '<a class="jw-pick' + (isCurrent(key) ? ' jw-pick--on' : '') + '" href="' + href(key) + '"><span class="jw-pick-icon">' + ic(n.icon, 16) + '</span><span class="jw-pick-name">' + esc(nm(n)) + '</span>' + (n.badge ? '<span class="jw-count">' + n.badge + '</span>' : '') + '</a>';
-        }
-        return '<div class="jw-pick-sec">' + esc(nm(n)) + '</div>' + n.children.map(function (c) {
-          var key = b.key + '/' + n.ja + '/' + c.ja;
-          return '<a class="jw-pick jw-pick--kid' + (isCurrent(key) ? ' jw-pick--on' : '') + '" href="' + href(key) + '"' + tipAttr(c) + '><span class="jw-pick-icon">' + ic(c.icon, 15) + '</span><span class="jw-pick-name">' + esc(nm(c)) + '</span>' + (c.badge ? '<span class="jw-count">' + c.badge + '</span>' : '') + '</a>';
-        }).join('');
-      }).join('');
-    }
-    $('#layer').innerHTML = '<div class="jw-gbar-menu jw-glass" role="menu" id="bbarMenu"><div class="jw-gbar-menu-head">' + esc(head) + '</div>' + items + '</div>';
-    var menu = $('#bbarMenu');
-    var r = btn.getBoundingClientRect();
-    var bar = $('#topbars').getBoundingClientRect();
-    menu.style.left = Math.round(Math.min(Math.max(8, r.left), window.innerWidth - menu.offsetWidth - 8)) + 'px';
-    menu.style.top = Math.round(bar.bottom + 6) + 'px';
-    $$('#bbarStrip .jw-gtab').forEach(function (g) {
-      var on = g.getAttribute('data-k') === k;
-      g.classList.toggle('jw-gtab--open', on);
-      if (g.hasAttribute('aria-expanded')) g.setAttribute('aria-expanded', String(on));
-    });
-  }
-  function closeBbar() {
-    if (!S.bbarOpen) return;
-    S.bbarOpen = null;
-    var m = $('#bbarMenu');
-    if (m) m.remove();
-    $$('#bbarStrip .jw-gtab--open').forEach(function (g) { g.classList.remove('jw-gtab--open'); g.setAttribute('aria-expanded', 'false'); });
-  }
   function closeFloating() {
     closeMenu();
-    closeBbar();
     closeGs();
     hideTip();
   }
@@ -1109,7 +1048,7 @@
       return '<div><div class="jw-set-sec">' + esc(title) + '</div>' + control + '<p class="jw-note" style="margin:.45rem 0 0">' + esc(note) + '</p></div>';
     }
     return setBox(
-      group(t('言語'), seg('set-lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, t('言語'), 'setLang'), t('すべての画面が日本語／ベトナム語に切り替わります。ヘッダーのメニューからも切り替えられます。')) +
+      group(t('言語'), seg('set-lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, t('言語'), 'setLang'), t('すべての画面が日本語／ベトナム語に切り替わります。サイドパネル下の歯車ボタンからも切り替えられます。')) +
       group(t('テーマ'), seg('set-theme', [{ v: 'light', label: t('ライト'), icon: ic('sun', 15) }, { v: 'dark', label: t('ダーク'), icon: ic('moon', 15) }], themeNow(), t('テーマ'), 'setTheme'), t('未設定の間はOSの設定（ライト／ダーク）に合わせます。')) +
       group(t('タイムゾーン'), seg('set-tz', [{ v: 'Asia/Tokyo', label: t('日本（JST, UTC+9）') }, { v: 'Asia/Ho_Chi_Minh', label: t('ベトナム（ICT, UTC+7）') }], tz, t('タイムゾーン'), 'setTz'), t('モックのため保存のみ（表示は変わりません）')) +
       group(t('日付の表記'), seg('set-datefmt', [{ v: 'md', label: (sample.getMonth() + 1) + '/' + sample.getDate() + '(' + w + ')' }, { v: 'dm', label: sample.getDate() + '/' + (sample.getMonth() + 1) + ' (' + w + ')' }], dateOrder(), t('日付の表記'), 'setDate'), t('ホーム・お知らせ・スケジュールなど、すべての日付の並びが変わります。'))
@@ -1298,7 +1237,7 @@
     var ov = document.createElement('div');
     ov.className = 'jw-logout';
     ov.id = 'loggedOut';
-    ov.innerHTML = '<div class="jw-ambient" aria-hidden="true"></div><div class="jw-logout-card jw-glass" role="dialog" aria-modal="true" aria-labelledby="loTitle">' + lockup('lo') +
+    ov.innerHTML = '<div class="jw-ambient" aria-hidden="true"></div><div class="jw-logout-card jw-glass" role="dialog" aria-modal="true" aria-labelledby="loTitle">' + brandLockup() +
       '<div class="jw-logout-title" id="loTitle">' + t('ログアウトしました') + '</div>' +
       '<div class="jw-logout-sub">' + t('JOY START をご利用いただきありがとうございました（モック）') + '</div>' +
       '<button type="button" class="jw-btn jw-btn--solid" data-act="relogin">' + ic('login-2', 16) + t('もう一度ログイン') + '</button></div>';
@@ -1329,9 +1268,10 @@
     if (el && el.hasAttribute && (el.hasAttribute('data-fade-x') || el.hasAttribute('data-fade-y'))) syncFade(el);
     if (tipFor) hideTip();
   }, true);
+  var wasNarrow = narrow();
   window.addEventListener('resize', function () {
+    if (narrow() !== wasNarrow) { wasNarrow = narrow(); S.drawer = false; closeMenu(); renderSide(); }
     if (S.menuOpen) placeMenu();
-    closeBbar();
     hideTip();
     syncFades(document);
   });
@@ -1339,9 +1279,7 @@
   // ── §Vẽ lại toàn bộ (đổi ngôn ngữ / theme) ──
   function refreshChrome() {
     document.documentElement.lang = LANG;
-    renderHeader();
     renderSide();
-    renderBlockBar();
     renderPage(false);
     if (S.menuOpen) {
       var panel = $('#menuPanel');
@@ -1357,7 +1295,7 @@
         });
         placeMenu();
       }
-      var btn = $('#menuBtn');
+      var btn = $('#setBtn');
       if (btn) btn.setAttribute('aria-expanded', 'true');
     }
   }
@@ -1376,15 +1314,14 @@
   // ── §Sự kiện: click ──
   document.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('[data-act]') : null;
-    // Bấm ra ngoài: đóng pulldown / dropdown tìm
-    if (S.bbarOpen && !e.target.closest('#bbarMenu') && !(el && el.getAttribute('data-act') === 'bbar')) closeBbar();
+    // Bấm ra ngoài: đóng dropdown tìm
     if (!e.target.closest('#gsearch')) closeGs();
     if (!el) return;
     var act = el.getAttribute('data-act');
     var v = el.getAttribute('data-v');
     var k = el.getAttribute('data-k');
     switch (act) {
-      case 'menu': if (S.menuOpen) closeMenu(); else openMenu(); break;
+      case 'setpop': if (S.menuOpen) closeMenu(); else openMenu(); break;
       case 'menu-close': closeMenu(); break;
       case 'lang': setLang(v); break;
       case 'theme': setTheme(v); break;
@@ -1396,30 +1333,49 @@
       case 'go': go(el.getAttribute('data-href')); break;
 
       case 'block': {
-        if (S.rail) { S.rail = false; save(KEY.rail, '0'); S.openBlock = k; }
-        else S.openBlock = S.openBlock === k ? null : k;
+        // Dải icon: bấm một khối ⇒ bung panel ra (≤640px: mở ngăn kéo) với khối đó mở sẵn
+        if (railNow()) {
+          if (narrow()) S.drawer = true; else { S.rail = false; save(KEY.rail, '0'); }
+          S.open[k] = true;
+        } else if (S.open[k]) delete S.open[k];
+        else S.open[k] = true;
+        saveOpen();
+        hideTip();
+        closeMenu();
         renderSide();
-        if (S.openBlock) {
-          var blk = $('#side .jw-sn-block--open');
-          if (blk) blk.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (S.open[k]) {
+          var blk = $('#side .jw-sn-top[data-k="' + k + '"]');
+          if (blk) blk.parentNode.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
         break;
       }
       case 'rail': {
-        S.rail = !S.rail;
-        save(KEY.rail, S.rail ? '1' : '0');
-        if (S.rail) S.sideQuery = null;
+        if (narrow()) S.drawer = !S.drawer;
+        else { S.rail = !S.rail; save(KEY.rail, S.rail ? '1' : '0'); }
         hideTip();
+        closeMenu();
         renderSide();
         break;
       }
-      case 'side-find': S.sideQuery = ''; renderSide(); { var f = $('#sideFind'); if (f) f.focus(); } break;
-      case 'side-find-x': S.sideQuery = null; renderSide(); break;
+      case 'drawer-close': S.drawer = false; renderSide(); break;
+      case 'expand-all':
+        MENU.forEach(function (b) { if (b.children) S.open[b.key] = true; });
+        S.sideQuery = '';
+        saveOpen();
+        renderSide();
+        break;
+      case 'collapse-all':
+        S.open = {};
+        S.sideQuery = '';
+        saveOpen();
+        renderSide();
+        { var sc0 = $('#sideScroll'); if (sc0) sc0.scrollTop = 0; }
+        break;
+      case 'side-find-x': S.sideQuery = ''; renderSide(); { var f = $('#sideFind'); if (f) f.focus(); } break;
       case 'fav': {
         e.preventDefault();
         var added = toggleFav(k);
         renderSide();
-        renderBlockBar();
         if (ROUTE.name === 'page') {
           if (ROUTE.key === 'link') { var lr = $('#linkResults'); if (lr) lr.innerHTML = linkBody(); }
           else renderPage(false);
@@ -1427,8 +1383,7 @@
         toast(added ? t('お気に入りに追加しました') : t('お気に入りから外しました'), ic('star', 16));
         break;
       }
-      case 'extlink': closeBbar(); toast(t('外部リンク（モック）'), ic('arrow-right-up', 16)); break;
-      case 'bbar': if (S.bbarOpen === k) closeBbar(); else openBbar(k, el); break;
+      case 'extlink': toast(t('外部リンク（モック）'), ic('arrow-right-up', 16)); break;
 
       case 'gs-item': openResult(el.getAttribute('data-cat'), el.getAttribute('data-page'), el.getAttribute('data-title'), el.getAttribute('data-link')); closeGs(); break;
       case 'gs-clear': { var gi = $('#gsInput'); if (gi) { gi.value = ''; gi.focus(); } el.hidden = true; closeGs(); break; }
@@ -1548,10 +1503,10 @@
     var typing = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
     if (e.key === 'Escape') {
       if (closeModal()) return;
-      if (S.menuOpen) { closeMenu(); var mb = $('#menuBtn'); if (mb) mb.focus(); return; }
-      if (S.bbarOpen) { closeBbar(); return; }
+      if (S.menuOpen) { closeMenu(); var mb = $('#setBtn'); if (mb) mb.focus(); return; }
       if (e.target.id === 'gsInput') { closeGs(); e.target.blur(); return; }
-      if (e.target.id === 'sideFind') { S.sideQuery = null; renderSide(); return; }
+      if (e.target.id === 'sideFind') { S.sideQuery = ''; renderSide(); return; }
+      if (S.drawer) { S.drawer = false; renderSide(); return; }
       return;
     }
     if (e.target.id === 'gsInput') {
@@ -1573,7 +1528,8 @@
     if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey) {
       var gs = $('#gsInput');
       if (gs) { e.preventDefault(); gs.focus(); return; }
-      if (!S.rail && window.innerWidth > 1100) { e.preventDefault(); S.sideQuery = S.sideQuery || ''; renderSide(); var sf = $('#sideFind'); if (sf) sf.focus(); }
+      var sf = $('#sideFind');
+      if (sf) { e.preventDefault(); sf.focus(); }
     }
   });
 
@@ -1608,7 +1564,6 @@
   applyTheme();
   window.addEventListener('hashchange', onRoute);
   if (!location.hash) { try { history.replaceState(null, '', '#/home'); } catch (e) { /* file:// */ } }
-  renderHeader();
   onRoute();
   // Cho script kiểm (tools/verify.mjs) đọc danh sách trang + chữ chưa dịch
   window.__JOYSTART__ = { pages: PAGE_LIST.map(function (p) { return p.key; }), missing: I18N_MISSING, announce: ANNOUNCEMENTS.map(function (a) { return a.id; }), settings: SETTINGS_TABS.map(function (x) { return x.id; }) };

@@ -6,7 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>JOY START</title>
 <!-- JOY START — mockup menu/home. FILE BUILD: sửa nguồn ở mockup/*, rồi `node tools/build.mjs`. -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffb370%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23f07319%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c2571a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2236%22%20height%3D%2236%22%20rx%3D%2210%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2214.5%22%20cy%3D%2212%22%20r%3D%223.4%22%20fill%3D%22%23fff%22%2F%3E%3Cpath%20d%3D%22M16%2016%20L23%2021%20L18.5%2023.5%20L26%2029%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223.2%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M13%2024%20L19.5%2020.5%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<!-- favicon = mark Dr.JOY (chép từ docs/brand/drjoy-mark.svg của JOY Analytics) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-6%20-5%20512%20512%22%3E%3Cg%20fill%3D%22%23f08c00%22%3E%3Cpath%20d%3D%22M%20476.558%20113.792%20L%20318.801%20113.792%20C%20304.829%20113.792%20292.353%20122.543%20287.601%20135.68%20L%20219.463%20323.986%20C%20213.938%20339.256%20225.25%20355.378%20241.489%20355.378%20L%20289.757%20355.378%20L%20256.43%20418.954%20L%20336.729%20355.378%20L%20399.246%20355.378%20C%20413.218%20355.378%20425.694%20346.622%20430.447%20333.485%20L%20498.583%20145.182%20C%20504.106%20129.913%20492.796%20113.792%20476.558%20113.792%20M%20389.296%20329.948%20L%20257.006%20329.948%20C%20252.948%20329.948%20250.118%20325.919%20251.499%20322.103%20L%20312.575%20153.009%20C%20314.528%20147.596%20319.67%20143.989%20325.423%20143.989%20L%20457.719%20143.989%20C%20461.777%20143.989%20464.602%20148.017%20463.226%20151.834%20L%20402.146%20320.927%20C%20400.194%20326.341%20395.055%20329.948%20389.296%20329.948%22%2F%3E%3Cpath%20d%3D%22M%20192.486%20350.609%20C%20192.486%20350.609%20103.929%20277.498%200%20351.645%20L%2085.873%20114.513%20C%20188.172%2044.763%20278.358%20113.481%20278.358%20113.481%20L%20192.486%20350.609%20Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <!-- Font như JOY Analytics (Outfit · Space Grotesk · Source Sans 3 · Zen Kaku Gothic New · Noto Sans JP)
      + Be Vietnam Pro: Outfit không có dấu tiếng Việt. Mạng chặn Google Fonts thì rơi về font hệ thống. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,6 +36,11 @@
    · KHÔNG có nền ribbon (`.jw-net`) — chỉ giữ 3 vệt loang màu của `.jw-ambient`
      để kính có thứ phía sau mà nhoè. Muốn nền PHẲNG hẳn: xoá khối §Nền.
    · CHỈ bộ màu Ember — không có `[data-palette='rime']`.
+   · KHÔNG có header: bố cục theo mockup gốc — side panel cao hết màn (logo Dr.JOY ở
+     đỉnh, profile + nút cài đặt ở đáy), nội dung bên phải.
+   · Màu nhấn = CAM Dr.JOY `#f08c00` ở CẢ HAI theme (không dùng cam cháy #c2571a của
+     Ember). Chỉ chữ cam trên nền SÁNG hạ nhẹ xuống `#cc7400` (cùng hue) để đạt 3:1.
+   · Nền: theme sáng SÁNG hơn Ember, theme tối TỐI hơn Ember.
    · Tiếng Việt: Outfit KHÔNG có subset vietnamese (thiếu U+1EA0–1EF1: ạ ả ấ ệ ộ…)
      ⇒ ở `:lang(vi)` chữ TRƯNG BÀY đổi sang Be Vietnam Pro; SỐ vẫn đi Outfit.
    ========================================================================== */
@@ -42,33 +48,35 @@
 /* §Token — bộ Ember, theme SÁNG (chép từ JOY Analytics) */
 :root {
   color-scheme: light;
-  --ground: #e7e3db;
-  --surface: #fdfcfa;
-  --surface-2: #dcd6cb;
-  --line: #cdc5b8;
-  --line-soft: #ded7cc;
+  --ground: #f5f2ed;
+  --surface: #ffffff;
+  --surface-2: #ebe6de;
+  --line: #ddd5ca;
+  --line-soft: #e9e3da;
   --ink: #1c1917;
   --ink-2: #4d453f;
-  --ink-3: #7c716a;
-  --accent: #c2571a;
-  --accent-text: #9c400c;
-  --accent-hover: #a44712;
-  --accent-soft: rgba(194, 87, 26, 0.1);
-  --accent-line: rgba(194, 87, 26, 0.32);
-  --accent-fill: #bd5417;
+  --ink-3: #776c64;
+  /* Cam Dr.JOY. Nền đặc/icon/vạch = đúng #f08c00; CHỮ cam trên nền sáng = #cc7400 (cùng
+     hue 35°, 3,3:1 trên panel) — #f08c00 làm chữ chỉ được 2,4:1. */
+  --accent: #f08c00;
+  --accent-text: #cc7400;
+  --accent-hover: #de8100;
+  --accent-soft: rgba(240, 140, 0, 0.12);
+  --accent-line: rgba(240, 140, 0, 0.4);
+  --accent-fill: #f08c00;
   --on-accent: #ffffff;
   --ok: #15803d;
   --warn: #b45309;
   --crit: #b91c1c;
   --on-crit: #ffffff;
-  --glass-fill: rgba(255, 255, 255, 0.32);
-  --glass-edge: rgba(255, 255, 255, 0.78);
-  --glass-spec: rgba(255, 255, 255, 0.95);
-  --glass-spec-lo: rgba(255, 255, 255, 0.22);
-  --glass-shadow: 0 10px 34px -12px rgba(28, 25, 23, 0.3);
-  --glass-fill-ctl: rgba(255, 255, 255, 0.62);
-  --glass-fill-panel: rgba(253, 252, 250, 0.55);
-  --glass-fill-viz: rgba(253, 252, 250, 0.42);
+  --glass-fill: rgba(255, 255, 255, 0.5);
+  --glass-edge: rgba(255, 255, 255, 0.9);
+  --glass-spec: rgba(255, 255, 255, 0.98);
+  --glass-spec-lo: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 10px 34px -14px rgba(28, 25, 23, 0.22);
+  --glass-fill-ctl: rgba(255, 255, 255, 0.78);
+  --glass-fill-panel: rgba(255, 255, 255, 0.66);
+  --glass-fill-viz: rgba(255, 255, 255, 0.52);
   --rim-hi: rgba(255, 255, 255, 0.98);
   --rim-mid: rgba(255, 255, 255, 0.34);
   --rim-lo: rgba(28, 25, 23, 0.24);
@@ -81,9 +89,9 @@
   --track-thumb-hi: #ffffff;
   --thumb-shadow: 0 1px 2px rgba(28, 25, 23, 0.18), 0 3px 8px -3px rgba(28, 25, 23, 0.2);
   --seg-pad: 3px;
-  --bloom-1: rgba(255, 140, 48, 0.2);
-  --bloom-2: rgba(255, 179, 112, 0.16);
-  --bloom-3: rgba(120, 145, 160, 0.14);
+  --bloom-1: rgba(240, 140, 0, 0.14);
+  --bloom-2: rgba(255, 180, 90, 0.14);
+  --bloom-3: rgba(120, 145, 160, 0.1);
   --focus: var(--accent);
   --field-edge: color-mix(in srgb, var(--accent) 78%, transparent);
   --field-glow: 0 0 14px -3px color-mix(in srgb, var(--accent) 70%, transparent);
@@ -92,12 +100,12 @@
   --sep: color-mix(in srgb, var(--ink) 10%, transparent);
   --table-line: color-mix(in srgb, var(--ink) 14%, transparent);
   --table-line-head: color-mix(in srgb, var(--ink) 28%, transparent);
-  --sn-panel-bg: #f0eae2;
-  --glass-fill-pop: rgba(253, 252, 250, 0.86);
+  --sn-panel-bg: #f9f7f3;
+  --glass-fill-pop: rgba(255, 255, 255, 0.9);
 
   /* Tông cho nhãn phân loại (danh mục お知らせ · プロダクト · trạng thái).
      Chữ ĐẬM đủ tương phản trên nền kính sáng; nền chip = 13% của chính tông. */
-  --tone-orange: #9c400c;
+  --tone-orange: #b56600;
   --tone-plum: #7a3d8c;
   --tone-green: #2d6a33;
   --tone-blue: #215e97;
@@ -116,9 +124,7 @@
   --pop-item-ease: cubic-bezier(0.2, 0.9, 0.3, 1.35);
   --screen-dur: 0.26s;
   --screen-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --bar-h: 46px;
   --screen-pad: 1.25rem;
-  --main-bleed: 9rem;
 
   /* Font */
   --font-body: 'Source Sans 3', 'Zen Kaku Gothic New', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
@@ -134,33 +140,34 @@
 /* §Token — theme TỐI */
 [data-theme='dark'] {
   color-scheme: dark;
-  --ground: #252220;
-  --surface: #302b28;
-  --surface-2: #3a3430;
-  --line: #453e39;
-  --line-soft: #372f2b;
-  --ink: #ede8e4;
+  --ground: #121110;
+  --surface: #1c1a18;
+  --surface-2: #262320;
+  --line: #34302c;
+  --line-soft: #292522;
+  --ink: #efeae6;
   --ink-2: #c3b8b0;
-  --ink-3: #a2958c;
-  --accent: #ff943d;
-  --accent-text: #ffb370;
-  --accent-hover: #ffb370;
-  --accent-soft: rgba(255, 148, 61, 0.14);
-  --accent-line: rgba(255, 148, 61, 0.36);
-  --accent-fill: #ff943d;
-  --on-accent: #2a1c0e;
+  --ink-3: #9d9087;
+  /* Nền tối: #f08c00 làm chữ vẫn 7,2:1 ⇒ dùng ĐÚNG màu chuẩn cho mọi vai. */
+  --accent: #f08c00;
+  --accent-text: #f08c00;
+  --accent-hover: #ff9c1a;
+  --accent-soft: rgba(240, 140, 0, 0.14);
+  --accent-line: rgba(240, 140, 0, 0.42);
+  --accent-fill: #f08c00;
+  --on-accent: #ffffff;
   --ok: #4ade80;
   --warn: #fbbf24;
   --crit: #fca5a5;
   --on-crit: #2a0f0f;
-  --glass-fill: rgba(255, 255, 255, 0.1);
-  --glass-edge: rgba(255, 255, 255, 0.2);
-  --glass-spec: rgba(255, 255, 255, 0.34);
-  --glass-spec-lo: rgba(255, 255, 255, 0.07);
-  --glass-shadow: 0 10px 34px -12px rgba(0, 0, 0, 0.6);
-  --glass-fill-ctl: rgba(255, 255, 255, 0.14);
-  --glass-fill-panel: rgba(48, 43, 40, 0.48);
-  --glass-fill-viz: rgba(48, 43, 40, 0.28);
+  --glass-fill: rgba(255, 255, 255, 0.07);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-spec: rgba(255, 255, 255, 0.24);
+  --glass-spec-lo: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 10px 34px -12px rgba(0, 0, 0, 0.75);
+  --glass-fill-ctl: rgba(255, 255, 255, 0.1);
+  --glass-fill-panel: rgba(30, 28, 26, 0.6);
+  --glass-fill-viz: rgba(30, 28, 26, 0.4);
   --rim-hi: rgba(255, 255, 255, 0.44);
   --rim-mid: rgba(255, 255, 255, 0.1);
   --rim-lo: rgba(0, 0, 0, 0.5);
@@ -169,16 +176,16 @@
   --rim-shadow-hi: 0 6px 18px -6px rgba(0, 0, 0, 0.62);
   --slide-track: rgba(0, 0, 0, 0.5);
   --slide-track-hi: rgba(0, 0, 0, 0.42);
-  --track-thumb: #4a423c;
-  --track-thumb-hi: #554b43;
+  --track-thumb: #3a3431;
+  --track-thumb-hi: #463f3a;
   --thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 3px 10px -3px rgba(0, 0, 0, 0.5);
-  --bloom-1: rgba(255, 140, 48, 0.22);
-  --bloom-2: rgba(240, 115, 25, 0.16);
-  --bloom-3: rgba(90, 120, 140, 0.16);
-  --sn-panel-bg: #3f3a35;
-  --glass-fill-pop: rgba(48, 43, 40, 0.86);
+  --bloom-1: rgba(240, 140, 0, 0.13);
+  --bloom-2: rgba(240, 120, 0, 0.09);
+  --bloom-3: rgba(90, 120, 140, 0.1);
+  --sn-panel-bg: #1d1b19;
+  --glass-fill-pop: rgba(30, 28, 26, 0.92);
 
-  --tone-orange: #ffb370;
+  --tone-orange: #ffa733;
   --tone-plum: #dcaaf0;
   --tone-green: #93dc9e;
   --tone-blue: #97c9f7;
@@ -322,41 +329,26 @@ h1, h2, h3, h4 {
   flex-direction: column;
   overflow: hidden;
 }
-.jw-topbars { position: relative; z-index: 6; flex: none; }
-.jw-header {
-  --glass-blur: 12px;
-  --glass-sat: 170%;
-  position: relative;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.7rem 1.25rem;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-}
+/* Logo = mark Dr.JOY (hai bong bóng thoại, #f08c00 — HẰNG SỐ thương hiệu, không đổi theo
+   theme) + chữ JOY START. Đứng ở ĐỈNH side panel, như mockup gốc; không có header. */
 .jw-brandhome {
   display: inline-flex;
   align-items: center;
-  margin: -0.3rem -0.45rem;
-  padding: 0.3rem 0.45rem;
+  gap: 0.55rem;
+  min-width: 0;
+  margin: -0.3rem -0.4rem;
+  padding: 0.35rem 0.4rem;
   border-radius: 12px;
   color: inherit;
   text-decoration: none;
   transition: background 0.16s ease;
 }
 .jw-brandhome:hover { background: var(--glass-fill); }
-
-/* Lockup: mark + wordmark (chép tỉ lệ `.jw-lockup`) */
-.jw-lockup-wrap { --lockup: 30px; display: inline-flex; flex-direction: column; gap: calc(var(--lockup) * 0.11); }
-.jw-lockup { display: inline-flex; align-items: center; gap: calc(var(--lockup) * 0.31); }
-.jw-lockup-mark { width: var(--lockup); height: var(--lockup); }
+.jw-brandlock { display: inline-flex; align-items: center; gap: 0.55rem; min-width: 0; }
+.jw-brand-mark { width: 36px; height: 25px; flex: none; }
 .jw-wordmark {
   font-family: 'Outfit', var(--font-display);
-  font-size: calc(var(--lockup) * 0.64);
+  font-size: 1.22rem;
   font-weight: 500;
   letter-spacing: -0.025em;
   line-height: 1;
@@ -365,14 +357,6 @@ h1, h2, h3, h4 {
 }
 .jw-wordmark b { font-weight: 700; }
 .jw-wordmark em { font-style: normal; font-weight: 500; color: #f08c00; margin-left: 0.18em; }
-.jw-lockup-ver {
-  padding-left: calc(var(--lockup) * 1.31);
-  font-family: 'Outfit', var(--font-display);
-  font-size: calc(var(--lockup) * 0.34);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--ink-3);
-}
 
 .jw-body { position: relative; flex: 1 1 0; min-height: 0; display: flex; }
 .jw-main {
@@ -383,9 +367,6 @@ h1, h2, h3, h4 {
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  margin-top: calc(-1 * var(--main-bleed));
-  padding-top: var(--main-bleed);
-  scroll-padding-top: var(--main-bleed);
 }
 .jw-screen { max-width: 84rem; margin: 0 auto; padding: 1.5rem var(--screen-pad) 3rem; }
 @media (prefers-reduced-motion: no-preference) {
@@ -396,60 +377,41 @@ h1, h2, h3, h4 {
   to { opacity: 1; transform: none; }
 }
 
-/* Mở menu / hộp thoại ⇒ nội dung phía sau nhoè (chép) */
-.jw-main, .jw-sidenav, .jw-groupbar {
+/* Mở panel cài đặt / hộp thoại ⇒ nội dung phía sau nhoè (chép). Panel cài đặt mọc ra
+   TỪ side panel nên chỉ nhoè vùng nội dung; hộp thoại thì nhoè cả hai. */
+.jw-main, .jw-sidenav {
   transition: opacity var(--menu-close-dur) var(--menu-close-ease), filter var(--menu-close-dur) var(--menu-close-ease);
 }
 [data-menu-open] .jw-main,
-[data-menu-open] .jw-sidenav,
-[data-menu-open] .jw-groupbar,
 [data-modal-open] .jw-main,
-[data-modal-open] .jw-sidenav,
-[data-modal-open] .jw-groupbar {
+[data-modal-open] .jw-sidenav {
   opacity: 0.45;
   filter: blur(12px);
   transition: opacity var(--menu-open-dur) var(--menu-open-ease), filter var(--menu-open-dur) var(--menu-open-ease);
 }
-[data-modal-open] .jw-header { opacity: 0.6; filter: blur(6px); transition: opacity 0.18s ease, filter 0.18s ease; }
 
 /* ==========================================================================
-   §HEADER MENU (chép)
+   §PANEL CÀI ĐẶT — mở từ nút bánh răng cạnh profile (đáy side panel).
+   Cùng chất liệu + nhịp mở của menu JOY Analytics, chỉ đổi chỗ mọc: góc DƯỚI-TRÁI.
    ========================================================================== */
-.jw-menubtn {
-  --glass-blur: 12px;
-  --glass-sat: 170%;
-  --rim-fill: var(--glass-fill-ctl);
-  --rim-shadow: var(--glass-shadow);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 13px;
-  z-index: 30;
-  color: var(--ink);
-  cursor: pointer;
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-}
-.jw-menubtn .jw-mb-x { display: none; }
-.jw-menubtn[aria-expanded='true'] .jw-mb-x { display: block; }
-.jw-menubtn[aria-expanded='true'] .jw-mb-burger { display: none; }
-.jw-scrim { position: fixed; inset: 0; z-index: 25; }
+/* Trên ngăn kéo side panel (z 40) — panel cài đặt mở được cả từ ngăn kéo ở mobile */
+.jw-scrim { position: fixed; inset: 0; z-index: 44; }
 .jw-menu {
   position: fixed;
-  z-index: 30;
+  z-index: 46;
   width: 17.5rem;
   padding: 0.5rem;
   border-radius: 18px;
-  transform-origin: top right;
-  max-height: calc(100dvh - 5.5rem);
+  transform-origin: bottom left;
+  max-height: calc(100dvh - 1rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--glass-fill-panel);
+  /* Side panel phía sau KHÔNG nhoè (chỉ vùng nội dung nhoè) ⇒ fill đặc hơn menu của JOY
+     Analytics, không thì chữ của cây lọt qua panel. */
+  background: var(--glass-fill-pop);
   --glass-blur: 26px;
   opacity: 0;
-  transform: scale(0.94) translateY(-6px);
+  transform: scale(0.94) translateY(6px);
   pointer-events: none;
   transition: opacity var(--menu-close-dur) var(--menu-close-ease), transform var(--menu-close-dur) var(--menu-close-ease);
 }
@@ -472,8 +434,6 @@ h1, h2, h3, h4 {
 .jw-menu--open > :nth-child(7) { animation-delay: 0.15s; }
 .jw-menu--open > :nth-child(8) { animation-delay: 0.175s; }
 .jw-menu--open > :nth-child(n + 9) { animation-delay: 0.2s; }
-.jw-menu-brand { padding: 0.35rem 0.5rem 0.7rem; border-bottom: 1px solid var(--glass-edge); }
-.jw-menu-brand .jw-lockup-wrap { --lockup: 26px; }
 .jw-menu-sec {
   padding: 0.6rem 0.5rem 0.25rem;
   font-family: var(--font-ui);
@@ -513,35 +473,13 @@ h1, h2, h3, h4 {
 .jw-menu-item[aria-current='page'] { color: var(--ink); --rim-fill: var(--glass-fill); }
 .jw-menu-item:hover { color: var(--ink); }
 .jw-menu-item svg { color: var(--ink-2); transition: color 0.16s ease; }
+.jw-menu-item > span { flex: 1 1 auto; }
+.jw-menu-item--go { color: var(--ink); --rim-fill: var(--glass-fill); }
 .jw-menu-item:hover svg, .jw-menu-item[aria-current='page'] svg { color: var(--accent-text); }
-.jw-menu-account { display: flex; align-items: center; gap: 0.55rem; padding: 0.15rem 0.4rem 0.5rem; }
 .jw-avatar { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; overflow: hidden; }
 .jw-avatar svg { width: 100%; height: 100%; }
-.jw-menu-who { display: flex; min-width: 0; flex-direction: column; gap: 0.12rem; }
-.jw-menu-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
-.jw-menu-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; color: var(--ink-3); }
-.jw-menu-out {
-  --rim-fill: var(--glass-fill);
-  --rim-shadow: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-.jw-menu-out:hover {
-  color: var(--crit);
-  --rim-fill: color-mix(in srgb, var(--crit) 16%, var(--rim-fill-hi));
-  --rim-hi: color-mix(in srgb, var(--crit) 55%, transparent);
-}
 
-/* Công tắc 2 nấc `.jw-slide` (chép) — dùng ở menu: ngôn ngữ · theme */
+/* Công tắc 2 nấc `.jw-slide` (chép) — dùng ở panel cài đặt: ngôn ngữ · theme */
 .jw-slide {
   --rim-fill: var(--slide-track);
   --rim-shadow: none;
@@ -590,7 +528,7 @@ h1, h2, h3, h4 {
 /* ==========================================================================
    §SIDE PANEL — cây điều hướng (chép `.jw-sidenav` + `.jw-tree-*`)
    ========================================================================== */
-.jw-sidenav, .jw-railpop, .jw-gbar-menu {
+.jw-sidenav {
   --trunk: 13px;
   --tree-icon: 26px;
   --tree-row-pad: 5px;
@@ -612,7 +550,7 @@ h1, h2, h3, h4 {
   --tree-icon-ink: var(--ink-3);
   --tree-line: color-mix(in srgb, var(--ink) 34%, var(--sn-panel-bg));
 }
-[data-theme='dark'] :is(.jw-sidenav, .jw-railpop, .jw-gbar-menu) { --tree-ink: var(--ink); --tree-icon-ink: var(--ink-2); }
+[data-theme='dark'] .jw-sidenav { --tree-ink: var(--ink); --tree-icon-ink: var(--ink-2); }
 .jw-sidenav {
   --glass-blur: 28px;
   --glass-sat: 150%;
@@ -626,22 +564,71 @@ h1, h2, h3, h4 {
   box-shadow: none;
   border-radius: 0;
   border-width: 0 1px 0 0;
-  padding: 0.85rem 0.55rem 1.5rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   transition: width 0.22s ease, opacity var(--menu-close-dur) var(--menu-close-ease), filter var(--menu-close-dur) var(--menu-close-ease);
 }
-.jw-sn-bar {
+/* 4 tầng, như mockup gốc: logo · công cụ (tìm + mở/đóng tất cả) · CÂY (cuộn riêng) · profile */
+.jw-sn-brand {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2px;
-  padding: 0 var(--sn-bar-pad-x) 0.35rem;
+  gap: 0.4rem;
+  padding: 0.95rem 0.6rem 0.6rem 0.95rem;
 }
-.jw-sn-toggle, .jw-sn-find-btn {
+.jw-sn-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0.15rem 0.55rem 0.6rem;
+}
+.jw-sn-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.15rem 0.55rem 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  --fade: 22px;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-t, 0px), #000 calc(100% - var(--fade-b, 0px)), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-t, 0px), #000 calc(100% - var(--fade-b, 0px)), transparent 100%);
+}
+.jw-sn-scroll[data-fade-t] { --fade-t: var(--fade); }
+.jw-sn-scroll[data-fade-b] { --fade-b: var(--fade); }
+.jw-sn-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 0.55rem 0.75rem;
+  border-top: 1px solid var(--sep);
+}
+.jw-sn-me {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.16s ease;
+}
+.jw-sn-me:hover, .jw-sn-me[aria-current='page'] { background: var(--glass-fill); }
+.jw-sn-me .jw-avatar { width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--glass-edge); }
+.jw-sn-who { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.jw-sn-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+.jw-sn-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; color: var(--ink-3); }
+.jw-sn-gear svg { transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); }
+.jw-sn-gear[aria-expanded='true'] { background: var(--glass-fill); color: var(--accent-text); }
+.jw-sn-gear[aria-expanded='true'] svg { transform: rotate(60deg); }
+.jw-sn-toggle, .jw-sn-tool, .jw-sn-gear {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -655,7 +642,8 @@ h1, h2, h3, h4 {
   cursor: pointer;
   transition: background 0.16s ease, color 0.16s ease;
 }
-.jw-sn-toggle:hover, .jw-sn-toggle:focus-visible, .jw-sn-find-btn:hover, .jw-sn-find-btn:focus-visible { background: var(--glass-fill); color: var(--ink); }
+.jw-sn-toggle:hover, .jw-sn-toggle:focus-visible, .jw-sn-tool:hover, .jw-sn-tool:focus-visible, .jw-sn-gear:hover, .jw-sn-gear:focus-visible { background: var(--glass-fill); color: var(--ink); }
+.jw-sn-gear { width: 38px; height: 38px; border-radius: 11px; color: var(--ink-2); }
 .jw-sn-find {
   flex: 1 1 auto;
   min-width: 0;
@@ -746,16 +734,16 @@ h1, h2, h3, h4 {
 }
 .jw-sn-top:hover { background: var(--glass-fill); color: var(--ink); }
 .jw-sn-caret { display: inline-flex; flex: none; color: var(--ink-3); transition: transform 0.18s ease, color 0.16s ease; }
-/* Khối ĐANG MỞ = nền cam (chép). Khối chứa TRANG HIỆN TẠI mà đang gập = chữ cam + chấm. */
-.jw-sn-block--open > .jw-sn-top,
+/* Khác JOY Analytics (ở đó khối ĐANG MỞ = nền cam, vì chỉ mở được MỘT khối): ở đây mở được
+   nhiều khối cùng lúc (nút "mở tất cả"), nên nền cam chỉ dành cho TRANG hiện tại ở tầng 1
+   (ホーム · リンク). Khối đang mở = chữ đậm + mũi tên lật; khối CHỨA trang hiện tại = chữ cam + vạch. */
 .jw-sn-top[aria-current='page'] { background: var(--accent-fill); color: var(--on-accent); }
-.jw-sn-block--open > .jw-sn-top .jw-sn-topico,
-.jw-sn-top[aria-current='page'] .jw-sn-topico,
-.jw-sn-block--open > .jw-sn-top .jw-sn-caret { color: var(--on-accent); }
+.jw-sn-top[aria-current='page'] .jw-sn-topico { color: var(--on-accent); }
+.jw-sn-block--open > .jw-sn-top { color: var(--ink); }
 .jw-sn-block--open > .jw-sn-top .jw-sn-caret { transform: rotate(180deg); }
-.jw-sn-block--here:not(.jw-sn-block--open) > .jw-sn-top { color: var(--accent-text); }
-.jw-sn-block--here:not(.jw-sn-block--open) > .jw-sn-top .jw-sn-topico { color: var(--accent-text); }
-.jw-sn-block--here:not(.jw-sn-block--open) > .jw-sn-top::after {
+.jw-sn-block--here > .jw-sn-top { color: var(--accent-text); }
+.jw-sn-block--here > .jw-sn-top .jw-sn-topico { color: var(--accent-text); }
+.jw-sn-block--here > .jw-sn-top::after {
   content: '';
   position: absolute;
   left: 3px;
@@ -918,7 +906,6 @@ h1, h2, h3, h4 {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.jw-sn-block--open > .jw-sn-top .jw-count,
 .jw-sn-top[aria-current='page'] .jw-count { background: var(--on-accent); color: var(--accent-text); }
 /* Hàng là TRANG = <a> + nút sao đứng CẠNH (nút lồng trong link là HTML sai) */
 .jw-tree-item { position: relative; }
@@ -946,13 +933,15 @@ h1, h2, h3, h4 {
   --rail-top: 38px;
   --rail-top-r: 11px;
   width: 3.4rem;
-  padding-left: var(--rail-pad-x);
-  padding-right: var(--rail-pad-x);
-  overflow-x: hidden;
-  scrollbar-gutter: auto;
 }
-.jw-sidenav--rail .jw-sn-bar { justify-content: center; padding-left: 0; padding-right: 0; }
-.jw-sidenav--rail :is(.jw-sn-find, .jw-sn-find-btn, .jw-sn-favs, .jw-sn-body, .jw-sn-topname, .jw-sn-caret, .jw-count) { display: none; }
+.jw-sidenav--rail .jw-sn-brand { flex-direction: column; gap: 0.55rem; padding: 0.9rem var(--rail-pad-x) 0.6rem; }
+.jw-sidenav--rail .jw-brandhome { margin: 0; padding: 0.3rem 0.25rem; }
+.jw-sidenav--rail .jw-brand-mark { width: 32px; height: 22px; }
+.jw-sidenav--rail .jw-sn-scroll { padding: 0.15rem var(--rail-pad-x) 1rem; overflow-x: hidden; scrollbar-gutter: auto; scrollbar-width: none; }
+.jw-sidenav--rail .jw-sn-scroll::-webkit-scrollbar { display: none; }
+.jw-sidenav--rail .jw-sn-foot { flex-direction: column; gap: 0.35rem; padding: 0.55rem var(--rail-pad-x) 0.75rem; }
+.jw-sidenav--rail .jw-sn-me { flex: none; padding: 0.2rem; }
+.jw-sidenav--rail :is(.jw-wordmark, .jw-sn-tools, .jw-sn-who, .jw-sn-favs, .jw-sn-body, .jw-sn-topname, .jw-sn-caret, .jw-count) { display: none; }
 .jw-sidenav--rail .jw-sn-nav { gap: 0.4rem; }
 .jw-sidenav--rail .jw-sn-top {
   justify-content: center;
@@ -965,8 +954,6 @@ h1, h2, h3, h4 {
 }
 .jw-sidenav--rail .jw-sn-topico { width: 34px; height: 34px; }
 .jw-sidenav--rail .jw-sn-toggle { width: var(--rail-top); height: var(--rail-top); border-radius: var(--rail-top-r); }
-.jw-sidenav--rail .jw-sn-block--open > .jw-sn-top { background: none; color: var(--ink-2); }
-.jw-sidenav--rail .jw-sn-block--open > .jw-sn-top .jw-sn-topico { color: var(--ink-3); }
 .jw-sidenav--rail .jw-sn-block--here > .jw-sn-top,
 .jw-sidenav--rail .jw-sn-top[aria-current='page'] { background: var(--accent-fill); color: var(--on-accent); }
 .jw-sidenav--rail .jw-sn-block--here > .jw-sn-top .jw-sn-topico,
@@ -983,135 +970,6 @@ h1, h2, h3, h4 {
   background: var(--accent);
   box-shadow: 0 0 0 2px var(--sn-panel-bg);
 }
-
-/* ==========================================================================
-   §DẢI KHỐI ở khổ HẸP (≤1100px) — cùng class `.jw-groupbar`/`.jw-gtab` (chép)
-   ========================================================================== */
-.jw-groupbar {
-  --glass-blur: 28px;
-  --glass-sat: 150%;
-  position: relative;
-  z-index: 1;
-  height: var(--bar-h);
-  overflow: hidden;
-  padding: 0 0.75rem;
-  border-radius: 0;
-  border: none;
-  box-shadow: var(--glass-shadow);
-}
-.jw-blockbar { display: none; }
-.jw-gbar-strip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  max-width: 100%;
-  height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  --fade: 30px;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
-}
-.jw-gbar-strip[data-fade-l] { --fade-l: var(--fade); }
-.jw-gbar-strip[data-fade-r] { --fade-r: var(--fade); }
-.jw-gbar-strip::-webkit-scrollbar { display: none; }
-.jw-gtab {
-  position: relative;
-  flex: 0 0 auto;
-  scroll-snap-align: center;
-  display: inline-flex;
-  align-items: center;
-  height: 46px;
-  padding: 0 0.15rem;
-  border: 0;
-  background: none;
-  color: var(--ink-2);
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  white-space: nowrap;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.16s ease;
-}
-.jw-gtab-pill { display: inline-flex; align-items: center; gap: 0.45rem; height: 32px; padding: 0 0.85rem 0 0.7rem; border-radius: 999px; transition: background 0.16s ease; }
-.jw-gtab:hover { color: var(--ink); }
-.jw-gtab:hover .jw-gtab-pill, .jw-gtab--open .jw-gtab-pill { background: var(--glass-fill); }
-.jw-gtab--active { color: var(--accent-text); }
-.jw-gtab--active::after {
-  content: '';
-  position: absolute;
-  left: 0.85rem;
-  right: 0.85rem;
-  bottom: 0;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--accent);
-}
-.jw-gtab-caret { display: inline-flex; color: var(--ink-3); transition: transform 0.16s ease; }
-.jw-gtab--active .jw-gtab-caret { color: var(--accent-text); }
-.jw-gtab--open .jw-gtab-caret { transform: rotate(180deg); }
-.jw-gtab .jw-count { margin-left: -0.15rem; }
-@keyframes jw-drop-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: none; }
-}
-.jw-gbar-menu {
-  position: fixed;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  width: min(19rem, calc(100vw - 1rem));
-  max-height: min(70vh, 34rem);
-  padding: 0.4rem;
-  border-radius: 14px;
-  background: var(--glass-fill-pop);
-  --glass-blur: 26px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  animation: jw-drop-in 0.14s ease-out;
-}
-.jw-gbar-menu-head {
-  padding: 0.3rem 0.5rem 0.4rem;
-  font-family: var(--font-display);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--ink-2);
-}
-.jw-gbar-menu .jw-pick-sec {
-  padding: 0.55rem 0.55rem 0.2rem;
-  font-family: var(--font-ui);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.jw-pick {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  border: 0;
-  border-radius: 9px;
-  background: none;
-  color: var(--ink-2);
-  font-size: 0.84rem;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-.jw-pick:hover { background: var(--glass-fill); color: var(--ink); }
-.jw-pick--on { color: var(--ink); font-weight: 600; background: var(--glass-fill); }
-.jw-pick-icon { display: inline-flex; color: var(--ink-3); flex-shrink: 0; }
-.jw-pick--on .jw-pick-icon, .jw-pick:hover .jw-pick-icon { color: var(--accent-text); }
-.jw-pick-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); }
-.jw-pick--kid { padding-left: 1.6rem; font-size: 0.8rem; }
 
 /* ==========================================================================
    §TIÊU ĐỀ TRANG (chép `.jw-page-*`)
@@ -1271,7 +1129,7 @@ select.jw-input { cursor: pointer; }
   position: relative;
   display: inline-grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-auto-columns: minmax(0, 1fr);
   align-items: stretch;
   padding: var(--seg-pad);
   border-radius: 999px;
@@ -1299,15 +1157,19 @@ select.jw-input { cursor: pointer; }
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 28px;
-  padding: 0 0.85rem;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0.25rem 0.85rem;
   border: none;
   border-radius: 999px;
   background: none;
   color: var(--ink-2);
   font-size: 0.8rem;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.25;
+  text-align: center;
+  /* Hẹp (dải icon ở mobile ăn mất 54px) thì nhãn dài XUỐNG DÒNG trong nút thay vì tràn */
+  white-space: normal;
   cursor: pointer;
   transition: color 0.16s ease;
 }
@@ -1315,7 +1177,7 @@ select.jw-input { cursor: pointer; }
 .jw-seg-opt--on { color: var(--ink); }
 .jw-seg-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Dải TAB dạng viên thuốc — cuộn ngang, mờ 2 mép khi còn nội dung (nếp `.jw-gbar-strip`) */
+/* Dải TAB dạng viên thuốc — cuộn ngang, mờ 2 mép khi còn nội dung (nếp `.jw-gbar-strip` của JOY Analytics) */
 .jw-tabs {
   display: flex;
   align-items: center;
@@ -1956,9 +1818,10 @@ select.jw-input { cursor: pointer; }
    §LỚP NỔI — toast · tooltip · hộp thoại · màn đăng xuất
    ========================================================================== */
 .jw-toasts {
-  position: absolute;
-  top: 100%;
-  left: 0;
+  position: fixed;
+  z-index: 70;
+  top: 0;
+  left: var(--side-w, 16.25rem);
   right: 0;
   display: flex;
   flex-direction: column;
@@ -2082,31 +1945,46 @@ select.jw-input { cursor: pointer; }
   align-items: center;
   gap: 0.6rem;
 }
-.jw-logout-card .jw-lockup-wrap { --lockup: 34px; margin-bottom: 0.8rem; }
+.jw-logout-card .jw-brandlock { margin-bottom: 0.8rem; }
+.jw-logout-card .jw-brand-mark { width: 44px; height: 30px; }
+.jw-logout-card .jw-wordmark { font-size: 1.5rem; }
 .jw-logout-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
 .jw-logout-sub { font-size: 0.88rem; color: var(--ink-2); margin-bottom: 0.6rem; }
 
 /* ==========================================================================
    §KHỔ MÀN
    ========================================================================== */
+/* Vùng nội dung hẹp đi theo độ rộng side panel ⇒ toast canh giữa VÙNG NỘI DUNG */
+.jw-app:has(.jw-sidenav--rail) { --side-w: 3.4rem; }
 @media (max-width: 1100px) {
-  .jw-sidenav { display: none; }
-  .jw-blockbar { display: block; }
-  .jw-brandhome { min-height: 44px; }
   .jw-search-page { grid-template-columns: minmax(0, 1fr); }
   .jw-vtabs { flex-direction: row; flex-wrap: wrap; position: static; }
   .jw-vtab { width: auto; }
   .jw-vtab .jw-tab-n { margin-left: 0.2rem; }
   .jw-grid2 { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 720px) {
-  .jw-groupbar { padding: 0 0.5rem; --bar-h: 42px; }
-  .jw-gtab { height: 42px; font-size: 0.76rem; }
-  .jw-gtab-pill { height: 30px; padding: 0 0.7rem 0 0.6rem; }
-}
+/* ≤640px (như mockup gốc): side panel LUÔN là dải icon, dán mép trái. Nút gập mở nó
+   thành NGĂN KÉO phủ lên nội dung (có màn che), nên nội dung không bị xô khi mở/đóng. */
+.jw-drawer-scrim { display: none; }
 @media (max-width: 640px) {
   :root { --screen-pad: 1rem; }
-  .jw-header { padding: 0.55rem 1rem; }
+  .jw-app { --side-w: 3.4rem; }
+  .jw-sidenav { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; height: auto; }
+  .jw-main { margin-left: 3.4rem; }
+  .jw-sidenav--drawer {
+    width: min(17.5rem, calc(100vw - 2.5rem));
+    background: var(--glass-fill-pop);
+    border-right-color: var(--glass-edge);
+    box-shadow: 12px 0 36px -12px rgba(0, 0, 0, 0.4);
+  }
+  [data-drawer] .jw-drawer-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(12, 10, 8, 0.28);
+    animation: jw-fade-in 0.18s ease;
+  }
   .jw-screen { padding-top: 1.1rem; }
   .jw-page-title { font-size: 1.35rem; }
   .jw-page-icon { width: 1.8rem; height: 1.8rem; }
@@ -2139,21 +2017,19 @@ select.jw-input { cursor: pointer; }
 <noscript><p style="padding:2rem;font-family:sans-serif">JOY START mockup cần JavaScript.</p></noscript>
 <div class="jw-app" id="app">
   <div class="jw-ambient" aria-hidden="true"></div>
-  <div class="jw-topbars" id="topbars">
-    <header class="jw-header jw-glass" id="header"></header>
-    <div class="jw-groupbar jw-glass jw-blockbar" id="blockbar"></div>
-    <div class="jw-toasts" id="toasts" role="status" aria-live="polite"></div>
-  </div>
+  <!-- Không có header (như mockup gốc): side panel cao hết màn + nội dung. -->
   <div class="jw-body">
     <aside class="jw-sidenav jw-glass" id="side"></aside>
+    <div class="jw-drawer-scrim" data-act="drawer-close" aria-hidden="true"></div>
     <main class="jw-main" id="main"><div class="jw-screen" id="screen"></div></main>
   </div>
+  <div class="jw-toasts" id="toasts" role="status" aria-live="polite"></div>
 </div>
 <div id="layer"></div>
 <div class="jw-tipbox" id="tipbox" role="tooltip"></div>
 <script>
 // ⚠ FILE SINH TỰ ĐỘNG — đừng sửa tay. Chạy lại: node tools/sync-icons.mjs <Solar.zip>
-// Solar Icons (bản OUTLINE) — 480 Design, CC BY 4.0 — 161 icon.
+// Solar Icons (bản OUTLINE) — 480 Design, CC BY 4.0 — 162 icon.
 var ICONS = {
   "add-circle": "<g fill=\"currentColor\"><path d=\"M12.75 9C12.75 8.58579 12.4142 8.25 12 8.25C11.5858 8.25 11.25 8.58579 11.25 9L11.25 11.25H9C8.58579 11.25 8.25 11.5858 8.25 12C8.25 12.4142 8.58579 12.75 9 12.75H11.25V15C11.25 15.4142 11.5858 15.75 12 15.75C12.4142 15.75 12.75 15.4142 12.75 15L12.75 12.75H15C15.4142 12.75 15.75 12.4142 15.75 12C15.75 11.5858 15.4142 11.25 15 11.25H12.75V9Z\" /><path fill-rule=\"evenodd\" d=\"M12 1.25C6.06294 1.25 1.25 6.06294 1.25 12C1.25 17.9371 6.06294 22.75 12 22.75C17.9371 22.75 22.75 17.9371 22.75 12C22.75 6.06294 17.9371 1.25 12 1.25ZM2.75 12C2.75 6.89137 6.89137 2.75 12 2.75C17.1086 2.75 21.25 6.89137 21.25 12C21.25 17.1086 17.1086 21.25 12 21.25C6.89137 21.25 2.75 17.1086 2.75 12Z\" clip-rule=\"evenodd\" /></g>",
   "alarm": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M8.13602 1.6026C8.35556 1.95386 8.24877 2.41657 7.89752 2.6361L3.8975 5.1361C3.54624 5.35563 3.08353 5.24885 2.864 4.8976C2.64447 4.54634 2.75125 4.08363 3.1025 3.8641L7.10253 1.3641C7.45378 1.14457 7.91649 1.25135 8.13602 1.6026ZM15.864 1.6026C16.0835 1.25135 16.5462 1.14457 16.8975 1.3641L20.8975 3.8641C21.2488 4.08363 21.3555 4.54635 21.136 4.8976C20.9165 5.24885 20.4538 5.35563 20.1025 5.1361L16.1025 2.6361C15.7512 2.41657 15.6445 1.95385 15.864 1.6026ZM12 4.7501C7.44365 4.7501 3.75 8.44375 3.75 13.0001C3.75 17.5564 7.44365 21.2501 12 21.2501C16.5563 21.2501 20.25 17.5564 20.25 13.0001C20.25 8.44375 16.5563 4.7501 12 4.7501ZM2.25 13.0001C2.25 7.61532 6.61522 3.2501 12 3.2501C17.3848 3.2501 21.75 7.61532 21.75 13.0001C21.75 18.3849 17.3848 22.7501 12 22.7501C6.61522 22.7501 2.25 18.3849 2.25 13.0001ZM12 8.2501C12.4142 8.2501 12.75 8.58589 12.75 9.0001V12.6894L15.0303 14.9698C15.3232 15.2627 15.3232 15.7375 15.0303 16.0304C14.7374 16.3233 14.2626 16.3233 13.9697 16.0304L11.4697 13.5304C11.329 13.3898 11.25 13.199 11.25 13.0001V9.0001C11.25 8.58589 11.5858 8.2501 12 8.2501Z\" clip-rule=\"evenodd\" />",
@@ -2212,6 +2088,8 @@ var ICONS = {
   "document": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10.9436 1.25H13.0564C14.8942 1.24998 16.3498 1.24997 17.489 1.40314C18.6614 1.56076 19.6104 1.89288 20.3588 2.64124C21.1071 3.38961 21.4392 4.33856 21.5969 5.51098C21.75 6.65019 21.75 8.10583 21.75 9.94359V14.0564C21.75 15.8942 21.75 17.3498 21.5969 18.489C21.4392 19.6614 21.1071 20.6104 20.3588 21.3588C19.6104 22.1071 18.6614 22.4392 17.489 22.5969C16.3498 22.75 14.8942 22.75 13.0564 22.75H10.9436C9.10583 22.75 7.65019 22.75 6.51098 22.5969C5.33856 22.4392 4.38961 22.1071 3.64124 21.3588C2.89288 20.6104 2.56076 19.6614 2.40314 18.489C2.24997 17.3498 2.24998 15.8942 2.25 14.0564V9.94358C2.24998 8.10582 2.24997 6.65019 2.40314 5.51098C2.56076 4.33856 2.89288 3.38961 3.64124 2.64124C4.38961 1.89288 5.33856 1.56076 6.51098 1.40314C7.65019 1.24997 9.10582 1.24998 10.9436 1.25ZM6.71085 2.88976C5.70476 3.02502 5.12511 3.27869 4.7019 3.7019C4.27869 4.12511 4.02502 4.70476 3.88976 5.71085C3.75159 6.73851 3.75 8.09318 3.75 10V14C3.75 15.9068 3.75159 17.2615 3.88976 18.2892C4.02502 19.2952 4.27869 19.8749 4.7019 20.2981C5.12511 20.7213 5.70476 20.975 6.71085 21.1102C7.73851 21.2484 9.09318 21.25 11 21.25H13C14.9068 21.25 16.2615 21.2484 17.2892 21.1102C18.2952 20.975 18.8749 20.7213 19.2981 20.2981C19.7213 19.8749 19.975 19.2952 20.1102 18.2892C20.2484 17.2615 20.25 15.9068 20.25 14V10C20.25 8.09318 20.2484 6.73851 20.1102 5.71085C19.975 4.70476 19.7213 4.12511 19.2981 3.7019C18.8749 3.27869 18.2952 3.02502 17.2892 2.88976C16.2615 2.75159 14.9068 2.75 13 2.75H11C9.09318 2.75 7.73851 2.75159 6.71085 2.88976ZM7.25 10C7.25 9.58579 7.58579 9.25 8 9.25H16C16.4142 9.25 16.75 9.58579 16.75 10C16.75 10.4142 16.4142 10.75 16 10.75H8C7.58579 10.75 7.25 10.4142 7.25 10ZM7.25 14C7.25 13.5858 7.58579 13.25 8 13.25H13C13.4142 13.25 13.75 13.5858 13.75 14C13.75 14.4142 13.4142 14.75 13 14.75H8C7.58579 14.75 7.25 14.4142 7.25 14Z\" clip-rule=\"evenodd\" />",
   "document-text": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10.9436 1.25H13.0564C14.8942 1.24998 16.3498 1.24997 17.489 1.40314C18.6614 1.56076 19.6104 1.89288 20.3588 2.64124C21.1071 3.38961 21.4392 4.33856 21.5969 5.51098C21.75 6.65019 21.75 8.10583 21.75 9.94359V14.0564C21.75 15.8942 21.75 17.3498 21.5969 18.489C21.4392 19.6614 21.1071 20.6104 20.3588 21.3588C19.6104 22.1071 18.6614 22.4392 17.489 22.5969C16.3498 22.75 14.8942 22.75 13.0564 22.75H10.9436C9.10583 22.75 7.65019 22.75 6.51098 22.5969C5.33856 22.4392 4.38961 22.1071 3.64124 21.3588C2.89288 20.6104 2.56076 19.6614 2.40314 18.489C2.24997 17.3498 2.24998 15.8942 2.25 14.0564V9.94358C2.24998 8.10582 2.24997 6.65019 2.40314 5.51098C2.56076 4.33856 2.89288 3.38961 3.64124 2.64124C4.38961 1.89288 5.33856 1.56076 6.51098 1.40314C7.65019 1.24997 9.10582 1.24998 10.9436 1.25ZM6.71085 2.88976C5.70476 3.02502 5.12511 3.27869 4.7019 3.7019C4.27869 4.12511 4.02502 4.70476 3.88976 5.71085C3.75159 6.73851 3.75 8.09318 3.75 10V14C3.75 15.9068 3.75159 17.2615 3.88976 18.2892C4.02502 19.2952 4.27869 19.8749 4.7019 20.2981C5.12511 20.7213 5.70476 20.975 6.71085 21.1102C7.73851 21.2484 9.09318 21.25 11 21.25H13C14.9068 21.25 16.2615 21.2484 17.2892 21.1102C18.2952 20.975 18.8749 20.7213 19.2981 20.2981C19.7213 19.8749 19.975 19.2952 20.1102 18.2892C20.2484 17.2615 20.25 15.9068 20.25 14V10C20.25 8.09318 20.2484 6.73851 20.1102 5.71085C19.975 4.70476 19.7213 4.12511 19.2981 3.7019C18.8749 3.27869 18.2952 3.02502 17.2892 2.88976C16.2615 2.75159 14.9068 2.75 13 2.75H11C9.09318 2.75 7.73851 2.75159 6.71085 2.88976ZM7.25 8C7.25 7.58579 7.58579 7.25 8 7.25H16C16.4142 7.25 16.75 7.58579 16.75 8C16.75 8.41421 16.4142 8.75 16 8.75H8C7.58579 8.75 7.25 8.41421 7.25 8ZM7.25 12C7.25 11.5858 7.58579 11.25 8 11.25H16C16.4142 11.25 16.75 11.5858 16.75 12C16.75 12.4142 16.4142 12.75 16 12.75H8C7.58579 12.75 7.25 12.4142 7.25 12ZM7.25 16C7.25 15.5858 7.58579 15.25 8 15.25H13C13.4142 15.25 13.75 15.5858 13.75 16C13.75 16.4142 13.4142 16.75 13 16.75H8C7.58579 16.75 7.25 16.4142 7.25 16Z\" clip-rule=\"evenodd\" />",
   "documents": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10.9451 1.25H13.0549C14.4225 1.24998 15.5248 1.24996 16.3918 1.36652C17.2919 1.48754 18.0497 1.74643 18.6517 2.34835C18.9501 2.64682 19.1642 2.98363 19.319 3.35712C20.2511 3.47388 21.0336 3.73034 21.6517 4.3484C22.2536 4.95032 22.5125 5.70819 22.6335 6.6083C22.75 7.47527 22.75 8.57759 22.75 9.94518V14.0549C22.75 15.4225 22.75 16.5248 22.6335 17.3918C22.5125 18.2919 22.2536 19.0498 21.6517 19.6517C21.0336 20.2698 20.2511 20.5262 19.319 20.643C19.1642 21.0164 18.9501 21.3532 18.6517 21.6517C18.0497 22.2536 17.2919 22.5125 16.3918 22.6335C15.5248 22.75 14.4225 22.75 13.0549 22.75H10.9451C9.57754 22.75 8.47522 22.75 7.60825 22.6335C6.70814 22.5125 5.95027 22.2536 5.34835 21.6517C5.04991 21.3532 4.8358 21.0164 4.68101 20.643C3.74894 20.5262 2.96643 20.2698 2.34835 19.6517C1.74643 19.0498 1.48754 18.2919 1.36652 17.3918C1.24996 16.5248 1.24998 15.4225 1.25 14.0549V9.94518C1.24998 8.57759 1.24996 7.47527 1.36652 6.6083C1.48754 5.70819 1.74643 4.95032 2.34835 4.3484C2.96642 3.73034 3.74892 3.47388 4.68096 3.35712C4.83576 2.98363 5.04988 2.64682 5.34835 2.34835C5.95027 1.74643 6.70814 1.48754 7.60825 1.36652C8.47522 1.24996 9.57754 1.24998 10.9451 1.25ZM4.32844 4.94047C3.89082 5.04593 3.618 5.20007 3.40901 5.40906C3.13225 5.68583 2.9518 6.0744 2.85315 6.80817C2.75159 7.56352 2.75 8.56464 2.75 10.0001V14.0001C2.75 15.4355 2.75159 16.4366 2.85315 17.1919C2.9518 17.9257 3.13225 18.3143 3.40901 18.591C3.61801 18.8 3.89083 18.9542 4.32845 19.0596C4.24997 18.2484 4.24998 17.2535 4.25 16.0549V7.94512C4.24998 6.74652 4.24997 5.75169 4.32844 4.94047ZM19.6716 19.0596C20.1092 18.9542 20.382 18.8 20.591 18.591C20.8678 18.3143 21.0482 17.9257 21.1469 17.1919C21.2484 16.4366 21.25 15.4355 21.25 14.0001V10.0001C21.25 8.56464 21.2484 7.56352 21.1469 6.80817C21.0482 6.0744 20.8678 5.68583 20.591 5.40906C20.382 5.20007 20.1092 5.04593 19.6716 4.94047C19.75 5.75169 19.75 6.74653 19.75 7.94513V16.0549C19.75 17.2535 19.75 18.2484 19.6716 19.0596ZM7.80812 2.85315C7.07435 2.9518 6.68577 3.13225 6.40901 3.40901C6.13225 3.68577 5.9518 4.07435 5.85315 4.80812C5.75159 5.56347 5.75 6.56458 5.75 8V16C5.75 17.4354 5.75159 18.4365 5.85315 19.1919C5.9518 19.9257 6.13225 20.3142 6.40901 20.591C6.68577 20.8678 7.07435 21.0482 7.80812 21.1469C8.56347 21.2484 9.56458 21.25 11 21.25H13C14.4354 21.25 15.4365 21.2484 16.1919 21.1469C16.9257 21.0482 17.3142 20.8678 17.591 20.591C17.8678 20.3142 18.0482 19.9257 18.1469 19.1919C18.2484 18.4365 18.25 17.4354 18.25 16V8C18.25 6.56459 18.2484 5.56347 18.1469 4.80812C18.0482 4.07435 17.8678 3.68577 17.591 3.40901C17.3142 3.13225 16.9257 2.9518 16.1919 2.85315C15.4365 2.75159 14.4354 2.75 13 2.75H11C9.56458 2.75 8.56347 2.75159 7.80812 2.85315ZM8.25 9C8.25 8.58579 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 8.58579 15.75 9C15.75 9.41422 15.4142 9.75 15 9.75H9C8.58579 9.75 8.25 9.41422 8.25 9ZM8.25 13C8.25 12.5858 8.58579 12.25 9 12.25H15C15.4142 12.25 15.75 12.5858 15.75 13C15.75 13.4142 15.4142 13.75 15 13.75H9C8.58579 13.75 8.25 13.4142 8.25 13ZM8.25 17C8.25 16.5858 8.58579 16.25 9 16.25H12C12.4142 16.25 12.75 16.5858 12.75 17C12.75 17.4142 12.4142 17.75 12 17.75H9C8.58579 17.75 8.25 17.4142 8.25 17Z\" clip-rule=\"evenodd\" />",
+  "double-alt-arrow-down": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M4.43057 6.51192C4.70014 6.19743 5.17361 6.161 5.48811 6.43057L12 12.0122L18.5119 6.43057C18.8264 6.161 19.2999 6.19743 19.5695 6.51192C19.839 6.82641 19.8026 7.29989 19.4881 7.56946L12.4881 13.5695C12.2072 13.8102 11.7928 13.8102 11.5119 13.5695L4.51192 7.56946C4.19743 7.29989 4.161 6.82641 4.43057 6.51192ZM4.43057 10.5119C4.70014 10.1974 5.17361 10.161 5.48811 10.4306L12 16.0122L18.5119 10.4306C18.8264 10.161 19.2999 10.1974 19.5695 10.5119C19.839 10.8264 19.8026 11.2999 19.4881 11.5695L12.4881 17.5695C12.2072 17.8102 11.7928 17.8102 11.5119 17.5695L4.51192 11.5695C4.19743 11.2999 4.161 10.8264 4.43057 10.5119Z\" clip-rule=\"evenodd\" />",
+  "double-alt-arrow-up": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M11.5119 6.43056C11.7928 6.18981 12.2072 6.18981 12.4881 6.43056L19.4881 12.4306C19.8026 12.7001 19.839 13.1736 19.5695 13.4881C19.2999 13.8026 18.8264 13.839 18.5119 13.5694L12 7.98781L5.48811 13.5694C5.17361 13.839 4.70014 13.8026 4.43057 13.4881C4.161 13.1736 4.19743 12.7001 4.51192 12.4306L11.5119 6.43056ZM4.51192 16.4306L11.5119 10.4306C11.7928 10.1898 12.2072 10.1898 12.4881 10.4306L19.4881 16.4306C19.8026 16.7001 19.839 17.1736 19.5695 17.4881C19.2999 17.8026 18.8264 17.839 18.5119 17.5694L12 11.9878L5.48811 17.5694C5.17361 17.839 4.70014 17.8026 4.43057 17.4881C4.161 17.1736 4.19743 16.7001 4.51192 16.4306Z\" clip-rule=\"evenodd\" />",
   "eye": "<g fill=\"currentColor\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path d=\"M12 8.25C9.92893 8.25 8.25 9.92893 8.25 12C8.25 14.0711 9.92893 15.75 12 15.75C14.0711 15.75 15.75 14.0711 15.75 12C15.75 9.92893 14.0711 8.25 12 8.25ZM9.75 12C9.75 10.7574 10.7574 9.75 12 9.75C13.2426 9.75 14.25 10.7574 14.25 12C14.25 13.2426 13.2426 14.25 12 14.25C10.7574 14.25 9.75 13.2426 9.75 12Z\" /><path d=\"M12 3.25C7.48587 3.25 4.44529 5.9542 2.68057 8.24686L2.64874 8.2882C2.24964 8.80653 1.88206 9.28392 1.63269 9.8484C1.36564 10.4529 1.25 11.1117 1.25 12C1.25 12.8883 1.36564 13.5471 1.63269 14.1516C1.88206 14.7161 2.24964 15.1935 2.64875 15.7118L2.68057 15.7531C4.44529 18.0458 7.48587 20.75 12 20.75C16.5141 20.75 19.5547 18.0458 21.3194 15.7531L21.3512 15.7118C21.7504 15.1935 22.1179 14.7161 22.3673 14.1516C22.6344 13.5471 22.75 12.8883 22.75 12C22.75 11.1117 22.6344 10.4529 22.3673 9.8484C22.1179 9.28391 21.7504 8.80652 21.3512 8.28818L21.3194 8.24686C19.5547 5.9542 16.5141 3.25 12 3.25ZM3.86922 9.1618C5.49864 7.04492 8.15036 4.75 12 4.75C15.8496 4.75 18.5014 7.04492 20.1308 9.1618C20.5694 9.73159 20.8263 10.0721 20.9952 10.4545C21.1532 10.812 21.25 11.2489 21.25 12C21.25 12.7511 21.1532 13.188 20.9952 13.5455C20.8263 13.9279 20.5694 14.2684 20.1308 14.8382C18.5014 16.9551 15.8496 19.25 12 19.25C8.15036 19.25 5.49864 16.9551 3.86922 14.8382C3.43064 14.2684 3.17374 13.9279 3.00476 13.5455C2.84684 13.188 2.75 12.7511 2.75 12C2.75 11.2489 2.84684 10.812 3.00476 10.4545C3.17374 10.0721 3.43063 9.73159 3.86922 9.1618Z\" /></g>",
   "face-scan-circle": "<g fill=\"currentColor\"><path d=\"M15.9998 10.5004C15.9998 11.3288 15.5521 12.0004 14.9998 12.0004C14.4475 12.0004 13.9998 11.3288 13.9998 10.5004C13.9998 9.67196 14.4475 9.00039 14.9998 9.00039C15.5521 9.00039 15.9998 9.67196 15.9998 10.5004Z\" /><path d=\"M9.99982 10.5004C9.99982 11.3288 9.5521 12.0004 8.99982 12.0004C8.44753 12.0004 7.99982 11.3288 7.99982 10.5004C7.99982 9.67196 8.44753 9.00039 8.99982 9.00039C9.5521 9.00039 9.99982 9.67196 9.99982 10.5004Z\" /><path fill-rule=\"evenodd\" d=\"M13.2648 2.05116C13.3472 1.64522 13.7431 1.38294 14.149 1.46533C18.3625 2.32056 21.6797 5.63763 22.535 9.85114C22.6173 10.2571 22.3551 10.6529 21.9491 10.7353C21.5432 10.8177 21.1473 10.5555 21.0649 10.1495C20.3295 6.52642 17.4738 3.67075 13.8506 2.93535C13.4447 2.85296 13.1824 2.45709 13.2648 2.05116ZM10.735 2.05121C10.8174 2.45714 10.5551 2.85301 10.1492 2.93541C6.52602 3.6708 3.67032 6.52647 2.93486 10.1496C2.85246 10.5555 2.45659 10.8178 2.05065 10.7354C1.64472 10.653 1.38244 10.2571 1.46484 9.85119C2.32014 5.63769 5.63726 2.32061 9.85079 1.46538C10.2567 1.38299 10.6526 1.64527 10.735 2.05121ZM2.05081 13.2654C2.45675 13.183 2.85262 13.4453 2.93502 13.8512C3.67048 17.4743 6.52618 20.33 10.1493 21.0654C10.5553 21.1478 10.8175 21.5436 10.7351 21.9496C10.6528 22.3555 10.2569 22.6178 9.85095 22.5354C5.63742 21.6802 2.3203 18.3631 1.465 14.1496C1.3826 13.7437 1.64488 13.3478 2.05081 13.2654ZM21.9491 13.2654C22.3551 13.3478 22.6173 13.7437 22.535 14.1496C21.6797 18.3631 18.3625 21.6802 14.149 22.5354C13.7431 22.6178 13.3472 22.3555 13.2648 21.9496C13.1824 21.5436 13.4447 21.1478 13.8506 21.0654C17.4738 20.33 20.3295 17.4743 21.0649 13.8512C21.1473 13.4453 21.5432 13.183 21.9491 13.2654ZM8.39729 15.5538C8.64395 15.221 9.11366 15.1512 9.44643 15.3979C10.1748 15.9377 11.0539 16.2504 11.9998 16.2504C12.9457 16.2504 13.8249 15.9377 14.5532 15.3979C14.886 15.1512 15.3557 15.221 15.6023 15.5538C15.849 15.8865 15.7792 16.3563 15.4464 16.6029C14.474 17.3237 13.2848 17.7504 11.9998 17.7504C10.7148 17.7504 9.52562 17.3237 8.55321 16.6029C8.22044 16.3563 8.15063 15.8865 8.39729 15.5538Z\" clip-rule=\"evenodd\" /></g>",
   "file-text": "<g fill=\"currentColor\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path d=\"M5.25 14.5001C5.25 14.0858 5.58579 13.7501 6 13.7501H14C14.4142 13.7501 14.75 14.0858 14.75 14.5001C14.75 14.9143 14.4142 15.2501 14 15.2501H6C5.58579 15.2501 5.25 14.9143 5.25 14.5001Z\" /><path d=\"M5.25 18C5.25 17.5858 5.58579 17.25 6 17.25H11.5C11.9142 17.25 12.25 17.5858 12.25 18C12.25 18.4143 11.9142 18.75 11.5 18.75H6C5.58579 18.75 5.25 18.4143 5.25 18Z\" /><path d=\"M12.25 2.83422C11.7896 2.75598 11.162 2.75005 10.0298 2.75005C8.11311 2.75005 6.75075 2.75163 5.71785 2.88987C4.70596 3.0253 4.12453 3.27933 3.7019 3.70195C3.27869 4.12516 3.02502 4.70481 2.88976 5.7109C2.75159 6.73856 2.75 8.09323 2.75 10.0001V14.0001C2.75 15.9069 2.75159 17.2615 2.88976 18.2892C3.02502 19.2953 3.27869 19.8749 3.7019 20.2981C4.12511 20.7214 4.70476 20.975 5.71085 21.1103C6.73851 21.2485 8.09318 21.2501 10 21.2501H14C15.9068 21.2501 17.2615 21.2485 18.2892 21.1103C19.2952 20.975 19.8749 20.7214 20.2981 20.2981C20.7213 19.8749 20.975 19.2953 21.1102 18.2892C21.2484 17.2615 21.25 15.9069 21.25 14.0001V13.5629C21.25 12.0269 21.2392 11.2988 21.0762 10.7501H17.9463C16.8135 10.7501 15.8877 10.7501 15.1569 10.6518C14.3929 10.5491 13.7306 10.3268 13.2019 9.79815C12.6732 9.26945 12.4509 8.60712 12.3482 7.84317C12.25 7.1123 12.25 6.18657 12.25 5.05374V2.83422ZM13.75 3.6095V5.00005C13.75 6.19976 13.7516 7.0241 13.8348 7.64329C13.9152 8.24091 14.059 8.53395 14.2626 8.73749C14.4661 8.94103 14.7591 9.08486 15.3568 9.16521C15.976 9.24846 16.8003 9.25005 18 9.25005H20.0195C19.723 8.9625 19.3432 8.61797 18.85 8.17407L14.8912 4.61117C14.4058 4.17433 14.0446 3.85187 13.75 3.6095ZM10.1755 1.25002C11.5601 1.24965 12.4546 1.24942 13.2779 1.56535C14.1012 1.88129 14.7632 2.47735 15.7873 3.39955C15.8226 3.43139 15.8584 3.46361 15.8947 3.49623L19.8534 7.05912C19.8956 7.09705 19.9372 7.1345 19.9783 7.17149C21.162 8.23614 21.9274 8.92458 22.3391 9.84902C22.7508 10.7734 22.7505 11.8029 22.75 13.3949C22.75 13.4502 22.75 13.5062 22.75 13.5629V14.0565C22.75 15.8942 22.75 17.3499 22.5969 18.4891C22.4392 19.6615 22.1071 20.6104 21.3588 21.3588C20.6104 22.1072 19.6614 22.4393 18.489 22.5969C17.3498 22.7501 15.8942 22.7501 14.0564 22.7501H9.94359C8.10583 22.7501 6.65019 22.7501 5.51098 22.5969C4.33856 22.4393 3.38961 22.1072 2.64124 21.3588C1.89288 20.6104 1.56076 19.6615 1.40314 18.4891C1.24997 17.3499 1.24998 15.8942 1.25 14.0565V9.94363C1.24998 8.10587 1.24997 6.65024 1.40314 5.51103C1.56076 4.33861 1.89288 3.38966 2.64124 2.64129C3.39019 1.89235 4.34232 1.56059 5.51887 1.40313C6.66283 1.25002 8.1257 1.25003 9.97352 1.25005L10.0298 1.25005C10.0789 1.25005 10.1275 1.25004 10.1755 1.25002Z\" /></g>",
@@ -2225,7 +2103,6 @@ var ICONS = {
   "global": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M9.20646 3.18191C8.95433 3.26179 8.70533 3.35257 8.46018 3.45411C7.33792 3.91897 6.3182 4.60032 5.45926 5.45926C4.60032 6.3182 3.91897 7.33792 3.45411 8.46018C3.0852 9.35081 2.85837 10.2922 2.78045 11.25H7.26094C7.29294 10.1541 7.39498 9.0741 7.56457 8.05057C7.7725 6.79558 8.07972 5.63914 8.47522 4.65039C8.69114 4.11057 8.9351 3.61641 9.20646 3.18191ZM12 1.25C10.5883 1.25 9.1904 1.52806 7.88615 2.06829C6.5819 2.60853 5.39683 3.40037 4.3986 4.3986C3.40037 5.39683 2.60853 6.5819 2.0683 7.88615C1.52806 9.1904 1.25 10.5883 1.25 12C1.25 13.4117 1.52806 14.8096 2.06829 16.1138C2.60853 17.4181 3.40037 18.6032 4.3986 19.6014C5.39683 20.5996 6.5819 21.3915 7.88615 21.9317C9.1904 22.4719 10.5883 22.75 12 22.75C13.4117 22.75 14.8096 22.4719 16.1138 21.9317C17.4181 21.3915 18.6032 20.5996 19.6014 19.6014C20.5996 18.6032 21.3915 17.4181 21.9317 16.1138C22.4719 14.8096 22.75 13.4117 22.75 12C22.75 10.5883 22.4719 9.1904 21.9317 7.88615C21.3915 6.5819 20.5996 5.39683 19.6014 4.3986C18.6032 3.40037 17.4181 2.60853 16.1138 2.0683C14.8096 1.52806 13.4117 1.25 12 1.25ZM12 2.75C11.7387 2.75 11.4012 2.87579 11.0088 3.2822C10.6134 3.69161 10.2176 4.33326 9.86793 5.20747C9.52056 6.07589 9.2385 7.12424 9.04439 8.29576C8.88866 9.23569 8.79316 10.2331 8.76162 11.25L15.2384 11.25C15.2068 10.2331 15.1113 9.23569 14.9556 8.29576C14.7615 7.12424 14.4794 6.0759 14.1321 5.20748C13.7824 4.33326 13.3866 3.69161 12.9912 3.2822C12.5988 2.87579 12.2613 2.75 12 2.75ZM16.7391 11.25C16.7071 10.1541 16.605 9.07411 16.4354 8.05057C16.2275 6.79558 15.9203 5.63914 15.5248 4.65039C15.3089 4.11057 15.0649 3.61641 14.7935 3.18191C15.0457 3.26179 15.2947 3.35257 15.5398 3.45411C16.6621 3.91897 17.6818 4.60032 18.5407 5.45926C19.3997 6.31821 20.081 7.33792 20.5459 8.46018C20.9148 9.35082 21.1416 10.2922 21.2195 11.25H16.7391ZM15.2384 12.75L8.76162 12.75C8.79316 13.7669 8.88866 14.7643 9.04439 15.7042C9.2385 16.8758 9.52056 17.9241 9.86793 18.7925C10.2176 19.6667 10.6134 20.3084 11.0088 20.7178C11.4012 21.1242 11.7387 21.25 12 21.25C12.2613 21.25 12.5988 21.1242 12.9912 20.7178C13.3866 20.3084 13.7824 19.6667 14.1321 18.7925C14.4794 17.9241 14.7615 16.8758 14.9556 15.7042C15.1113 14.7643 15.2068 13.7669 15.2384 12.75ZM14.7935 20.8181C15.0649 20.3836 15.3089 19.8894 15.5248 19.3496C15.9203 18.3609 16.2275 17.2044 16.4354 15.9494C16.605 14.9259 16.7071 13.8459 16.7391 12.75H21.2195C21.1416 13.7078 20.9148 14.6492 20.5459 15.5398C20.081 16.6621 19.3997 17.6818 18.5407 18.5407C17.6818 19.3997 16.6621 20.081 15.5398 20.5459C15.2947 20.6474 15.0457 20.7382 14.7935 20.8181ZM9.20646 20.8181C8.9351 20.3836 8.69114 19.8894 8.47521 19.3496C8.07971 18.3609 7.7725 17.2044 7.56457 15.9494C7.39498 14.9259 7.29294 13.8459 7.26094 12.75H2.78045C2.85837 13.7078 3.0852 14.6492 3.45411 15.5398C3.91897 16.6621 4.60032 17.6818 5.45926 18.5407C6.3182 19.3997 7.33792 20.081 8.46018 20.5459C8.70533 20.6474 8.95433 20.7382 9.20646 20.8181Z\" clip-rule=\"evenodd\" />",
   "graph-new-up": "<g fill=\"currentColor\"><path d=\"M11.9426 1.25H13.5C13.9142 1.25 14.25 1.58579 14.25 2C14.25 2.41421 13.9142 2.75 13.5 2.75H12C9.62178 2.75 7.91356 2.75159 6.61358 2.92637C5.33517 3.09825 4.56445 3.42514 3.9948 3.9948C3.42514 4.56445 3.09825 5.33517 2.92637 6.61358C2.75159 7.91356 2.75 9.62178 2.75 12C2.75 14.3782 2.75159 16.0864 2.92637 17.3864C3.09825 18.6648 3.42514 19.4355 3.9948 20.0052C4.56445 20.5749 5.33517 20.9018 6.61358 21.0736C7.91356 21.2484 9.62178 21.25 12 21.25C14.3782 21.25 16.0864 21.2484 17.3864 21.0736C18.6648 20.9018 19.4355 20.5749 20.0052 20.0052C20.5749 19.4355 20.9018 18.6648 21.0736 17.3864C21.2484 16.0864 21.25 14.3782 21.25 12V10.5C21.25 10.0858 21.5858 9.75 22 9.75C22.4142 9.75 22.75 10.0858 22.75 10.5V12.0574C22.75 14.3658 22.75 16.1748 22.5603 17.5863C22.366 19.031 21.9607 20.1711 21.0659 21.0659C20.1711 21.9607 19.031 22.366 17.5863 22.5603C16.1748 22.75 14.3658 22.75 12.0574 22.75H11.9426C9.63423 22.75 7.82519 22.75 6.41371 22.5603C4.96897 22.366 3.82895 21.9607 2.93414 21.0659C2.03933 20.1711 1.63399 19.031 1.43975 17.5863C1.24998 16.1748 1.24999 14.3658 1.25 12.0574V11.9426C1.24999 9.63423 1.24998 7.82519 1.43975 6.41371C1.63399 4.96897 2.03933 3.82895 2.93414 2.93414C3.82895 2.03933 4.96897 1.63399 6.41371 1.43975C7.82519 1.24998 9.63423 1.24999 11.9426 1.25Z\" /><path fill-rule=\"evenodd\" d=\"M15.25 5C15.25 2.92893 16.9289 1.25 19 1.25C21.0711 1.25 22.75 2.92893 22.75 5C22.75 7.07107 21.0711 8.75 19 8.75C16.9289 8.75 15.25 7.07107 15.25 5ZM19 2.75C17.7574 2.75 16.75 3.75736 16.75 5C16.75 6.24264 17.7574 7.25 19 7.25C20.2426 7.25 21.25 6.24264 21.25 5C21.25 3.75736 20.2426 2.75 19 2.75Z\" clip-rule=\"evenodd\" /><path d=\"M13.75 10C13.75 10.4142 14.0858 10.75 14.5 10.75H15.1893L13.1768 12.7626C13.0791 12.8602 12.9209 12.8602 12.8232 12.7626L11.2374 11.1768C10.554 10.4934 9.44598 10.4934 8.76256 11.1768L6.46967 13.4697C6.17678 13.7626 6.17678 14.2374 6.46967 14.5303C6.76256 14.8232 7.23744 14.8232 7.53033 14.5303L9.82322 12.2374C9.92085 12.1398 10.0791 12.1398 10.1768 12.2374L11.7626 13.8232C12.446 14.5066 13.554 14.5066 14.2374 13.8232L16.25 11.8107V12.5C16.25 12.9142 16.5858 13.25 17 13.25C17.4142 13.25 17.75 12.9142 17.75 12.5V10C17.75 9.58579 17.4142 9.25 17 9.25H14.5C14.0858 9.25 13.75 9.58579 13.75 10Z\" /></g>",
   "graph-up": "<g fill=\"currentColor\"><path d=\"M13.75 10C13.75 10.4142 14.0858 10.75 14.5 10.75H15.1893L13.1768 12.7626C13.0791 12.8602 12.9209 12.8602 12.8232 12.7626L11.2374 11.1768C10.554 10.4934 9.44598 10.4934 8.76256 11.1768L6.46967 13.4697C6.17678 13.7626 6.17678 14.2374 6.46967 14.5303C6.76256 14.8232 7.23744 14.8232 7.53033 14.5303L9.82322 12.2374C9.92085 12.1398 10.0791 12.1398 10.1768 12.2374L11.7626 13.8232C12.446 14.5066 13.554 14.5066 14.2374 13.8232L16.25 11.8107V12.5C16.25 12.9142 16.5858 13.25 17 13.25C17.4142 13.25 17.75 12.9142 17.75 12.5V10C17.75 9.58579 17.4142 9.25 17 9.25H14.5C14.0858 9.25 13.75 9.58579 13.75 10Z\" /><path fill-rule=\"evenodd\" d=\"M11.9426 1.25C9.63423 1.24999 7.82519 1.24998 6.41371 1.43975C4.96897 1.63399 3.82895 2.03933 2.93414 2.93414C2.03933 3.82895 1.63399 4.96897 1.43975 6.41371C1.24998 7.82519 1.24999 9.63423 1.25 11.9426V12.0574C1.24999 14.3658 1.24998 16.1748 1.43975 17.5863C1.63399 19.031 2.03933 20.1711 2.93414 21.0659C3.82895 21.9607 4.96897 22.366 6.41371 22.5603C7.82519 22.75 9.63423 22.75 11.9426 22.75H12.0574C14.3658 22.75 16.1748 22.75 17.5863 22.5603C19.031 22.366 20.1711 21.9607 21.0659 21.0659C21.9607 20.1711 22.366 19.031 22.5603 17.5863C22.75 16.1748 22.75 14.3658 22.75 12.0574V11.9426C22.75 9.63423 22.75 7.82519 22.5603 6.41371C22.366 4.96897 21.9607 3.82895 21.0659 2.93414C20.1711 2.03933 19.031 1.63399 17.5863 1.43975C16.1748 1.24998 14.3658 1.24999 12.0574 1.25H11.9426ZM3.9948 3.9948C4.56445 3.42514 5.33517 3.09825 6.61358 2.92637C7.91356 2.75159 9.62178 2.75 12 2.75C14.3782 2.75 16.0864 2.75159 17.3864 2.92637C18.6648 3.09825 19.4355 3.42514 20.0052 3.9948C20.5749 4.56445 20.9018 5.33517 21.0736 6.61358C21.2484 7.91356 21.25 9.62178 21.25 12C21.25 14.3782 21.2484 16.0864 21.0736 17.3864C20.9018 18.6648 20.5749 19.4355 20.0052 20.0052C19.4355 20.5749 18.6648 20.9018 17.3864 21.0736C16.0864 21.2484 14.3782 21.25 12 21.25C9.62178 21.25 7.91356 21.2484 6.61358 21.0736C5.33517 20.9018 4.56445 20.5749 3.9948 20.0052C3.42514 19.4355 3.09825 18.6648 2.92637 17.3864C2.75159 16.0864 2.75 14.3782 2.75 12C2.75 9.62178 2.75159 7.91356 2.92637 6.61358C3.09825 5.33517 3.42514 4.56445 3.9948 3.9948Z\" clip-rule=\"evenodd\" /></g>",
-  "hamburger-menu": "<g fill=\"currentColor\" fill-rule=\"evenodd\" clip-rule=\"evenodd\"><path d=\"M20.75 7C20.75 7.41421 20.4142 7.75 20 7.75L4 7.75C3.58579 7.75 3.25 7.41421 3.25 7C3.25 6.58579 3.58579 6.25 4 6.25L20 6.25C20.4142 6.25 20.75 6.58579 20.75 7Z\" /><path d=\"M20.75 12C20.75 12.4142 20.4142 12.75 20 12.75L4 12.75C3.58579 12.75 3.25 12.4142 3.25 12C3.25 11.5858 3.58579 11.25 4 11.25L20 11.25C20.4142 11.25 20.75 11.5858 20.75 12Z\" /><path d=\"M20.75 17C20.75 17.4142 20.4142 17.75 20 17.75L4 17.75C3.58579 17.75 3.25 17.4142 3.25 17C3.25 16.5858 3.58579 16.25 4 16.25L20 16.25C20.4142 16.25 20.75 16.5858 20.75 17Z\" /></g>",
   "hand-heart": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M15.583 1.41995C16.895 1.86149 17.7501 3.09602 17.7501 4.71455C17.7501 5.73209 17.1716 6.66866 16.527 7.41588C15.8644 8.184 15.0257 8.8733 14.2921 9.40806C14.2607 9.43097 14.2295 9.45375 14.1986 9.47635C13.4866 9.99659 12.8992 10.4258 12.0001 10.4258C11.1009 10.4258 10.5135 9.99659 9.80154 9.47634C9.77061 9.45374 9.73944 9.43097 9.708 9.40805C8.97441 8.87329 8.13575 8.18399 7.47311 7.41587C6.82851 6.66865 6.25006 5.73209 6.25006 4.71456C6.25006 3.09603 7.10508 1.8615 8.41713 1.41996C9.5362 1.04335 10.8388 1.29193 12.0001 2.13723C13.1613 1.29193 14.4639 1.04335 15.583 1.41995ZM15.1046 2.84161C14.4525 2.62218 13.4802 2.76414 12.5076 3.65812C12.2206 3.92189 11.7795 3.92189 11.4925 3.65812C10.5199 2.76414 9.5476 2.62218 8.89556 2.84161C8.27008 3.0521 7.75006 3.65592 7.75006 4.71456C7.75006 5.18213 8.03458 5.77033 8.60889 6.43607C9.16518 7.08091 9.90138 7.69278 10.5916 8.19592C11.4347 8.81053 11.6351 8.92578 12.0001 8.92578C12.365 8.92578 12.5654 8.81054 13.4085 8.19593C14.0987 7.69279 14.8349 7.08093 15.3912 6.43609C15.9655 5.77034 16.2501 5.18213 16.2501 4.71455C16.2501 3.65592 15.73 3.0521 15.1046 2.84161ZM8.68397 14.448C10.5498 14.0865 12.5471 14.1676 14.1633 15.1316C14.3903 15.267 14.6031 15.4357 14.7888 15.6442C15.1646 16.0664 15.3588 16.5911 15.3679 17.1172C15.5592 16.9938 15.7508 16.8568 15.9454 16.7098L17.7526 15.3446C18.6572 14.6613 19.9718 14.6612 20.8765 15.3443C21.7125 15.9755 22.0457 17.1083 21.4473 18.0675C21.022 18.7493 20.3815 19.6922 19.7296 20.296C19.0707 20.9063 18.1329 21.4194 17.4236 21.7618C16.5621 22.1776 15.6316 22.4075 14.7269 22.5539C12.8777 22.8532 10.9535 22.8074 9.12505 22.4308C8.19064 22.2382 7.21961 22.1382 6.25999 22.1382H4.00006C3.58585 22.1382 3.25006 21.8024 3.25006 21.3882C3.25006 20.974 3.58585 20.6382 4.00006 20.6382H6.25999C7.3221 20.6382 8.39454 20.7487 9.42772 20.9616C11.0798 21.302 12.8202 21.343 14.4872 21.0732C15.3161 20.939 16.0901 20.7398 16.7715 20.4109C17.4549 20.081 18.2233 19.6466 18.7104 19.1955C19.2029 18.7393 19.7541 17.9477 20.1747 17.2736C20.3016 17.0701 20.284 16.7765 19.9727 16.5414C19.6029 16.2622 19.0264 16.2623 18.6567 16.5415L16.8496 17.9067C16.1281 18.4516 15.2402 19.0347 14.1388 19.2103C14.0276 19.2281 13.9119 19.2443 13.7918 19.2586C13.7345 19.2689 13.6749 19.2758 13.6133 19.2781C13.051 19.334 12.3998 19.347 11.6813 19.2791C11.2689 19.2402 10.9662 18.8743 11.0051 18.4619C11.0441 18.0495 11.41 17.7468 11.8223 17.7858C12.4498 17.845 13.0127 17.8319 13.4903 17.7829C13.5 17.7819 13.5096 17.7809 13.5192 17.7799C13.5392 17.7683 13.5697 17.7472 13.6096 17.7122C13.9291 17.4334 13.9576 16.9665 13.6684 16.6416C13.5951 16.5593 13.5049 16.4854 13.3949 16.4198C12.2138 15.7153 10.6363 15.5976 8.96927 15.9206C7.31174 16.2417 5.66497 16.9815 4.43392 17.8545C4.09604 18.0941 3.6279 18.0144 3.38828 17.6766C3.14867 17.3387 3.22833 16.8706 3.5662 16.6309C4.96457 15.6393 6.80866 14.8113 8.68397 14.448Z\" clip-rule=\"evenodd\" />",
   "hand-shake": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M18.906 3.92194C17.8921 2.88646 16.4461 2.50452 15.0306 2.9073C14.6322 3.02066 14.2173 2.78959 14.104 2.39119C13.9906 1.99279 14.2217 1.57792 14.6201 1.46456C16.5583 0.913072 18.5747 1.43959 19.9778 2.8725C20.2676 3.16846 20.2626 3.64331 19.9666 3.9331C19.6706 4.2229 19.1958 4.2179 18.906 3.92194ZM11.1904 3.30839C10.9763 2.94131 10.3525 2.7187 9.71882 3.08085C9.08746 3.44168 8.97642 4.07772 9.18675 4.4384L11.7124 8.76952C11.9211 9.12734 11.8001 9.58656 11.4423 9.79522C11.0845 10.0039 10.6253 9.88296 10.4166 9.52514L7.89098 5.19403C7.89085 5.19381 7.8911 5.19424 7.89098 5.19403L7.04909 3.75032C6.83503 3.38324 6.21122 3.16063 5.57755 3.52278C4.94619 3.88361 4.83515 4.51965 5.04548 4.88033L8.83397 11.377C9.04263 11.7348 8.92171 12.1941 8.56389 12.4027C8.20607 12.6114 7.74685 12.4905 7.53819 12.1326L5.85442 9.24522C5.64036 8.87814 5.01655 8.65553 4.38288 9.01768C3.75152 9.37851 3.64048 10.0145 3.85081 10.3752L7.6393 16.8719C9.24824 19.631 13.2186 20.5264 16.5856 18.6021C19.9502 16.6792 21.1463 12.8377 19.5411 10.085L17.0154 5.75387C16.8013 5.3868 16.1775 5.16418 15.5439 5.52633C14.9125 5.88716 14.8015 6.5232 15.0118 6.88389L16.6956 9.7713C16.7963 9.94411 16.8239 10.15 16.7721 10.3432C16.7203 10.5365 16.5935 10.701 16.4198 10.8003C14.8774 11.6818 14.4047 13.3863 15.0799 14.5443C15.2886 14.9022 15.1677 15.3614 14.8099 15.57C14.4521 15.7787 13.9928 15.6578 13.7842 15.3C12.7249 13.4835 13.3917 11.2368 15.0475 9.92287L11.1904 3.30839ZM13.9186 5.00916L12.4861 2.55277C11.7703 1.32517 10.163 1.09928 8.97453 1.77853C8.60823 1.98787 8.29668 2.27483 8.06179 2.60775C7.26173 1.72687 5.8839 1.62001 4.83326 2.22046C3.64241 2.90104 3.03012 4.40197 3.74971 5.63596L4.75188 7.35452C4.36684 7.39635 3.98493 7.51742 3.63859 7.71536C2.44774 8.39595 1.83545 9.89687 2.55504 11.1309L6.34352 17.6275C8.45427 21.2471 13.408 22.1458 17.3299 19.9044C21.254 17.6617 22.9513 12.9554 20.8368 9.32937L18.3112 4.99825C17.5953 3.77065 15.9881 3.54476 14.7996 4.22401C14.4495 4.42406 14.1495 4.69498 13.9186 5.00916ZM4.41401 17.859C4.77183 17.6504 5.23105 17.7713 5.43971 18.1291C6.26657 19.5471 7.53066 20.6193 9.08954 21.3151C9.46779 21.4839 9.63757 21.9274 9.46875 22.3057C9.29993 22.6839 8.85645 22.8537 8.4782 22.6849C6.66668 21.8764 5.14688 20.6046 4.14393 18.8847C3.93527 18.5269 4.05619 18.0677 4.41401 17.859Z\" clip-rule=\"evenodd\" />",
   "heart": "<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M5.62436 4.4241C3.96537 5.18243 2.75 6.98614 2.75 9.13701C2.75 11.3344 3.64922 13.0281 4.93829 14.4797C6.00072 15.676 7.28684 16.6675 8.54113 17.6345C8.83904 17.8642 9.13515 18.0925 9.42605 18.3218C9.95208 18.7365 10.4213 19.1004 10.8736 19.3647C11.3261 19.6292 11.6904 19.7499 12 19.7499C12.3096 19.7499 12.6739 19.6292 13.1264 19.3647C13.5787 19.1004 14.0479 18.7365 14.574 18.3218C14.8649 18.0925 15.161 17.8642 15.4589 17.6345C16.7132 16.6675 17.9993 15.676 19.0617 14.4797C20.3508 13.0281 21.25 11.3344 21.25 9.13701C21.25 6.98614 20.0346 5.18243 18.3756 4.4241C16.7639 3.68739 14.5983 3.88249 12.5404 6.02065C12.399 6.16754 12.2039 6.25054 12 6.25054C11.7961 6.25054 11.601 6.16754 11.4596 6.02065C9.40166 3.88249 7.23607 3.68739 5.62436 4.4241ZM12 4.45873C9.68795 2.39015 7.09896 2.10078 5.00076 3.05987C2.78471 4.07283 1.25 6.42494 1.25 9.13701C1.25 11.8025 2.3605 13.836 3.81672 15.4757C4.98287 16.7888 6.41022 17.8879 7.67083 18.8585C7.95659 19.0785 8.23378 19.292 8.49742 19.4998C9.00965 19.9036 9.55954 20.3342 10.1168 20.6598C10.6739 20.9853 11.3096 21.2499 12 21.2499C12.6904 21.2499 13.3261 20.9853 13.8832 20.6598C14.4405 20.3342 14.9903 19.9036 15.5026 19.4998C15.7662 19.292 16.0434 19.0785 16.3292 18.8585C17.5898 17.8879 19.0171 16.7888 20.1833 15.4757C21.6395 13.836 22.75 11.8025 22.75 9.13701C22.75 6.42494 21.2153 4.07283 18.9992 3.05987C16.901 2.10078 14.3121 2.39015 12 4.45873Z\" clip-rule=\"evenodd\" />",
@@ -2332,7 +2209,7 @@ var ICONS = {
 var LANG = 'ja';
 var I18N_MISSING = {};
 var I18N_VI = {
-  // ── Khung app · header · menu ──
+  // ── Khung app · side panel · panel cài đặt ──
   'ホーム': 'Trang chủ',
   'メニュー': 'Menu',
   'モックアップ': 'Mockup',
@@ -2370,11 +2247,14 @@ var I18N_VI = {
   // ── Home ──
   'JOY START 全体を検索': 'Tìm kiếm toàn bộ JOY START',
   '検索をクリア': 'Xoá nội dung tìm',
+  'すべて開く': 'Mở tất cả',
+  'すべて閉じる': 'Đóng tất cả',
+  '設定画面を開く': 'Mở màn hình cài đặt',
   '自分宛ての件数': 'Việc của tôi',
   '承認待ち': 'Chờ duyệt',
   '期限切れ': 'Quá hạn',
   '今日の予定': 'Lịch hôm nay',
-  '未読のお知らせ': 'Thông báo mới',
+  '未読のお知らせ': 'Chưa đọc',
   '今月減らせた時間': 'Thời gian giảm được tháng này',
   '{n}時間': '{n} giờ',
   '詳細': 'Chi tiết',
@@ -2542,7 +2422,7 @@ var I18N_VI = {
   '所属事業部・職種・拠点は名簿が正です（ここでは変更できません）。変更は人材戦略部へご連絡ください。': 'Khối kinh doanh · vị trí · văn phòng lấy theo danh bạ (không đổi được ở đây). Muốn thay đổi, vui lòng liên hệ Phòng Chiến lược Nhân sự.',
   'メール': 'Email',
   'この端末から JOY START をログアウトします。': 'Đăng xuất JOY START trên thiết bị này.',
-  'すべての画面が日本語／ベトナム語に切り替わります。ヘッダーのメニューからも切り替えられます。': 'Toàn bộ màn hình chuyển sang tiếng Nhật / tiếng Việt. Cũng có thể đổi từ menu trên thanh tiêu đề.',
+  'すべての画面が日本語／ベトナム語に切り替わります。サイドパネル下の歯車ボタンからも切り替えられます。': 'Toàn bộ màn hình chuyển sang tiếng Nhật / tiếng Việt. Cũng có thể đổi bằng nút bánh răng ở cuối side panel.',
   '未設定の間はOSの設定（ライト／ダーク）に合わせます。': 'Khi chưa chọn, giao diện theo cài đặt của hệ điều hành (sáng / tối).',
   'タイムゾーン': 'Múi giờ',
   '日本（JST, UTC+9）': 'Nhật Bản (JST, UTC+9)',
@@ -3532,7 +3412,7 @@ function photoSvg(scene){
 
   // ── §Lưu trữ — localStorage luôn bọc try/catch (chế độ riêng tư có thể ném lỗi) ──
   var KEY = {
-    lang: 'joystart_lang', theme: 'joystart_theme', rail: 'joystart_rail',
+    lang: 'joystart_lang', theme: 'joystart_theme', rail: 'joystart_rail', open: 'joystart_open_blocks',
     favs: 'joystart_favorites', read: 'joystart_announce_read', cards: 'joystart_home_cards',
     tz: 'joystart_timezone', datefmt: 'joystart_datefmt', settings: 'joystart_settings_'
   };
@@ -3647,12 +3527,14 @@ function photoSvg(scene){
   // ── §Trạng thái ──
   var favsRaw = loadJSON(KEY.favs, ['todo/予定', 'incident/台帳']);
   var readRaw = loadJSON(KEY.read, []);
+  var openRaw = loadJSON(KEY.open, []);
   var S = {
     rail: load(KEY.rail, '0') === '1',
     favs: Array.isArray(favsRaw) ? favsRaw.filter(function (k) { return typeof k === 'string' && (PAGES[k] || LINK_BY_KEY[k]); }) : [],
     read: {},
-    openBlock: null,
-    sideQuery: null,
+    open: {},
+    drawer: false,
+    sideQuery: '',
     announceTab: 'すべて',
     healthCat: '量',
     rankCat: '量',
@@ -3665,13 +3547,18 @@ function photoSvg(scene){
     linkFilter: '',
     homeDraft: null,
     menuOpen: false,
-    bbarOpen: null,
     gsHot: -1,
     photos: PHOTOS.slice(),
     pendingScroll: null,
     missingFolder: ''
   };
   if (Array.isArray(readRaw)) readRaw.forEach(function (id) { S.read[id] = true; });
+  if (Array.isArray(openRaw)) openRaw.forEach(function (k) { if (BLOCKS[k] && BLOCKS[k].children) S.open[k] = true; });
+  function saveOpen() { save(KEY.open, Object.keys(S.open)); }
+  // ≤640px (như mockup gốc): side panel luôn là dải icon; nút gập mở nó thành NGĂN KÉO.
+  var mqNarrow = window.matchMedia ? window.matchMedia('(max-width: 640px)') : null;
+  function narrow() { return !!(mqNarrow && mqNarrow.matches); }
+  function railNow() { return narrow() ? !S.drawer : S.rail; }
   var ROUTE = { name: 'home' };
 
   function isUnread(a) { return !!a.unread && !S.read[a.id]; }
@@ -3728,38 +3615,26 @@ function photoSvg(scene){
     }
     ROUTE = r;
     closeFloating();
+    S.drawer = false;
+    // Sang một trang ⇒ khối chứa nó MỞ ra (các khối đang mở khác GIỮ nguyên — mở được nhiều khối)
     if (r.name === 'page') {
       var b = PAGES[r.key].block;
-      S.openBlock = b.children ? b.key : null;
-    } else if (r.name === 'home') {
-      S.openBlock = null;
+      if (b.children && !S.open[b.key]) { S.open[b.key] = true; saveOpen(); }
     }
     if (r.name === 'settings') S.homeDraft = null;
     renderSide();
     revealCurrent();
-    renderBlockBar(true);
     renderPage(true);
   }
 
-  // ── §Header ──
-  function lockup(prefix, ver) {
-    var g = 'jsg-' + prefix;
-    return '<span class="jw-lockup-wrap"><span class="jw-lockup">' +
-      '<svg class="jw-lockup-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
-        '<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb370"/><stop offset="0.5" stop-color="#f07319"/><stop offset="1" stop-color="#c2571a"/></linearGradient></defs>' +
-        '<rect x="2" y="2" width="36" height="36" rx="10" fill="url(#' + g + ')"/>' +
-        '<circle cx="14.5" cy="12" r="3.4" fill="#fff"/>' +
-        '<path d="M16 16 L23 21 L18.5 23.5 L26 29" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<path d="M13 24 L19.5 20.5" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-      '</svg>' +
-      '<span class="jw-wordmark"><b>JOY</b><em>START</em></span></span>' +
-      (ver ? '<span class="jw-lockup-ver">' + esc(ver) + '</span>' : '') + '</span>';
-  }
-  function renderHeader() {
-    $('#header').innerHTML =
-      '<a class="jw-brandhome" href="#/home" aria-label="JOY START — ' + esc(t('ホーム')) + '"' + (ROUTE.name === 'home' ? ' aria-current="page"' : '') + '>' + lockup('hdr') + '</a>' +
-      '<button type="button" class="jw-menubtn jw-rim" id="menuBtn" data-act="menu" aria-haspopup="menu" aria-expanded="' + S.menuOpen + '" aria-label="' + esc(t('メニュー')) + '">' +
-        ic('hamburger-menu', 20, 'jw-mb-burger') + ic('close', 20, 'jw-mb-x') + '</button>';
+  // ── §Logo ──
+  // Mark Dr.JOY (hai bong bóng thoại) — path chép NGUYÊN VĂN từ `docs/brand/drjoy-mark.svg` của
+  // JOY Analytics, màu #f08c00 là hằng số thương hiệu. viewBox cắt sát hình (bbox 0 83 500 336).
+  var DRJOY_MARK = '<svg class="jw-brand-mark" viewBox="-6 77 512 348" aria-hidden="true" focusable="false"><g fill="#f08c00">' +
+    '<path d="M 476.558 113.792 L 318.801 113.792 C 304.829 113.792 292.353 122.543 287.601 135.68 L 219.463 323.986 C 213.938 339.256 225.25 355.378 241.489 355.378 L 289.757 355.378 L 256.43 418.954 L 336.729 355.378 L 399.246 355.378 C 413.218 355.378 425.694 346.622 430.447 333.485 L 498.583 145.182 C 504.106 129.913 492.796 113.792 476.558 113.792 M 389.296 329.948 L 257.006 329.948 C 252.948 329.948 250.118 325.919 251.499 322.103 L 312.575 153.009 C 314.528 147.596 319.67 143.989 325.423 143.989 L 457.719 143.989 C 461.777 143.989 464.602 148.017 463.226 151.834 L 402.146 320.927 C 400.194 326.341 395.055 329.948 389.296 329.948"/>' +
+    '<path d="M 192.486 350.609 C 192.486 350.609 103.929 277.498 0 351.645 L 85.873 114.513 C 188.172 44.763 278.358 113.481 278.358 113.481 L 192.486 350.609 Z"/></g></svg>';
+  function brandLockup() {
+    return '<span class="jw-brandlock">' + DRJOY_MARK + '<span class="jw-wordmark"><b>JOY</b><em>START</em></span></span>';
   }
   function slide(act, opts, cur, cls, aria) {
     var right = opts[1].v === cur;
@@ -3769,22 +3644,17 @@ function photoSvg(scene){
         return '<span class="jw-slide-opt' + (o.v === cur ? ' jw-slide-opt--on' : '') + '" title="' + esc(o.title || o.label || '') + '">' + (o.icon || '') + (o.label ? esc(o.label) : '') + '</span>';
       }).join('') + '</button>';
   }
+  // ── §Panel cài đặt (nút bánh răng cạnh profile): ngôn ngữ · theme · vào màn 設定 ──
   function menuHtml() {
     var theme = themeNow();
-    return '<div class="jw-menu-brand">' + lockup('menu', t('モックアップ') + ' · 2026-09') + '</div>' +
-      '<div class="jw-menu-sec">' + t('表示設定') + '</div>' +
+    return '<div class="jw-menu-sec">' + t('表示設定') + '</div>' +
       '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('言語') + '</span>' +
         slide('lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, 'jw-slide--wide', t('言語')) + '</div>' +
       '<div class="jw-menu-row"><span class="jw-menu-row-label">' + t('テーマ') + '</span>' +
         slide('theme', [{ v: 'light', icon: ic('sun', 17), title: t('ライト') }, { v: 'dark', icon: ic('moon', 17), title: t('ダーク') }], theme, '', t('テーマ')) + '</div>' +
       '<div class="jw-menu-sep"></div>' +
-      '<div class="jw-menu-sec">' + t('ナビゲーション') + '</div>' +
-      '<a class="jw-menu-item jw-rim" href="#/home"' + (ROUTE.name === 'home' ? ' aria-current="page"' : '') + '>' + ic('home-2', 18) + t('ホーム') + '</a>' +
-      '<a class="jw-menu-item jw-rim" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' + ic('settings', 18) + t('設定') + '</a>' +
-      '<div class="jw-menu-sep"></div>' +
-      '<div class="jw-menu-account"><span class="jw-avatar">' + avatarSvg(HEALTH_AVATARS[SETTINGS_ME.name]) + '</span>' +
-        '<span class="jw-menu-who"><span class="jw-menu-name">' + esc(SETTINGS_ME.name) + '</span><span class="jw-menu-mail">' + esc(SETTINGS_ME.mail) + '</span></span></div>' +
-      '<button type="button" class="jw-menu-out jw-rim" data-act="logout">' + ic('logout-2', 16) + t('ログアウト') + '</button>';
+      '<a class="jw-menu-item jw-menu-item--go jw-rim" id="setGo" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (ROUTE.name === 'settings' ? ' aria-current="page"' : '') + '>' +
+        ic('settings', 18) + '<span>' + t('設定画面を開く') + '</span>' + ic('alt-arrow-right', 15) + '</a>';
   }
   function openMenu() {
     closeFloating();
@@ -3792,23 +3662,28 @@ function photoSvg(scene){
     document.documentElement.setAttribute('data-menu-open', '');
     var layer = $('#layer');
     layer.innerHTML = '<div class="jw-scrim" data-act="menu-close" aria-hidden="true"></div>' +
-      '<div class="jw-menu jw-glass" role="menu" id="menuPanel" aria-label="' + esc(t('メニュー')) + '">' + menuHtml() + '</div>';
+      '<div class="jw-menu jw-glass" role="dialog" id="menuPanel" aria-label="' + esc(t('表示設定')) + '">' + menuHtml() + '</div>';
     placeMenu();
     var panel = $('#menuPanel');
     void panel.offsetHeight;
     panel.classList.add('jw-menu--open');
-    var btn = $('#menuBtn');
+    var btn = $('#setBtn');
     if (btn) btn.setAttribute('aria-expanded', 'true');
   }
+  // Mọc từ nút bánh răng: side panel đầy đủ ⇒ nằm TRÊN profile, canh mép trái panel;
+  // dải icon ⇒ nằm BÊN PHẢI dải, đáy canh đáy nút.
   function placeMenu() {
     var panel = $('#menuPanel');
-    var btn = $('#menuBtn');
+    var btn = $('#setBtn');
     if (!panel || !btn) return;
     var b = btn.getBoundingClientRect();
-    var hdr = $('#header').getBoundingClientRect();
-    var w = panel.offsetWidth;
-    panel.style.left = Math.round(Math.min(Math.max(8, b.right - w), window.innerWidth - w - 8)) + 'px';
-    panel.style.top = Math.round(hdr.bottom + 8) + 'px';
+    var side = $('#side').getBoundingClientRect();
+    var w = panel.offsetWidth, h = panel.offsetHeight;
+    var left, top;
+    if (railNow()) { left = side.right + 8; top = b.bottom - h; }
+    else { left = side.left + 8; top = b.top - h - 10; }
+    panel.style.left = Math.round(Math.max(8, Math.min(left, window.innerWidth - w - 8))) + 'px';
+    panel.style.top = Math.round(Math.max(8, top)) + 'px';
   }
   function closeMenu() {
     if (!S.menuOpen) return;
@@ -3821,7 +3696,7 @@ function photoSvg(scene){
       panel.classList.remove('jw-menu--open');
       setTimeout(function () { if (!S.menuOpen && panel.parentNode) panel.remove(); }, 240);
     }
-    var btn = $('#menuBtn');
+    var btn = $('#setBtn');
     if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 
@@ -3856,16 +3731,17 @@ function photoSvg(scene){
   }
   function blockHtml(b) {
     var here = routeBlock() === b.key;
-    var railTip = S.rail ? ' data-tip="' + esc(nm(b)) + '"' : '';
+    var rail = railNow();
+    var railTip = rail ? ' data-tip="' + esc(nm(b)) + '"' : '';
     if (!b.children) {
       return '<div class="jw-sn-block"><a class="jw-sn-top" href="' + href(b.key) + '"' + (here ? ' aria-current="page"' : '') + railTip +
-        (S.rail ? ' aria-label="' + esc(nm(b)) + '"' : '') + '><span class="jw-sn-topico">' + ic(b.icon, 18) + '</span>' +
+        (rail ? ' aria-label="' + esc(nm(b)) + '"' : '') + '><span class="jw-sn-topico">' + ic(b.icon, 18) + '</span>' +
         '<span class="jw-sn-topname">' + esc(nm(b)) + '</span></a></div>';
     }
-    var open = S.openBlock === b.key && !S.rail;
+    var open = !!S.open[b.key] && !rail;
     var badge = blockBadge(b);
     return '<div class="jw-sn-block' + (open ? ' jw-sn-block--open' : '') + (here ? ' jw-sn-block--here' : '') + '">' +
-      '<button type="button" class="jw-sn-top" data-act="block" data-k="' + b.key + '"' + (S.rail ? ' aria-label="' + esc(nm(b)) + '"' : ' aria-expanded="' + open + '"') + railTip + (badge ? ' data-count="' + badge + '"' : '') + '>' +
+      '<button type="button" class="jw-sn-top" data-act="block" data-k="' + b.key + '"' + (rail ? ' aria-label="' + esc(nm(b)) + '"' : ' aria-expanded="' + open + '"') + railTip + (badge ? ' data-count="' + badge + '"' : '') + '>' +
         '<span class="jw-sn-topico">' + ic(b.icon, 18) + '</span><span class="jw-sn-topname">' + esc(nm(b)) + '</span>' +
         (badge && !open ? '<span class="jw-count" aria-label="' + esc(t('{n}件', { n: badge })) + '">' + badge + '</span>' : '') +
         '<span class="jw-sn-caret">' + ic('alt-arrow-down', 14) + '</span></button>' +
@@ -3904,29 +3780,52 @@ function photoSvg(scene){
     }).join('') + '</div>';
   }
   function sideBodyHtml() {
-    if (!S.rail && S.sideQuery !== null && S.sideQuery.trim()) return hitsHtml(S.sideQuery);
-    return (S.rail ? '' : favsHtml()) + '<nav class="jw-sn-nav" aria-label="' + esc(t('メニュー')) + '">' + MENU.map(blockHtml).join('') + '</nav>';
+    var rail = railNow();
+    if (!rail && S.sideQuery.trim()) return hitsHtml(S.sideQuery);
+    return (rail ? '' : favsHtml()) + '<nav class="jw-sn-nav" aria-label="' + esc(t('メニュー')) + '">' + MENU.map(blockHtml).join('') + '</nav>';
   }
+  function toolBtn(act, icon, label) {
+    return '<button type="button" class="jw-sn-tool" data-act="' + act + '" aria-label="' + esc(label) + '" data-tip="' + esc(label) + '" data-tip-pos="bottom">' + icon + '</button>';
+  }
+  // Side panel = 4 tầng như mockup gốc: logo (+ nút gập) · công cụ · cây (cuộn riêng) · profile + bánh răng
   function renderSide() {
     var el = $('#side');
-    var keep = el.scrollTop;
-    el.className = 'jw-sidenav jw-glass' + (S.rail ? ' jw-sidenav--rail' : '');
-    var find = '';
-    if (!S.rail) {
-      find = S.sideQuery !== null
-        ? '<label class="jw-sn-find">' + ic('magnifier', 15) + '<input class="jw-sn-find-input" id="sideFind" type="text" autocomplete="off" placeholder="' + esc(t('メニューを検索')) + '" aria-label="' + esc(t('メニューを検索')) + '" value="' + esc(S.sideQuery) + '">' +
-          '<button type="button" class="jw-sn-find-x" data-act="side-find-x" aria-label="' + esc(t('検索を閉じる')) + '">' + ic('close', 14) + '</button></label>'
-        : '<button type="button" class="jw-sn-find-btn" data-act="side-find" aria-label="' + esc(t('メニューを検索')) + '" data-tip="' + esc(t('メニューを検索')) + '" data-tip-pos="bottom">' + ic('magnifier', 18) + '</button>';
-    }
-    el.innerHTML = '<div class="jw-sn-bar">' + find +
-      '<button type="button" class="jw-sn-toggle" data-act="rail" aria-expanded="' + !S.rail + '" aria-label="' + esc(S.rail ? t('メニューを開く') : t('メニューを閉じる')) + '" data-tip="' + esc(S.rail ? t('メニューを開く') : t('メニューを閉じる')) + '"' + (S.rail ? '' : ' data-tip-pos="bottom"') + '>' + ic('sidebar-minimalistic', 18) + '</button></div>' +
-      '<div class="jw-sn-content" id="sideBody">' + sideBodyHtml() + '</div>';
-    el.scrollTop = keep;
+    var sc = $('#sideScroll');
+    var keep = sc ? sc.scrollTop : 0;
+    var rail = railNow();
+    var drawer = narrow() && S.drawer;
+    el.className = 'jw-sidenav jw-glass' + (rail ? ' jw-sidenav--rail' : '') + (drawer ? ' jw-sidenav--drawer' : '');
+    document.documentElement.toggleAttribute('data-drawer', drawer);
+    var toggleLabel = narrow() ? (drawer ? t('メニューを閉じる') : t('メニューを開く')) : (rail ? t('メニューを開く') : t('メニューを閉じる'));
+    var me = SETTINGS_ME;
+    var onAccount = ROUTE.name === 'settings' && ROUTE.tab === 'アカウント';
+    el.innerHTML =
+      '<div class="jw-sn-brand">' +
+        '<a class="jw-brandhome" href="#/home" aria-label="JOY START — ' + esc(t('ホーム')) + '"' + (rail ? ' data-tip="JOY START"' : '') + '>' + brandLockup() + '</a>' +
+        '<button type="button" class="jw-sn-toggle" data-act="rail" aria-expanded="' + !rail + '" aria-label="' + esc(toggleLabel) + '" data-tip="' + esc(toggleLabel) + '"' + (rail ? '' : ' data-tip-pos="bottom"') + '>' + ic('sidebar-minimalistic', 18) + '</button>' +
+      '</div>' +
+      (rail ? '' : '<div class="jw-sn-tools">' +
+        '<label class="jw-sn-find">' + ic('magnifier', 15) +
+          '<input class="jw-sn-find-input" id="sideFind" type="text" autocomplete="off" placeholder="' + esc(t('メニューを検索')) + '" aria-label="' + esc(t('メニューを検索')) + '" value="' + esc(S.sideQuery) + '">' +
+          '<button type="button" class="jw-sn-find-x" id="sideFindX" data-act="side-find-x" aria-label="' + esc(t('検索をクリア')) + '"' + (S.sideQuery ? '' : ' hidden') + '>' + ic('close', 14) + '</button></label>' +
+        toolBtn('expand-all', ic('double-alt-arrow-down', 18), t('すべて開く')) +
+        toolBtn('collapse-all', ic('double-alt-arrow-up', 18), t('すべて閉じる')) +
+      '</div>') +
+      '<div class="jw-sn-scroll" id="sideScroll" data-fade-y><div class="jw-sn-content" id="sideBody">' + sideBodyHtml() + '</div></div>' +
+      '<div class="jw-sn-foot">' +
+        '<a class="jw-sn-me" href="#/settings/' + encodeURIComponent('アカウント') + '"' + (onAccount ? ' aria-current="page"' : '') +
+          ' aria-label="' + esc(me.name + ' — ' + t('アカウント')) + '"' + (rail ? ' data-tip="' + esc(me.name) + '"' : '') + '>' +
+          '<span class="jw-avatar">' + avatarSvg(HEALTH_AVATARS[me.name]) + '</span>' +
+          '<span class="jw-sn-who"><span class="jw-sn-name">' + esc(me.name) + '</span><span class="jw-sn-mail">' + esc(me.mail) + '</span></span></a>' +
+        '<button type="button" class="jw-sn-gear" id="setBtn" data-act="setpop" aria-haspopup="dialog" aria-expanded="' + S.menuOpen + '" aria-label="' + esc(t('表示設定')) + '" data-tip="' + esc(t('表示設定')) + '">' + ic('settings', 20) + '</button>' +
+      '</div>';
+    var nsc = $('#sideScroll');
+    nsc.scrollTop = keep;
     syncFades(el);
   }
   // Trang hiện tại nằm ngoài vùng nhìn của cột ⇒ cuộn cột tới đó (chỉ khi ĐỔI trang)
   function revealCurrent() {
-    var el = $('#side');
+    var el = $('#sideScroll');
     var cur = $('#side .jw-tree-on');
     if (!el || !cur) return;
     var er = el.getBoundingClientRect(), cr = cur.getBoundingClientRect();
@@ -3934,93 +3833,13 @@ function photoSvg(scene){
   }
   function refreshSideBody() {
     var el = $('#sideBody');
-    if (el) { el.innerHTML = sideBodyHtml(); syncFades(el); }
+    if (el) { el.innerHTML = sideBodyHtml(); syncFades($('#sideScroll')); }
+    var x = $('#sideFindX');
+    if (x) x.hidden = !S.sideQuery;
   }
 
-  // ── §Dải khối (≤1100px) + pulldown ──
-  // reveal = đổi trang: tab của khối hiện tại bị khuất/cắt mép thì cuộn nó vào giữa.
-  // Các lượt vẽ lại khác (mở pulldown, ghim) giữ nguyên vị trí cuộn của dải.
-  function renderBlockBar(reveal) {
-    var cur = routeBlock();
-    var favTab = S.favs.length
-      ? '<button type="button" class="jw-gtab' + (S.bbarOpen === '__favs' ? ' jw-gtab--open' : '') + '" data-act="bbar" data-k="__favs" aria-haspopup="menu" aria-expanded="' + (S.bbarOpen === '__favs') + '">' +
-        '<span class="jw-gtab-pill">' + ic('star', 16) + '<span>' + t('お気に入り') + '</span><span class="jw-gtab-caret">' + ic('alt-arrow-down', 13) + '</span></span></button>'
-      : '';
-    var tabs = MENU.map(function (b, i) {
-      var active = cur === b.key;
-      if (!b.children) {
-        return '<a class="jw-gtab' + (active ? ' jw-gtab--active' : '') + '" href="' + href(b.key) + '"' + (active ? ' aria-current="page"' : '') + '>' +
-          '<span class="jw-gtab-pill">' + ic(b.icon, 16) + '<span>' + esc(nm(b)) + '</span></span></a>' + (i === 0 ? favTab : '');
-      }
-      var open = S.bbarOpen === b.key;
-      var badge = blockBadge(b);
-      return '<button type="button" class="jw-gtab' + (active ? ' jw-gtab--active' : '') + (open ? ' jw-gtab--open' : '') + '" data-act="bbar" data-k="' + b.key + '" aria-haspopup="menu" aria-expanded="' + open + '">' +
-        '<span class="jw-gtab-pill">' + ic(b.icon, 16) + '<span>' + esc(nm(b)) + '</span>' + (badge ? '<span class="jw-count">' + badge + '</span>' : '') +
-        '<span class="jw-gtab-caret">' + ic('alt-arrow-down', 13) + '</span></span></button>';
-    }).join('');
-    var el = $('#blockbar');
-    var keep = $('#bbarStrip') ? $('#bbarStrip').scrollLeft : null;
-    el.innerHTML = '<div class="jw-gbar-strip" id="bbarStrip" data-fade-x>' + tabs + '</div>';
-    var strip = $('#bbarStrip');
-    if (keep !== null) strip.scrollLeft = keep;
-    var act = $('#bbarStrip .jw-gtab--active');
-    if (act && (keep === null || reveal)) {
-      var sr = strip.getBoundingClientRect(), ar = act.getBoundingClientRect();
-      var cut = ar.left < sr.left + 8 || ar.right > sr.right - 8;
-      if (keep === null || cut) strip.scrollLeft = Math.max(0, strip.scrollLeft + (ar.left - sr.left) - (sr.width - ar.width) / 2);
-    }
-    syncFades(el);
-  }
-  function openBbar(k, btn) {
-    closeFloating();
-    S.bbarOpen = k;
-    var items = '';
-    var head = '';
-    if (k === '__favs') {
-      head = t('お気に入り');
-      items = S.favs.map(function (fk) {
-        var p = PAGES[fk];
-        var l = LINK_BY_KEY[fk];
-        if (l) return '<button type="button" class="jw-pick" data-act="extlink" data-k="' + esc(fk) + '"><span class="jw-pick-icon">' + ic('link-round', 16) + '</span><span class="jw-pick-name">' + esc(tr(l.item.label)) + '</span></button>';
-        if (!p) return '';
-        return '<a class="jw-pick' + (isCurrent(fk) ? ' jw-pick--on' : '') + '" href="' + href(fk) + '"><span class="jw-pick-icon">' + ic(p.node.icon, 16) + '</span><span class="jw-pick-name">' + esc(nm(p.node)) + '</span></a>';
-      }).join('');
-    } else {
-      var b = BLOCKS[k];
-      head = nm(b);
-      items = b.children.map(function (n) {
-        if (!n.children) {
-          var key = b.key + '/' + n.ja;
-          return '<a class="jw-pick' + (isCurrent(key) ? ' jw-pick--on' : '') + '" href="' + href(key) + '"><span class="jw-pick-icon">' + ic(n.icon, 16) + '</span><span class="jw-pick-name">' + esc(nm(n)) + '</span>' + (n.badge ? '<span class="jw-count">' + n.badge + '</span>' : '') + '</a>';
-        }
-        return '<div class="jw-pick-sec">' + esc(nm(n)) + '</div>' + n.children.map(function (c) {
-          var key = b.key + '/' + n.ja + '/' + c.ja;
-          return '<a class="jw-pick jw-pick--kid' + (isCurrent(key) ? ' jw-pick--on' : '') + '" href="' + href(key) + '"' + tipAttr(c) + '><span class="jw-pick-icon">' + ic(c.icon, 15) + '</span><span class="jw-pick-name">' + esc(nm(c)) + '</span>' + (c.badge ? '<span class="jw-count">' + c.badge + '</span>' : '') + '</a>';
-        }).join('');
-      }).join('');
-    }
-    $('#layer').innerHTML = '<div class="jw-gbar-menu jw-glass" role="menu" id="bbarMenu"><div class="jw-gbar-menu-head">' + esc(head) + '</div>' + items + '</div>';
-    var menu = $('#bbarMenu');
-    var r = btn.getBoundingClientRect();
-    var bar = $('#topbars').getBoundingClientRect();
-    menu.style.left = Math.round(Math.min(Math.max(8, r.left), window.innerWidth - menu.offsetWidth - 8)) + 'px';
-    menu.style.top = Math.round(bar.bottom + 6) + 'px';
-    $$('#bbarStrip .jw-gtab').forEach(function (g) {
-      var on = g.getAttribute('data-k') === k;
-      g.classList.toggle('jw-gtab--open', on);
-      if (g.hasAttribute('aria-expanded')) g.setAttribute('aria-expanded', String(on));
-    });
-  }
-  function closeBbar() {
-    if (!S.bbarOpen) return;
-    S.bbarOpen = null;
-    var m = $('#bbarMenu');
-    if (m) m.remove();
-    $$('#bbarStrip .jw-gtab--open').forEach(function (g) { g.classList.remove('jw-gtab--open'); g.setAttribute('aria-expanded', 'false'); });
-  }
   function closeFloating() {
     closeMenu();
-    closeBbar();
     closeGs();
     hideTip();
   }
@@ -4628,7 +4447,7 @@ function photoSvg(scene){
       return '<div><div class="jw-set-sec">' + esc(title) + '</div>' + control + '<p class="jw-note" style="margin:.45rem 0 0">' + esc(note) + '</p></div>';
     }
     return setBox(
-      group(t('言語'), seg('set-lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, t('言語'), 'setLang'), t('すべての画面が日本語／ベトナム語に切り替わります。ヘッダーのメニューからも切り替えられます。')) +
+      group(t('言語'), seg('set-lang', [{ v: 'ja', label: '日本語' }, { v: 'vi', label: 'Tiếng Việt' }], LANG, t('言語'), 'setLang'), t('すべての画面が日本語／ベトナム語に切り替わります。サイドパネル下の歯車ボタンからも切り替えられます。')) +
       group(t('テーマ'), seg('set-theme', [{ v: 'light', label: t('ライト'), icon: ic('sun', 15) }, { v: 'dark', label: t('ダーク'), icon: ic('moon', 15) }], themeNow(), t('テーマ'), 'setTheme'), t('未設定の間はOSの設定（ライト／ダーク）に合わせます。')) +
       group(t('タイムゾーン'), seg('set-tz', [{ v: 'Asia/Tokyo', label: t('日本（JST, UTC+9）') }, { v: 'Asia/Ho_Chi_Minh', label: t('ベトナム（ICT, UTC+7）') }], tz, t('タイムゾーン'), 'setTz'), t('モックのため保存のみ（表示は変わりません）')) +
       group(t('日付の表記'), seg('set-datefmt', [{ v: 'md', label: (sample.getMonth() + 1) + '/' + sample.getDate() + '(' + w + ')' }, { v: 'dm', label: sample.getDate() + '/' + (sample.getMonth() + 1) + ' (' + w + ')' }], dateOrder(), t('日付の表記'), 'setDate'), t('ホーム・お知らせ・スケジュールなど、すべての日付の並びが変わります。'))
@@ -4817,7 +4636,7 @@ function photoSvg(scene){
     var ov = document.createElement('div');
     ov.className = 'jw-logout';
     ov.id = 'loggedOut';
-    ov.innerHTML = '<div class="jw-ambient" aria-hidden="true"></div><div class="jw-logout-card jw-glass" role="dialog" aria-modal="true" aria-labelledby="loTitle">' + lockup('lo') +
+    ov.innerHTML = '<div class="jw-ambient" aria-hidden="true"></div><div class="jw-logout-card jw-glass" role="dialog" aria-modal="true" aria-labelledby="loTitle">' + brandLockup() +
       '<div class="jw-logout-title" id="loTitle">' + t('ログアウトしました') + '</div>' +
       '<div class="jw-logout-sub">' + t('JOY START をご利用いただきありがとうございました（モック）') + '</div>' +
       '<button type="button" class="jw-btn jw-btn--solid" data-act="relogin">' + ic('login-2', 16) + t('もう一度ログイン') + '</button></div>';
@@ -4848,9 +4667,10 @@ function photoSvg(scene){
     if (el && el.hasAttribute && (el.hasAttribute('data-fade-x') || el.hasAttribute('data-fade-y'))) syncFade(el);
     if (tipFor) hideTip();
   }, true);
+  var wasNarrow = narrow();
   window.addEventListener('resize', function () {
+    if (narrow() !== wasNarrow) { wasNarrow = narrow(); S.drawer = false; closeMenu(); renderSide(); }
     if (S.menuOpen) placeMenu();
-    closeBbar();
     hideTip();
     syncFades(document);
   });
@@ -4858,9 +4678,7 @@ function photoSvg(scene){
   // ── §Vẽ lại toàn bộ (đổi ngôn ngữ / theme) ──
   function refreshChrome() {
     document.documentElement.lang = LANG;
-    renderHeader();
     renderSide();
-    renderBlockBar();
     renderPage(false);
     if (S.menuOpen) {
       var panel = $('#menuPanel');
@@ -4876,7 +4694,7 @@ function photoSvg(scene){
         });
         placeMenu();
       }
-      var btn = $('#menuBtn');
+      var btn = $('#setBtn');
       if (btn) btn.setAttribute('aria-expanded', 'true');
     }
   }
@@ -4895,15 +4713,14 @@ function photoSvg(scene){
   // ── §Sự kiện: click ──
   document.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('[data-act]') : null;
-    // Bấm ra ngoài: đóng pulldown / dropdown tìm
-    if (S.bbarOpen && !e.target.closest('#bbarMenu') && !(el && el.getAttribute('data-act') === 'bbar')) closeBbar();
+    // Bấm ra ngoài: đóng dropdown tìm
     if (!e.target.closest('#gsearch')) closeGs();
     if (!el) return;
     var act = el.getAttribute('data-act');
     var v = el.getAttribute('data-v');
     var k = el.getAttribute('data-k');
     switch (act) {
-      case 'menu': if (S.menuOpen) closeMenu(); else openMenu(); break;
+      case 'setpop': if (S.menuOpen) closeMenu(); else openMenu(); break;
       case 'menu-close': closeMenu(); break;
       case 'lang': setLang(v); break;
       case 'theme': setTheme(v); break;
@@ -4915,30 +4732,49 @@ function photoSvg(scene){
       case 'go': go(el.getAttribute('data-href')); break;
 
       case 'block': {
-        if (S.rail) { S.rail = false; save(KEY.rail, '0'); S.openBlock = k; }
-        else S.openBlock = S.openBlock === k ? null : k;
+        // Dải icon: bấm một khối ⇒ bung panel ra (≤640px: mở ngăn kéo) với khối đó mở sẵn
+        if (railNow()) {
+          if (narrow()) S.drawer = true; else { S.rail = false; save(KEY.rail, '0'); }
+          S.open[k] = true;
+        } else if (S.open[k]) delete S.open[k];
+        else S.open[k] = true;
+        saveOpen();
+        hideTip();
+        closeMenu();
         renderSide();
-        if (S.openBlock) {
-          var blk = $('#side .jw-sn-block--open');
-          if (blk) blk.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (S.open[k]) {
+          var blk = $('#side .jw-sn-top[data-k="' + k + '"]');
+          if (blk) blk.parentNode.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
         break;
       }
       case 'rail': {
-        S.rail = !S.rail;
-        save(KEY.rail, S.rail ? '1' : '0');
-        if (S.rail) S.sideQuery = null;
+        if (narrow()) S.drawer = !S.drawer;
+        else { S.rail = !S.rail; save(KEY.rail, S.rail ? '1' : '0'); }
         hideTip();
+        closeMenu();
         renderSide();
         break;
       }
-      case 'side-find': S.sideQuery = ''; renderSide(); { var f = $('#sideFind'); if (f) f.focus(); } break;
-      case 'side-find-x': S.sideQuery = null; renderSide(); break;
+      case 'drawer-close': S.drawer = false; renderSide(); break;
+      case 'expand-all':
+        MENU.forEach(function (b) { if (b.children) S.open[b.key] = true; });
+        S.sideQuery = '';
+        saveOpen();
+        renderSide();
+        break;
+      case 'collapse-all':
+        S.open = {};
+        S.sideQuery = '';
+        saveOpen();
+        renderSide();
+        { var sc0 = $('#sideScroll'); if (sc0) sc0.scrollTop = 0; }
+        break;
+      case 'side-find-x': S.sideQuery = ''; renderSide(); { var f = $('#sideFind'); if (f) f.focus(); } break;
       case 'fav': {
         e.preventDefault();
         var added = toggleFav(k);
         renderSide();
-        renderBlockBar();
         if (ROUTE.name === 'page') {
           if (ROUTE.key === 'link') { var lr = $('#linkResults'); if (lr) lr.innerHTML = linkBody(); }
           else renderPage(false);
@@ -4946,8 +4782,7 @@ function photoSvg(scene){
         toast(added ? t('お気に入りに追加しました') : t('お気に入りから外しました'), ic('star', 16));
         break;
       }
-      case 'extlink': closeBbar(); toast(t('外部リンク（モック）'), ic('arrow-right-up', 16)); break;
-      case 'bbar': if (S.bbarOpen === k) closeBbar(); else openBbar(k, el); break;
+      case 'extlink': toast(t('外部リンク（モック）'), ic('arrow-right-up', 16)); break;
 
       case 'gs-item': openResult(el.getAttribute('data-cat'), el.getAttribute('data-page'), el.getAttribute('data-title'), el.getAttribute('data-link')); closeGs(); break;
       case 'gs-clear': { var gi = $('#gsInput'); if (gi) { gi.value = ''; gi.focus(); } el.hidden = true; closeGs(); break; }
@@ -5067,10 +4902,10 @@ function photoSvg(scene){
     var typing = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
     if (e.key === 'Escape') {
       if (closeModal()) return;
-      if (S.menuOpen) { closeMenu(); var mb = $('#menuBtn'); if (mb) mb.focus(); return; }
-      if (S.bbarOpen) { closeBbar(); return; }
+      if (S.menuOpen) { closeMenu(); var mb = $('#setBtn'); if (mb) mb.focus(); return; }
       if (e.target.id === 'gsInput') { closeGs(); e.target.blur(); return; }
-      if (e.target.id === 'sideFind') { S.sideQuery = null; renderSide(); return; }
+      if (e.target.id === 'sideFind') { S.sideQuery = ''; renderSide(); return; }
+      if (S.drawer) { S.drawer = false; renderSide(); return; }
       return;
     }
     if (e.target.id === 'gsInput') {
@@ -5092,7 +4927,8 @@ function photoSvg(scene){
     if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey) {
       var gs = $('#gsInput');
       if (gs) { e.preventDefault(); gs.focus(); return; }
-      if (!S.rail && window.innerWidth > 1100) { e.preventDefault(); S.sideQuery = S.sideQuery || ''; renderSide(); var sf = $('#sideFind'); if (sf) sf.focus(); }
+      var sf = $('#sideFind');
+      if (sf) { e.preventDefault(); sf.focus(); }
     }
   });
 
@@ -5127,7 +4963,6 @@ function photoSvg(scene){
   applyTheme();
   window.addEventListener('hashchange', onRoute);
   if (!location.hash) { try { history.replaceState(null, '', '#/home'); } catch (e) { /* file:// */ } }
-  renderHeader();
   onRoute();
   // Cho script kiểm (tools/verify.mjs) đọc danh sách trang + chữ chưa dịch
   window.__JOYSTART__ = { pages: PAGE_LIST.map(function (p) { return p.key; }), missing: I18N_MISSING, announce: ANNOUNCEMENTS.map(function (a) { return a.id; }), settings: SETTINGS_TABS.map(function (x) { return x.id; }) };

@@ -122,9 +122,17 @@ let steps = 0;
     await page.click('.jw-page-actions [data-act="fav"]');
     await page.waitForSelector('.jw-sn-favs a[href*="%E4%B8%8A%E9%95%B7"]');
   });
+  await step('mở tất cả / đóng tất cả', async () => {
+    await page.click('[data-act="expand-all"]');
+    const n = await page.$$eval('.jw-sn-block--open', (e) => e.length);
+    const want = await page.$$eval('.jw-sn-top[data-act="block"]', (e) => e.length);
+    if (n !== want) throw new Error(`mở ${n}/${want} khối`);
+    await page.click('[data-act="collapse-all"]');
+    const m = await page.$$eval('.jw-sn-block--open', (e) => e.length);
+    if (m !== 0) throw new Error(`còn ${m} khối mở`);
+  });
   // Tìm menu: 日本語 chỉ khớp nhãn tiếng Nhật; nhãn tiếng Việt chỉ khớp khi đang ở Tiếng Việt.
   await step('tìm trong side panel (ja: 在庫 khớp, kho KHÔNG khớp)', async () => {
-    await page.click('[data-act="side-find"]');
     await page.fill('#sideFind', 'kho');
     await page.waitForSelector('.jw-sn-hits-none');
     await page.fill('#sideFind', '在庫');
@@ -138,17 +146,23 @@ let steps = 0;
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => location.hash.startsWith('#/search'));
   });
-  await step('menu header → đổi Tiếng Việt + theme tối', async () => {
-    await page.click('#menuBtn');
+  await step('bánh răng cạnh profile → đổi Tiếng Việt + theme tối', async () => {
+    await page.click('#setBtn');
     await page.waitForSelector('.jw-menu--open');
     await page.click('.jw-slide[data-act="lang"]');
     await page.waitForFunction(() => document.documentElement.lang === 'vi');
     await page.click('.jw-slide[data-act="theme"]');
     await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark');
     await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('#menuPanel.jw-menu--open'));
+  });
+  await step('bánh răng → nút vào màn 設定', async () => {
+    await page.click('#setBtn');
+    await page.waitForSelector('.jw-menu--open #setGo');
+    await page.click('#setGo');
+    await page.waitForFunction(() => location.hash.startsWith('#/settings'));
   });
   await step('tìm trong side panel (vi: kho khớp)', async () => {
-    await page.click('[data-act="side-find"]');
     await page.fill('#sideFind', 'kho');
     await page.waitForSelector('.jw-sn-hit[href*="inventory"]');
     await page.click('[data-act="side-find-x"]');
@@ -162,6 +176,29 @@ let steps = 0;
     await page.waitForFunction(() => !document.querySelector('#loggedOut') && location.hash === '#/home');
   });
   logs.forEach((l) => fail('thao tác', 'console: ' + l));
+  await ctx.close();
+}
+// ── Mobile (390px): side panel là dải icon; nút gập mở NGĂN KÉO; chọn trang thì ngăn kéo đóng ──
+{
+  const { ctx, page, logs } = await context({ vp: { width: 390, height: 844 }, lang: 'ja', theme: 'light' });
+  const step = async (name, fn) => { steps++; try { await fn(); } catch (e) { fail('thao tác mobile', `${name}: ${e.message.split('\n')[0]}`); } };
+  await step('dải icon → ngăn kéo → chọn trang', async () => {
+    await page.waitForSelector('.jw-sidenav--rail');
+    await page.click('.jw-sn-top[data-k="todo"]');
+    await page.waitForSelector('html[data-drawer] .jw-sidenav--drawer .jw-sn-block--open .jw-tree-kids');
+    await page.click('.jw-tree-leaf[href*="%E4%B8%8A%E9%95%B7"]');
+    await page.waitForFunction(() => location.hash.includes('%E4%B8%8A%E9%95%B7') && !document.documentElement.hasAttribute('data-drawer'));
+    await page.waitForSelector('.jw-sidenav--rail');
+  });
+  await step('ngăn kéo: bánh răng mở panel cài đặt nổi TRÊN ngăn kéo', async () => {
+    await page.click('[data-act="rail"]');
+    await page.waitForSelector('.jw-sidenav--drawer');
+    await page.click('#setBtn');
+    await page.waitForSelector('.jw-menu--open');
+    const top = await page.evaluate(() => { const r = document.querySelector('#setGo').getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!(el && el.closest('#menuPanel')); });
+    if (!top) throw new Error('panel cài đặt bị ngăn kéo che');
+  });
+  logs.forEach((l) => fail('thao tác mobile', 'console: ' + l));
   await ctx.close();
 }
 

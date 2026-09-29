@@ -11,7 +11,7 @@
 var LANG = 'ja';
 var I18N_MISSING = {};
 var I18N_VI = {
-  // ── Khung app · header · menu ──
+  // ── Khung app · side panel · panel cài đặt ──
   'ホーム': 'Trang chủ',
   'メニュー': 'Menu',
   'モックアップ': 'Mockup',
@@ -49,11 +49,14 @@ var I18N_VI = {
   // ── Home ──
   'JOY START 全体を検索': 'Tìm kiếm toàn bộ JOY START',
   '検索をクリア': 'Xoá nội dung tìm',
+  'すべて開く': 'Mở tất cả',
+  'すべて閉じる': 'Đóng tất cả',
+  '設定画面を開く': 'Mở màn hình cài đặt',
   '自分宛ての件数': 'Việc của tôi',
   '承認待ち': 'Chờ duyệt',
   '期限切れ': 'Quá hạn',
   '今日の予定': 'Lịch hôm nay',
-  '未読のお知らせ': 'Thông báo mới',
+  '未読のお知らせ': 'Chưa đọc',
   '今月減らせた時間': 'Thời gian giảm được tháng này',
   '{n}時間': '{n} giờ',
   '詳細': 'Chi tiết',
@@ -221,7 +224,7 @@ var I18N_VI = {
   '所属事業部・職種・拠点は名簿が正です（ここでは変更できません）。変更は人材戦略部へご連絡ください。': 'Khối kinh doanh · vị trí · văn phòng lấy theo danh bạ (không đổi được ở đây). Muốn thay đổi, vui lòng liên hệ Phòng Chiến lược Nhân sự.',
   'メール': 'Email',
   'この端末から JOY START をログアウトします。': 'Đăng xuất JOY START trên thiết bị này.',
-  'すべての画面が日本語／ベトナム語に切り替わります。ヘッダーのメニューからも切り替えられます。': 'Toàn bộ màn hình chuyển sang tiếng Nhật / tiếng Việt. Cũng có thể đổi từ menu trên thanh tiêu đề.',
+  'すべての画面が日本語／ベトナム語に切り替わります。サイドパネル下の歯車ボタンからも切り替えられます。': 'Toàn bộ màn hình chuyển sang tiếng Nhật / tiếng Việt. Cũng có thể đổi bằng nút bánh răng ở cuối side panel.',
   '未設定の間はOSの設定（ライト／ダーク）に合わせます。': 'Khi chưa chọn, giao diện theo cài đặt của hệ điều hành (sáng / tối).',
   'タイムゾーン': 'Múi giờ',
   '日本（JST, UTC+9）': 'Nhật Bản (JST, UTC+9)',

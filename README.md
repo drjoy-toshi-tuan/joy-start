@@ -1,11 +1,18 @@
 # JOY START — mockup (giao diện JOY Analytics)
 
-Mockup cổng nội bộ **JOY START**, dựng lại từ `JOY_START_menu_mockup.html` (cùng nội dung, trang, chức năng)
-nhưng mặc giao diện của **JOY Analytics**: kính liquid glass, header + menu, side panel gập được, dải khối
-trên mobile.
+Mockup cổng nội bộ **JOY START**, dựng lại từ `JOY_START_menu_mockup.html` (cùng nội dung, trang, chức năng,
+và cùng BỐ CỤC: không header, side panel cao hết màn) nhưng mặc chất liệu của **JOY Analytics**: kính
+liquid glass, cây điều hướng, panel, control.
 
-- **Chỉ bộ màu Ember**, theme **sáng / tối** (mặc định theo hệ điều hành, đổi ở menu header hoặc 設定 › 表示).
-- **Song ngữ 日本語 / Tiếng Việt** (đổi ở menu header hoặc 設定 › 表示). Lựa chọn nhớ trong `localStorage`.
+- **Side panel** (như bản gốc): logo Dr.JOY ở đỉnh · ô tìm menu + nút **mở tất cả / đóng tất cả** ·
+  お気に入り + cây menu (cuộn riêng) · ở đáy là **profile** (ảnh + tên + email, bấm vào mở 設定 › アカウント)
+  và **nút bánh răng** mở panel cài đặt nhanh: đổi ngôn ngữ, đổi theme, nút vào màn 設定.
+  Nút gập thu side panel thành dải icon. Ở khổ ≤640px side panel luôn là dải icon; nút gập mở nó
+  thành ngăn kéo phủ lên nội dung.
+- **Màu nhấn = cam Dr.JOY `#f08c00`** ở cả hai theme. Riêng chữ cam trên nền sáng dùng `#cc7400`
+  (cùng hue) cho đủ tương phản 3:1. Theme **sáng / tối** (mặc định theo hệ điều hành); nền sáng sáng
+  hơn, nền tối tối hơn bộ Ember của JOY Analytics.
+- **Song ngữ 日本語 / Tiếng Việt**. Ngôn ngữ, theme, khối đang mở, お気に入り nhớ trong `localStorage`.
 - **Icon: toàn bộ lấy từ Solar, bản Outline** (161 icon).
 - **Không lấy nền ribbon** của JOY Analytics. Chỉ giữ 3 vệt loang màu rất nhẹ sau lớp kính: kính cần
   một nền có sắc để còn đọc ra là kính. Muốn nền phẳng hẳn thì xoá khối `.jw-ambient` ở `styles.css`.
@@ -49,8 +56,9 @@ node tools/verify.mjs [--shots <thư mục>]              # kiểm bằng trình
   Icon thiếu sẽ hiện cảnh báo `[icon] thiếu: …` trên console.
 - **Thêm chữ:** viết tiếng Nhật trong `t('…')` và thêm bản dịch vào `I18N_VI`. Thiếu bản dịch thì
   màn Tiếng Việt hiện chữ Nhật và `verify.mjs` báo đỏ.
-- **`verify.mjs`** quét 135 route × 日本語/Tiếng Việt × 1440px/390px, rồi chạy 8 thao tác chính (mở khối,
-  sang trang, ghim お気に入り, tìm menu ở cả 2 ngôn ngữ, tìm toàn bộ, đổi ngôn ngữ + theme, đăng xuất). Nó báo đỏ khi
+- **`verify.mjs`** quét 135 route × 日本語/Tiếng Việt × 1440px/390px, rồi chạy các thao tác chính (mở khối,
+  sang trang, ghim お気に入り, mở/đóng tất cả, tìm menu ở cả 2 ngôn ngữ, tìm toàn bộ, bánh răng → đổi
+  ngôn ngữ + theme → vào 設定, đăng xuất, và ở 390px: dải icon → ngăn kéo → chọn trang). Nó báo đỏ khi
   có: lỗi/cảnh báo console, cuộn ngang, chữ chưa dịch. Cần Playwright (`npm i -g playwright` hoặc
   đặt `NODE_PATH`). Máy đi qua proxy thì thêm `PW_PROXY=http://host:port`; muốn cache font thì thêm
   `PW_FONT_CACHE=<thư mục>`.
@@ -70,11 +78,14 @@ không publish. Muốn chạy tay: Actions → Deploy to GitHub Pages → Run wo
 
 ## Khác JOY Analytics ở đâu
 
-- Không nền ribbon (yêu cầu). Không bộ màu Rime.
+- Không header, không dải khối dưới header: bố cục theo mockup gốc (xem trên).
+- Không nền ribbon (yêu cầu). Không bộ màu Rime. Cam là cam Dr.JOY, không phải cam cháy của Ember.
+- Logo = mark Dr.JOY (path chép nguyên văn từ `docs/brand/drjoy-mark.svg` của JOY Analytics) + chữ
+  JOY START. Favicon cũng là mark Dr.JOY.
 - Tiếng Việt dùng font **Be Vietnam Pro** cho chữ tiêu đề/số, vì Outfit (font của JOY Analytics)
   không có dấu tiếng Việt.
-- Side panel theo cách của JOY Analytics: chỉ khối tầng 1 gập (mở một khối thì khối khác đóng),
-  thu thành dải icon + tooltip. ≤1100px thì side panel ẩn, thay bằng dải khối + pulldown dưới header.
+- Cây menu: mở được NHIỀU khối cùng lúc (JOY Analytics chỉ mở một), vì có nút mở tất cả. Nên nền cam
+  chỉ dành cho trang hiện tại ở tầng 1 (ホーム · リンク); khối chứa trang hiện tại = chữ cam + vạch.
   Tên mục bị cắt "…" thì tooltip hiện tên đầy đủ.
 
 ## Dữ liệu

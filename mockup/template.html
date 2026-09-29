@@ -6,7 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>JOY START</title>
 <!-- JOY START — mockup menu/home. FILE BUILD: sửa nguồn ở mockup/*, rồi `node tools/build.mjs`. -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffb370%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23f07319%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c2571a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2236%22%20height%3D%2236%22%20rx%3D%2210%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2214.5%22%20cy%3D%2212%22%20r%3D%223.4%22%20fill%3D%22%23fff%22%2F%3E%3Cpath%20d%3D%22M16%2016%20L23%2021%20L18.5%2023.5%20L26%2029%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223.2%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M13%2024%20L19.5%2020.5%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<!-- favicon = mark Dr.JOY (chép từ docs/brand/drjoy-mark.svg của JOY Analytics) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-6%20-5%20512%20512%22%3E%3Cg%20fill%3D%22%23f08c00%22%3E%3Cpath%20d%3D%22M%20476.558%20113.792%20L%20318.801%20113.792%20C%20304.829%20113.792%20292.353%20122.543%20287.601%20135.68%20L%20219.463%20323.986%20C%20213.938%20339.256%20225.25%20355.378%20241.489%20355.378%20L%20289.757%20355.378%20L%20256.43%20418.954%20L%20336.729%20355.378%20L%20399.246%20355.378%20C%20413.218%20355.378%20425.694%20346.622%20430.447%20333.485%20L%20498.583%20145.182%20C%20504.106%20129.913%20492.796%20113.792%20476.558%20113.792%20M%20389.296%20329.948%20L%20257.006%20329.948%20C%20252.948%20329.948%20250.118%20325.919%20251.499%20322.103%20L%20312.575%20153.009%20C%20314.528%20147.596%20319.67%20143.989%20325.423%20143.989%20L%20457.719%20143.989%20C%20461.777%20143.989%20464.602%20148.017%20463.226%20151.834%20L%20402.146%20320.927%20C%20400.194%20326.341%20395.055%20329.948%20389.296%20329.948%22%2F%3E%3Cpath%20d%3D%22M%20192.486%20350.609%20C%20192.486%20350.609%20103.929%20277.498%200%20351.645%20L%2085.873%20114.513%20C%20188.172%2044.763%20278.358%20113.481%20278.358%20113.481%20L%20192.486%20350.609%20Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <!-- Font như JOY Analytics (Outfit · Space Grotesk · Source Sans 3 · Zen Kaku Gothic New · Noto Sans JP)
      + Be Vietnam Pro: Outfit không có dấu tiếng Việt. Mạng chặn Google Fonts thì rơi về font hệ thống. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,15 +32,13 @@
 <noscript><p style="padding:2rem;font-family:sans-serif">JOY START mockup cần JavaScript.</p></noscript>
 <div class="jw-app" id="app">
   <div class="jw-ambient" aria-hidden="true"></div>
-  <div class="jw-topbars" id="topbars">
-    <header class="jw-header jw-glass" id="header"></header>
-    <div class="jw-groupbar jw-glass jw-blockbar" id="blockbar"></div>
-    <div class="jw-toasts" id="toasts" role="status" aria-live="polite"></div>
-  </div>
+  <!-- Không có header (như mockup gốc): side panel cao hết màn + nội dung. -->
   <div class="jw-body">
     <aside class="jw-sidenav jw-glass" id="side"></aside>
+    <div class="jw-drawer-scrim" data-act="drawer-close" aria-hidden="true"></div>
     <main class="jw-main" id="main"><div class="jw-screen" id="screen"></div></main>
   </div>
+  <div class="jw-toasts" id="toasts" role="status" aria-live="polite"></div>
 </div>
 <div id="layer"></div>
 <div class="jw-tipbox" id="tipbox" role="tooltip"></div>
